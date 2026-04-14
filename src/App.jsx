@@ -155,60 +155,15 @@ function App() {
       return itemDateStr === selectedDate;
     }).length;
 
+  // Effect 1: Handle Authentication State
   useEffect(() => {
-    // Fallback timeout
-    const timeoutId = setTimeout(() => {
-      setLoading(false);
-    }, 2000);
-
+    const timeoutId = setTimeout(() => setLoading(false), 2000);
+    
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       clearTimeout(timeoutId);
       setUser(currentUser);
-      
-      if (currentUser) {
-        const userTodoKey = `todos_${currentUser.uid}`;
-        let isFirstSnapshot = true;
-        
-        const unsubStore = onSnapshot(doc(db, "users", currentUser.uid), (docSnap) => {
-          if (docSnap.exists()) {
-            const cloudTasks = docSnap.data().tasks || [];
-            
-            if (isFirstSnapshot) {
-              isFirstSnapshot = false;
-              // Only merge user-specific localStorage on initial load
-              const saved = localStorage.getItem(userTodoKey);
-              const localTasks = saved ? JSON.parse(saved) : [];
-              
-              if (localTasks.length > 0) {
-                const cloudIds = new Set(cloudTasks.map(t => t.id));
-                const localOnly = localTasks.filter(t => !cloudIds.has(t.id));
-                const merged = [...localOnly, ...cloudTasks];
-                setTasks(merged);
-                localStorage.setItem(userTodoKey, JSON.stringify(merged));
-                setDoc(doc(db, "users", currentUser.uid), { tasks: merged });
-              } else {
-                setTasks(cloudTasks);
-                localStorage.setItem(userTodoKey, JSON.stringify(cloudTasks));
-              }
-            } else {
-              setTasks(cloudTasks);
-              localStorage.setItem(userTodoKey, JSON.stringify(cloudTasks));
-            }
-          } else {
-            // First time user on this device/cloud: start clean or check user-specific storage only
-            const saved = localStorage.getItem(userTodoKey);
-            const localTasks = saved ? JSON.parse(saved) : [];
-            setTasks(localTasks);
-            setDoc(doc(db, "users", currentUser.uid), { tasks: localTasks });
-          }
-          setLoading(false);
-        }, (error) => {
-          console.error("Firestore error:", error);
-          setLoading(false);
-        });
-        return () => unsubStore();
-      } else {
-        setTasks([]); // Clear tasks when logged out
+      if (!currentUser) {
+        setTasks([]);
         setLoading(false);
       }
     }, (error) => {
@@ -222,6 +177,53 @@ function App() {
       unsubscribe();
     };
   }, []);
+
+  // Effect 2: Handle Task Synchronization (User-specific)
+  useEffect(() => {
+    if (!user) return;
+    
+    setLoading(true);
+    const userTodoKey = `todos_${user.uid}`;
+    let isFirstSnapshot = true;
+    
+    const unsubStore = onSnapshot(doc(db, "users", user.uid), (docSnap) => {
+      if (docSnap.exists()) {
+        const cloudTasks = docSnap.data().tasks || [];
+        
+        if (isFirstSnapshot) {
+          isFirstSnapshot = false;
+          const saved = localStorage.getItem(userTodoKey);
+          const localTasks = saved ? JSON.parse(saved) : [];
+          
+          if (localTasks.length > 0) {
+            const cloudIds = new Set(cloudTasks.map(t => t.id));
+            const localOnly = localTasks.filter(t => !cloudIds.has(t.id));
+            const merged = [...localOnly, ...cloudTasks];
+            setTasks(merged);
+            localStorage.setItem(userTodoKey, JSON.stringify(merged));
+            setDoc(doc(db, "users", user.uid), { tasks: merged });
+          } else {
+            setTasks(cloudTasks);
+            localStorage.setItem(userTodoKey, JSON.stringify(cloudTasks));
+          }
+        } else {
+          setTasks(cloudTasks);
+          localStorage.setItem(userTodoKey, JSON.stringify(cloudTasks));
+        }
+      } else {
+        const saved = localStorage.getItem(userTodoKey);
+        const localTasks = saved ? JSON.parse(saved) : [];
+        setTasks(localTasks);
+        setDoc(doc(db, "users", user.uid), { tasks: localTasks });
+      }
+      setLoading(false);
+    }, (error) => {
+      console.error("Firestore tasks error:", error);
+      setLoading(false);
+    });
+
+    return () => unsubStore();
+  }, [user?.uid]);
 
   const updateTasks = async (newTasks) => {
     setTasks(newTasks);
