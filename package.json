@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Jinil Todo Application",
   "author": "Jinil",
-  "version": "1.0.6",
+  "version": "1.0.8",
   "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
@@ -76,7 +76,8 @@
       {
         "provider": "github",
         "owner": "goz86",
-        "repo": "jinil-app"
+        "repo": "jinil-app",
+        "releaseType": "release"
       }
     ]
   }

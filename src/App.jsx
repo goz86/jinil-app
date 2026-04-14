@@ -195,15 +195,11 @@ function App() {
               localStorage.setItem(userTodoKey, JSON.stringify(cloudTasks));
             }
           } else {
-            // First time user: check user-specific storage, or fallback to general 'todos' for migration once
-            const saved = localStorage.getItem(userTodoKey) || localStorage.getItem('todos');
+            // First time user on this device/cloud: start clean or check user-specific storage only
+            const saved = localStorage.getItem(userTodoKey);
             const localTasks = saved ? JSON.parse(saved) : [];
             setTasks(localTasks);
             setDoc(doc(db, "users", currentUser.uid), { tasks: localTasks });
-            // Cleanup legacy key after migration
-            if (!localStorage.getItem(userTodoKey) && localStorage.getItem('todos')) {
-               localStorage.removeItem('todos');
-            }
           }
           setLoading(false);
         }, (error) => {
