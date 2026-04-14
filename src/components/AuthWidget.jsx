@@ -7,25 +7,24 @@ export default function AuthWidget({ user, onLogin, onLogout, email, setEmail, p
 
     return (
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 mb-4 flex flex-col gap-3">
-            <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">
-                {user ? t('logout') : t('login')}
-            </h3>
-
             {user ? (
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
+                <div className="flex flex-col items-center justify-center py-2">
+                    <div className="flex flex-col items-center space-y-3">
                         {user.photoURL ? (
-                            <img src={user.photoURL} alt="User" className="w-10 h-10 rounded-full shadow-md border-2 border-white dark:border-gray-600 object-cover" />
+                            <img src={user.photoURL} alt="User" className="w-16 h-16 rounded-full shadow-lg border-2 border-white dark:border-gray-600 object-cover" />
                         ) : (
-                            <div className="w-10 h-10 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm shadow-md border-2 border-white dark:border-gray-600">
+                            <div className="w-16 h-16 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-2xl shadow-lg border-2 border-white dark:border-gray-600">
                                 {(user.email || '?')[0].toUpperCase()}
                             </div>
                         )}
-                        <span className="text-sm font-medium text-gray-800 dark:text-gray-200 truncate w-32">
+                        <span className="text-base font-semibold text-gray-800 dark:text-gray-100">
                             {user.email || 'User'}
                         </span>
                     </div>
-                    <button onClick={onLogout} className="text-xs text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 font-medium px-2 py-1 bg-red-50 dark:bg-red-900/20 rounded-lg transition-colors">
+                    <button 
+                        onClick={onLogout} 
+                        className="mt-4 text-sm text-red-500 hover:text-red-100 hover:bg-red-500 dark:text-red-400 dark:hover:text-red-300 font-bold px-6 py-2 border border-red-200 dark:border-red-900/50 rounded-xl transition-all duration-200"
+                    >
                         {t('logout')}
                     </button>
                 </div>
