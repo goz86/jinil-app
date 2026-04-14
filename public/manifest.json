@@ -1,0 +1,23 @@
+{
+  "manifest_version": 3,
+  "name": "진일 라벨",
+  "version": "1.0",
+  "description": "진일 라벨 - To-Do List & Financial Market dashboard",
+  "chrome_url_overrides": {
+    "newtab": "index.html"
+  },
+  "permissions": [
+    "storage",
+    "identity"
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  },
+  "oauth2": {
+    "client_id": "212959567719-6m11ur6g7magb0ddg05e3ship7t56erq.apps.googleusercontent.com",
+    "scopes": [
+      "https://www.googleapis.com/auth/userinfo.email",
+      "https://www.googleapis.com/auth/userinfo.profile"
+    ]
+  }
+}

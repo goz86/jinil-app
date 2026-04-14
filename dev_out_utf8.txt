@@ -1,0 +1,21 @@
+﻿
+> jinil-label@1.0.1 electron:dev
+> concurrently -k "cross-env BROWSER=none npm run dev" "wait-on http://localhost:5173 && electron ."
+
+[0] 
+[0] > jinil-label@1.0.1 dev
+[0] > vite
+[0] 
+[0] 
+[0]   [32m[1mVITE[22m v7.3.1[39m  [2mready in [0m[1m781[22m[2m[0m ms[22m
+[0] 
+[0]   [32mΓ₧£[39m  [1mLocal[22m:   [36mhttp://localhost:[1m5173[22m/[39m
+[0] [2m  [32mΓ₧£[39m  [1mNetwork[22m[2m: use [22m[1m--host[22m[2m to expose[22m
+[1] 
+[1] (node:12924) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///C:/Users/Hhung/Desktop/todo-app%20vn/electron/main.js is not specified and it doesn't parse as CommonJS.
+[1] Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+[1] To eliminate this warning, add "type": "module" to C:\Users\Hhung\Desktop\todo-app vn\package.json.
+[1] (Use `electron --trace-warnings ...` to show where the warning was created)
+[1] wait-on http://localhost:5173 && electron . exited with code 0
+--> Sending SIGTERM to other processes..
+[0] cross-env BROWSER=none npm run dev exited with code 1

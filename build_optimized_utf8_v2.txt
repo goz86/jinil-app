@@ -1,0 +1,80 @@
+﻿
+> jinil-label@1.0.1 electron:build
+> npm run build && cross-env CSC_SKIP=true electron-builder
+
+
+> jinil-label@1.0.1 build
+> vite build
+
+[36mvite v7.3.1 [32mbuilding client environment for production...[36m[39m
+transforming...
+[32mΓ£ô[39m 71 modules transformed.
+rendering chunks...
+computing gzip size...
+[2mdist/[22m[32mindex.html        [39m[1m[2m    0.42 kB[22m[1m[22m[2m Γöé gzip:   0.29 kB[22m
+[2mdist/[22m[35massets/index.css  [39m[1m[2m   83.04 kB[22m[1m[22m[2m Γöé gzip:  15.94 kB[22m
+[2mdist/[22m[36massets/index.js   [39m[1m[33m1,653.10 kB[39m[22m[2m Γöé gzip: 491.00 kB[22m
+node.exe : [33m
+At line:1 char:1
++ & "C:\Program Files\n
+odejs/node.exe" "C:\Pro
+gram Files\nodejs/node_
+mo ...
++ ~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~
+~~
+    + CategoryInfo     
+         : NotSpecifi  
+  ed: ([33m:String)   
+  [], RemoteExcepti    
+on
+    + FullyQualifiedEr 
+   rorId : NativeComm  
+  andError
+ 
+(!) Some chunks are lar
+ger than 500 kB after m
+inification. Consider:
+- Using dynamic import(
+) to code-split the app
+lication
+- Use build.rollupOptio
+ns.output.manualChunks 
+to improve chunking: ht
+tps://rollupjs.org/conf
+iguration-options/#outp
+ut-manualchunks
+- Adjust chunk size lim
+it for this warning via
+ build.chunkSizeWarning
+Limit.[39m
+[32mΓ£ô built in 6.40s[39m
+  ΓÇó electron-builder  version=26.8.1 os=10.0.22621
+  ΓÇó loaded configuration  file=package.json ("build" field)
+  ΓÇó executing @electron/rebuild  electronVersion=40.6.1 arch=x64 buildFromSource=false workspaceRoot=C:\Users\Hhung\Desktop\todo-app vn projectDir=./ appDir=./
+  ΓÇó installing native dependencies  arch=x64
+  ΓÇó completed installing native dependencies
+  ΓÇó packaging       platform=win32 arch=x64 electron=40.6.1 appOutDir=dist_electron\win-unpacked
+  ΓÇó searching for node modules  pm=npm searchDir=C:\Users\Hhung\Desktop\todo-app vn
+(node:16448) [DEP0190] 
+DeprecationWarning: Pas
+sing args to a child pr
+ocess with shell option
+ true can lead to secur
+ity vulnerabilities, as
+ the arguments are not 
+escaped, only concatena
+ted.
+(Use `node --trace-depr
+ecation ...` to show wh
+ere the warning was cre
+ated)
+  ΓÇó duplicate dependency references  dependencies=["once@1.4.0","readable-stream@3.6.2","readable-stream@3.6.2","once@1.4.0","readable-stream@3.6.2","glob@7.2.3","lazystream@1.0.1","readable-stream@3.6.2","readable-stream@3.6.2","readable-stream@3.6.2","readable-stream@3.6.2","glob@7.2.3","@firebase/app@0.14.8","@firebase/util@1.13.0","@firebase/util@1.13.0","@firebase/analytics@0.10.19","@firebase/app-compat@0.5.8","@firebase/component@0.7.0","@firebase/util@1.13.0","@firebase/app@0.14.8","@firebase/component@0.7.0","@firebase/installations@0.6.19","@firebase/logger@0.5.0","@firebase/util@1.13.0","@firebase/app-check@0.11.0","@firebase/app-compat@0.5.8","@firebase/component@0.7.0","@firebase/logger@0.5.0","@firebase/util@1.13.0","@firebase/app@0.14.8","@firebase/component@0.7.0","@firebase/logger@0.5.0","@firebase/util@1.13.0","@firebase/app@0.14.8","@firebase/component@0.7.0","@firebase/logger@0.5.0","@firebase/util@1.13.0","@firebase/component@0.7.0","@firebase/logger@0.5.0","@firebase/util@1.13.0","@firebase/app-compat@0.5.8","@firebase/util@1.13.0","@firebase/auth@1.12.0","@firebase/component@0.7.0","@firebase/util@1.13.0","@firebase/app@0.14.8","@firebase/component@0.7.0","@firebase/logger@0.5.0","@firebase/util@1.13.0","@firebase/app@0.14.8","@firebase/component@0.7.0","@firebase/logger@0.5.0","@firebase/util@1.13.0","@firebase/component@0.7.0","@firebase/util@1.13.0","@firebase/database@1.1.0","@firebase/logger@0.5.0","@firebase/util@1.13.0","@firebase/component@0.7.0","@firebase/logger@0.5.0","@firebase/util@1.13.0","@firebase/app-compat@0.5.8","@firebase/component@0.7.0","@firebase/util@1.13.0","@firebase/firestore@4.11.0","@firebase/util@1.13.0","@firebase/app@0.14.8","@firebase/component@0.7.0","@firebase/logger@0.5.0","@firebase/util@1.13.0","@grpc/proto-loader@0.7.15","@types/node@25.3.0","string-width@4.2.3","string-width@4.2.3","strip-ansi@6.0.1","strip-ansi@6.0.1","@firebase/app-compat@0.5.8","@firebase/component@0.7.0","@firebase/functions@0.13.1","@firebase/util@1.13.0","@firebase/app@0.14.8","@firebase/component@0.7.0","@firebase/util@1.13.0","@firebase/app-compat@0.5.8","@firebase/component@0.7.0","@firebase/installations@0.6.19","@firebase/util@1.13.0","@firebase/app@0.14.8","@firebase/component@0.7.0","@firebase/util@1.13.0","@firebase/app-compat@0.5.8","@firebase/component@0.7.0","@firebase/messaging@0.12.23","@firebase/util@1.13.0","@firebase/app@0.14.8","@firebase/component@0.7.0","@firebase/installations@0.6.19","@firebase/util@1.13.0","@firebase/app-compat@0.5.8","@firebase/component@0.7.0","@firebase/logger@0.5.0","@firebase/performance@0.7.9","@firebase/util@1.13.0","@firebase/app@0.14.8","@firebase/component@0.7.0","@firebase/installations@0.6.19","@firebase/logger@0.5.0","@firebase/util@1.13.0","@firebase/app-compat@0.5.8","@firebase/component@0.7.0","@firebase/logger@0.5.0","@firebase/remote-config@0.8.0","@firebase/util@1.13.0","@firebase/app@0.14.8","@firebase/component@0.7.0","@firebase/installations@0.6.19","@firebase/logger@0.5.0","@firebase/util@1.13.0","@firebase/app-compat@0.5.8","@firebase/component@0.7.0","@firebase/util@1.13.0","@firebase/storage@0.14.0","@firebase/util@1.13.0","@firebase/app@0.14.8","@firebase/component@0.7.0","@firebase/util@1.13.0"]
+  ΓÇó updating asar integrity executable resource  executablePath=dist_electron\win-unpacked\∞ºä∞¥╝ δ¥╝δ▓¿.exe
+  ΓÇó signing with signtool.exe  path=dist_electron\win-unpacked\∞ºä∞¥╝ δ¥╝δ▓¿.exe
+  ΓÇó building        target=nsis file=dist_electron\∞ºä∞¥╝ δ¥╝δ▓¿ Setup 1.0.1.exe archs=x64 oneClick=false perMachine=false
+  ΓÇó signing with signtool.exe  path=dist_electron\win-unpacked\resources\elevate.exe
+  ΓÇó signing with signtool.exe  path=dist_electron\∞ºä∞¥╝ δ¥╝δ▓¿ Setup 1.0.1.__uninstaller.exe
+  ΓÇó signing with signtool.exe  path=dist_electron\∞ºä∞¥╝ δ¥╝δ▓¿ Setup 1.0.1.exe
+  ΓÇó building block map  blockMapFile=dist_electron\∞ºä∞¥╝ δ¥╝δ▓¿ Setup 1.0.1.exe.blockmap
