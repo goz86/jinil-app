@@ -201,6 +201,29 @@ export default function ClientAddressBook({ user }) {
         setShowForm(true);
     };
 
+    const handleCopy = (text, type) => {
+        if (!text) return;
+        navigator.clipboard.writeText(text);
+        
+        // Toast notification
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 2000,
+            timerProgressBar: true,
+            didOpen: (toast) => {
+                toast.addEventListener('mouseenter', Swal.stopTimer)
+                toast.addEventListener('mouseleave', Swal.resumeTimer)
+            }
+        });
+
+        Toast.fire({
+            icon: 'success',
+            title: `${type === 'phone' ? t('phone') : type === 'address' ? t('address') : t('companyName')} 복사되었습니다`
+        });
+    };
+
     return (
         <div className="flex flex-col h-full bg-white dark:bg-gray-800 rounded-xl">
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 p-2">
@@ -352,11 +375,29 @@ export default function ClientAddressBook({ user }) {
                                     <svg className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" /></svg>
                                     {index + 1}
                                 </td>
-                                <td className="px-4 py-3 font-bold text-gray-800 dark:text-white truncate" title={c.name}>{c.name}</td>
+                                <td 
+                                    className="px-4 py-3 font-bold text-gray-800 dark:text-white truncate cursor-pointer hover:underline active:text-blue-600 transition-all" 
+                                    title={t('clickToCopy') || 'Nhấn để copy'}
+                                    onClick={(e) => { e.stopPropagation(); handleCopy(c.name, 'name'); }}
+                                >
+                                    {c.name}
+                                </td>
                                 <td className="px-4 py-3 text-gray-700 dark:text-gray-300 truncate" title={c.representative}>{c.representative}</td>
                                 <td className="px-4 py-3 text-gray-700 dark:text-gray-300 truncate" title={c.contactName}>{c.contactName}</td>
-                                <td className="px-4 py-3 text-blue-600 dark:text-blue-400 font-semibold truncate" title={c.phone}>{c.phone}</td>
-                                <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-400 whitespace-normal break-words leading-relaxed" title={c.address}>{c.address}</td>
+                                <td 
+                                    className="px-4 py-3 text-blue-600 dark:text-blue-400 font-semibold truncate cursor-pointer hover:underline active:text-blue-800 transition-all" 
+                                    title={t('clickToCopy') || 'Nhấn để copy'}
+                                    onClick={(e) => { e.stopPropagation(); handleCopy(c.phone, 'phone'); }}
+                                >
+                                    {c.phone}
+                                </td>
+                                <td 
+                                    className="px-4 py-3 text-xs text-gray-600 dark:text-gray-400 whitespace-normal break-words leading-relaxed cursor-pointer hover:bg-blue-50/50 dark:hover:bg-blue-900/20 rounded-lg transition-all" 
+                                    title={t('clickToCopy') || 'Nhấn để copy'}
+                                    onClick={(e) => { e.stopPropagation(); handleCopy(c.address, 'address'); }}
+                                >
+                                    {c.address}
+                                </td>
                                 <td className="px-4 py-3 text-right">
                                     <div className="flex justify-end gap-2">
                                         <button onClick={() => handleEdit(c)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
