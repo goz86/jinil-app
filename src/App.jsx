@@ -17,6 +17,7 @@ import StockTicker from './components/StockTicker';
 import { auth, db } from './firebase';
 import { signInWithCredential, signInWithEmailAndPassword, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
 import { collection, doc, onSnapshot, setDoc, query, orderBy, limit, where, getDocs, deleteDoc } from 'firebase/firestore';
+import { ref, deleteObject } from 'firebase/storage';
 import { useLanguage } from './contexts/LanguageContext';
 import Swal from 'sweetalert2';
 
@@ -124,9 +125,34 @@ function App() {
 
       try {
         const snapshot = await getDocs(q);
-        snapshot.forEach(async (document) => {
+        for (const document of snapshot.docs) {
+          const data = document.data();
+          
+          // 1. Try to delete the associated image from Storage
+          if (data.imagePath || data.imageUrl) {
+            try {
+              let storageRef;
+              if (data.imagePath) {
+                storageRef = ref(storage, data.imagePath);
+              } else if (data.imageUrl && data.imageUrl.includes('firebasestorage.googleapis.com')) {
+                // Legacy fallback: extract path from URL
+                const decodedUrl = decodeURIComponent(data.imageUrl);
+                const pathPart = decodedUrl.split('/o/')[1]?.split('?')[0];
+                if (pathPart) storageRef = ref(storage, pathPart);
+              }
+
+              if (storageRef) {
+                await deleteObject(storageRef);
+              }
+            } catch (storageErr) {
+              // Ignore if already deleted or path invalid
+              console.warn("Auto-cleanup storage error:", storageErr);
+            }
+          }
+
+          // 2. Delete the Firestore document
           await deleteDoc(doc(db, "deliveries", document.id));
-        });
+        }
       } catch (error) {
         console.error("Cleanup error:", error);
       }

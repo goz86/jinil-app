@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { db, storage } from '../firebase';
 import { collection, onSnapshot, deleteDoc, doc, addDoc, query, orderBy, serverTimestamp } from 'firebase/firestore';
-import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useLanguage } from '../contexts/LanguageContext';
 import Swal from 'sweetalert2';
 import ExcelJS from 'exceljs';
@@ -65,9 +65,32 @@ export default function DeliveryWidget({ selectedDate, deliveries = [] }) {
 
     // Data is now managed by parent (App.jsx) via props
 
-    const handleDelete = async (id) => {
+    const handleDelete = async (item) => {
         try {
-            await deleteDoc(doc(db, "deliveries", id));
+            // 1. Delete image from Storage if exists
+            if (item.imagePath || item.imageUrl) {
+                try {
+                    // Try imagePath first (new records), then fallback to URL parsing
+                    let storageRef;
+                    if (item.imagePath) {
+                        storageRef = ref(storage, item.imagePath);
+                    } else if (item.imageUrl && item.imageUrl.includes('firebasestorage.googleapis.com')) {
+                        // Extract path from URL: /o/PATH?alt=media
+                        const decodedUrl = decodeURIComponent(item.imageUrl);
+                        const pathPart = decodedUrl.split('/o/')[1]?.split('?')[0];
+                        if (pathPart) storageRef = ref(storage, pathPart);
+                    }
+
+                    if (storageRef) {
+                        await deleteObject(storageRef);
+                    }
+                } catch (storageErr) {
+                    console.error("Storage delete error (might be already gone):", storageErr);
+                }
+            }
+
+            // 2. Delete Firestore document
+            await deleteDoc(doc(db, "deliveries", item.id));
         } catch (err) {
             console.error("Delete error:", err);
         }
@@ -156,6 +179,7 @@ export default function DeliveryWidget({ selectedDate, deliveries = [] }) {
                     await addDoc(collection(db, "deliveries"), {
                         barcode: barcode.trim(),
                         imageUrl,
+                        imagePath: fileName, // Save path for easier cleanup later
                         timestamp: serverTimestamp(),
                         uploadedBy: "Team"
                     });
@@ -479,7 +503,7 @@ export default function DeliveryWidget({ selectedDate, deliveries = [] }) {
                         <div className="space-y-1 relative">
                             {/* Delete Action - Positioned top right relative to text area */}
                             <button
-                                onClick={() => handleDelete(item.id)}
+                                onClick={() => handleDelete(item)}
                                 className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 text-gray-300 hover:text-red-500 transition-all p-1"
                                 title={t('delete')}
                             >

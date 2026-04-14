@@ -19,7 +19,7 @@ export default function InventoryManagement({ user }) {
     // Resizable Columns State
     const [columnWidths, setColumnWidths] = useState(() => {
         const saved = localStorage.getItem('inventory-column-widths');
-        return saved ? JSON.parse(saved) : [50, 130, 100, 180, 120, 80, 80, 100, 100];
+        return saved ? JSON.parse(saved) : [50, 130, 90, 180, 100, 70, 70, 90, 80, 100];
     });
     const [isResizing, setIsResizing] = useState(-1);
 
@@ -73,6 +73,7 @@ export default function InventoryManagement({ user }) {
         stockIn: 0,
         stockOut: 0,
         currentStock: 0,
+        unit: '',
         date: getCurrentLocalTime()
     });
 
@@ -80,6 +81,7 @@ export default function InventoryManagement({ user }) {
         setFormData({
             category: '', productName: '', productCode: '', 
             stockIn: 0, stockOut: 0, currentStock: 0,
+            unit: '',
             date: getCurrentLocalTime()
         });
     };
@@ -126,6 +128,7 @@ export default function InventoryManagement({ user }) {
                 stockIn: Number(formData.stockIn),
                 stockOut: Number(formData.stockOut),
                 currentStock: Number(formData.currentStock),
+                unit: formData.unit || ''
             };
 
             if (editingId) {
@@ -257,6 +260,7 @@ export default function InventoryManagement({ user }) {
                             <InputField label={t('stockIn')} value={formData.stockIn} onChange={v => setFormData({...formData, stockIn: v})} type="number" />
                             <InputField label={t('stockOut')} value={formData.stockOut} onChange={v => setFormData({...formData, stockOut: v})} type="number" />
                             <InputField label={t('currentStock')} value={formData.currentStock} onChange={v => setFormData({...formData, currentStock: v})} type="number" />
+                            <InputField label="단위" value={formData.unit} onChange={v => setFormData({...formData, unit: v})} placeholder="예: PAIR, KG, 개" />
                             <InputField label={t('date')} value={formData.date} onChange={v => setFormData({...formData, date: v})} />
                             
                             <div className="flex justify-end gap-3 mt-4">
@@ -348,7 +352,11 @@ export default function InventoryManagement({ user }) {
                                 {t('currentStock')}
                                 <div onMouseDown={(e) => startResizing(7, e)} className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-green-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </th>
-                            <th className="px-4 py-3 text-right" style={{ width: columnWidths[8] }}>{t('actions')}</th>
+                            <th className="px-4 py-3 text-center text-gray-400 relative group" style={{ width: columnWidths[8] }}>
+                                단위
+                                <div onMouseDown={(e) => startResizing(8, e)} className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-green-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </th>
+                            <th className="px-4 py-3 text-right" style={{ width: columnWidths[9] }}>{t('actions')}</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
@@ -380,6 +388,7 @@ export default function InventoryManagement({ user }) {
                                 <td className="px-4 py-3 text-center text-blue-600 dark:text-blue-400 font-semibold">{item.stockIn}</td>
                                 <td className="px-4 py-3 text-center text-red-600 dark:text-red-400 font-semibold">{item.stockOut}</td>
                                 <td className="px-4 py-3 text-center font-bold text-green-600">{item.currentStock}</td>
+                                <td className="px-4 py-3 text-center text-gray-600">{item.unit || '-'}</td>
                                 <td className="px-4 py-3 text-right text-base">
                                     <div className="flex justify-end gap-2">
                                         <button onClick={() => handleEdit(item)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
