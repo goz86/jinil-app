@@ -4,7 +4,7 @@ import { collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, doc, order
 import { useLanguage } from '../contexts/LanguageContext';
 import Swal from 'sweetalert2';
 
-export default function InventoryManagement() {
+export default function InventoryManagement({ user }) {
     const { t } = useLanguage();
     const [inventory, setInventory] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
@@ -14,25 +14,110 @@ export default function InventoryManagement() {
     const [sortField, setSortField] = useState('productName');
     const [sortOrder, setSortOrder] = useState('asc');
 
+    const [sortField, setSortField] = useState('custom'); // 'custom' or field name
+    const [sortOrder, setSortOrder] = useState('asc');
+
+    const [draggedItemIndex, setDraggedItemIndex] = useState(null);
+
+    // Resizable Columns State
+    const [columnWidths, setColumnWidths] = useState(() => {
+        const saved = localStorage.getItem('inventory-column-widths');
+        return saved ? JSON.parse(saved) : [50, 130, 100, 180, 120, 80, 80, 100, 100];
+    });
+    const [isResizing, setIsResizing] = useState(-1);
+
+    useEffect(() => {
+        localStorage.setItem('inventory-column-widths', JSON.stringify(columnWidths));
+    }, [columnWidths]);
+
+    const startResizing = (idx, e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        setIsResizing(idx);
+    };
+
+    useEffect(() => {
+        if (isResizing === -1) return;
+
+        const handleMouseMove = (e) => {
+            setColumnWidths(prev => {
+                const newWidths = [...prev];
+                const delta = e.movementX;
+                const minWidth = 40;
+                newWidths[isResizing] = Math.max(minWidth, newWidths[isResizing] + delta);
+                return newWidths;
+            });
+        };
+
+        const handleMouseUp = () => setIsResizing(-1);
+
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+        return () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+    }, [isResizing]);
+
+    const getCurrentLocalTime = () => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        return `${year}-${month}-${day} ${hours}:${minutes}`;
+    };
+
     const [formData, setFormData] = useState({
         category: '',
         productName: '',
         productCode: '',
-        initialStock: 0,
         stockIn: 0,
         stockOut: 0,
-        client: '',
-        inPrice: 0,
-        outPrice: 0
+        currentStock: 0,
+        date: getCurrentLocalTime()
     });
 
-    useEffect(() => {
-        const q = query(collection(db, 'inventory'), orderBy(sortField, sortOrder));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setInventory(data);
-            setLoading(false);
+    const resetForm = () => {
+        setFormData({
+            category: '', productName: '', productCode: '', 
+            stockIn: 0, stockOut: 0, currentStock: 0,
+            date: getCurrentLocalTime()
         });
+    };
+
+    useEffect(() => {
+        const q = query(collection(db, 'inventory'));
+        
+        const unsubscribe = onSnapshot(q, 
+            { includeMetadataChanges: true },
+            (snapshot) => {
+                let data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                // Sort locally based on current sortField
+                data.sort((a, b) => {
+                    if (sortField === 'custom') {
+                        const indexA = a.sortIndex !== undefined ? a.sortIndex : Number.MAX_SAFE_INTEGER;
+                        const indexB = b.sortIndex !== undefined ? b.sortIndex : Number.MAX_SAFE_INTEGER;
+                        if (indexA !== indexB) return indexA - indexB;
+                        return (a.productName || '').localeCompare(b.productName || '');
+                    } else {
+                        const valA = a[sortField] || '';
+                        const valB = b[sortField] || '';
+                        const cmp = valA.toString().localeCompare(valB.toString());
+                        return sortOrder === 'asc' ? cmp : -cmp;
+                    }
+                });
+
+                setInventory(data);
+                setLoading(false);
+            },
+            (error) => {
+                console.error("Snapshot error:", error);
+                setLoading(false);
+            }
+        );
         return () => unsubscribe();
     }, [sortField, sortOrder]);
 
@@ -41,20 +126,23 @@ export default function InventoryManagement() {
         try {
             const dataToSave = {
                 ...formData,
-                initialStock: Number(formData.initialStock),
                 stockIn: Number(formData.stockIn),
                 stockOut: Number(formData.stockOut),
-                inPrice: Number(formData.inPrice),
-                outPrice: Number(formData.outPrice),
+                currentStock: Number(formData.currentStock),
             };
 
             if (editingId) {
                 await updateDoc(doc(db, 'inventory', editingId), dataToSave);
                 Swal.fire(t('success'), '', 'success');
             } else {
+                const maxSortIndex = inventory.length > 0 
+                  ? Math.max(...inventory.map(i => i.sortIndex || 0)) 
+                  : 0;
+
                 await addDoc(collection(db, 'inventory'), {
                     ...dataToSave,
-                    createdAt: serverTimestamp()
+                    sortIndex: maxSortIndex + 1000,
+                    createdAt: new Date()
                 });
                 Swal.fire(t('success'), '', 'success');
             }
@@ -66,19 +154,60 @@ export default function InventoryManagement() {
         }
     };
 
-    const resetForm = () => {
-        setFormData({
-            category: '', productName: '', productCode: '', initialStock: 0,
-            stockIn: 0, stockOut: 0, client: '', inPrice: 0, outPrice: 0
-        });
+    const handleDragStart = (e, index) => {
+        if (sortField !== 'custom') {
+            setSortField('custom');
+        }
+        setDraggedItemIndex(index);
+        e.dataTransfer.effectAllowed = "move";
+    };
+
+    const handleDragOver = (e, index) => {
+        e.preventDefault();
+    };
+
+    const handleDrop = async (e, targetIndex) => {
+        e.preventDefault();
+        if (draggedItemIndex === null || draggedItemIndex === targetIndex) return;
+
+        const newItems = [...inventory];
+        const draggedItem = newItems[draggedItemIndex];
+        
+        newItems.splice(draggedItemIndex, 1);
+        newItems.splice(targetIndex, 0, draggedItem);
+        
+        setInventory(newItems);
+        setDraggedItemIndex(null);
+
+        try {
+            let newIndex;
+            if (targetIndex === 0) {
+                newIndex = (newItems[1].sortIndex || 0) - 1000;
+            } else if (targetIndex === newItems.length - 1) {
+                newIndex = (newItems[newItems.length - 2].sortIndex || 0) + 1000;
+            } else {
+                const prevIndex = newItems[targetIndex - 1].sortIndex || 0;
+                const nextIndex = newItems[targetIndex + 1].sortIndex || 0;
+                newIndex = (prevIndex + nextIndex) / 2;
+            }
+
+            await updateDoc(doc(db, 'inventory', draggedItem.id), {
+                sortIndex: newIndex
+            });
+        } catch (error) {
+            console.error("Reorder failed:", error);
+            Swal.fire('Error', 'Failed to save order', 'error');
+        }
     };
 
     const handleDelete = async (id) => {
         const result = await Swal.fire({
-            title: 'Are you sure?',
+            title: t('confirmDeleteTitle'),
+            text: t('confirmDeleteText'),
             icon: 'warning',
             showCancelButton: true,
-            confirmButtonText: 'Yes, delete it!'
+            confirmButtonText: t('yes'),
+            cancelButtonText: t('no')
         });
         if (result.isConfirmed) {
             await deleteDoc(doc(db, 'inventory', id));
@@ -88,8 +217,7 @@ export default function InventoryManagement() {
     const filteredInventory = inventory.filter(i => 
         i.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         i.productCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        i.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        i.client?.toLowerCase().includes(searchTerm.toLowerCase())
+        i.category?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const handleEdit = (item) => {
@@ -122,21 +250,19 @@ export default function InventoryManagement() {
 
             {/* Form Modal */}
             {showForm && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-2xl overflow-y-auto max-h-[90vh] p-6 border border-gray-100 dark:border-gray-700">
+                <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg overflow-y-auto max-h-[90vh] p-6 border border-gray-100 dark:border-gray-700">
                         <h2 className="text-xl font-bold mb-6 text-gray-800 dark:text-white">{editingId ? t('edit') : t('addNew')}</h2>
-                        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                             <InputField label={t('category')} value={formData.category} onChange={v => setFormData({...formData, category: v})} required />
                             <InputField label={t('productName')} value={formData.productName} onChange={v => setFormData({...formData, productName: v})} required />
                             <InputField label={t('productCode')} value={formData.productCode} onChange={v => setFormData({...formData, productCode: v})} required />
-                            <InputField label={t('client')} value={formData.client} onChange={v => setFormData({...formData, client: v})} />
-                            <InputField label={t('initialStock')} value={formData.initialStock} onChange={v => setFormData({...formData, initialStock: v})} type="number" />
                             <InputField label={t('stockIn')} value={formData.stockIn} onChange={v => setFormData({...formData, stockIn: v})} type="number" />
                             <InputField label={t('stockOut')} value={formData.stockOut} onChange={v => setFormData({...formData, stockOut: v})} type="number" />
-                            <InputField label={t('inPrice')} value={formData.inPrice} onChange={v => setFormData({...formData, inPrice: v})} type="number" />
-                            <InputField label={t('outPrice')} value={formData.outPrice} onChange={v => setFormData({...formData, outPrice: v})} type="number" />
+                            <InputField label={t('currentStock')} value={formData.currentStock} onChange={v => setFormData({...formData, currentStock: v})} type="number" />
+                            <InputField label={t('date')} value={formData.date} onChange={v => setFormData({...formData, date: v})} />
                             
-                            <div className="md:col-span-2 flex justify-end gap-3 mt-4">
+                            <div className="flex justify-end gap-3 mt-4">
                                 <button type="button" onClick={() => setShowForm(false)} className="px-6 py-2 text-gray-500 font-bold border border-gray-200 rounded-xl hover:bg-gray-50">{t('cancel')}</button>
                                 <button type="submit" className="px-6 py-2 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700">{t('save')}</button>
                             </div>
@@ -145,49 +271,126 @@ export default function InventoryManagement() {
                 </div>
             )}
 
-            <div className="overflow-x-auto border border-gray-100 dark:border-gray-700 rounded-xl shadow-sm">
-                <table className="w-full text-sm text-left">
+            <div className={`overflow-x-auto border border-gray-100 dark:border-gray-700 rounded-xl shadow-sm ${isResizing !== -1 ? 'select-none' : ''}`}>
+                <table className="w-full text-sm text-left border-collapse" style={{ tableLayout: 'fixed' }}>
                     <thead className="text-xs uppercase bg-gray-50 dark:bg-gray-700 text-gray-500 dark:text-gray-400">
                         <tr>
-                            <th className="px-4 py-3">{t('category')}</th>
-                            <th className="px-4 py-3">{t('productName')}</th>
-                            <th className="px-4 py-3">{t('productCode')}</th>
-                            <th className="px-4 py-3 text-center">{t('initialStock')}</th>
-                            <th className="px-4 py-3 text-center text-blue-600 dark:text-blue-400">{t('stockIn')}</th>
-                            <th className="px-4 py-3 text-center text-red-600 dark:text-red-400">{t('stockOut')}</th>
-                            <th className="px-4 py-3 text-center font-bold">{t('currentStock')}</th>
-                            <th className="px-4 py-3">{t('client')}</th>
-                            <th className="px-4 py-3 text-right">{t('actions')}</th>
+                            <th className="px-4 py-3 text-center relative group" style={{ width: columnWidths[0] }}>
+                                {t('number')}
+                                <div onMouseDown={(e) => startResizing(0, e)} className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-green-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </th>
+                            <th 
+                                className="px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors group relative"
+                                onClick={() => {
+                                    const nextOrder = sortField === 'date' && sortOrder === 'asc' ? 'desc' : 'asc';
+                                    setSortField('date');
+                                    setSortOrder(nextOrder);
+                                }}
+                                style={{ width: columnWidths[1] }}
+                            >
+                                <div className="flex items-center gap-1">
+                                    {t('date')}
+                                    {sortField === 'date' && (sortOrder === 'asc' ? '▲' : '▼')}
+                                </div>
+                                <div onMouseDown={(e) => startResizing(1, e)} className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-green-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </th>
+                            <th 
+                                className="px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors group relative"
+                                onClick={() => {
+                                    const nextOrder = sortField === 'category' && sortOrder === 'asc' ? 'desc' : 'asc';
+                                    setSortField('category');
+                                    setSortOrder(nextOrder);
+                                }}
+                                style={{ width: columnWidths[2] }}
+                            >
+                                <div className="flex items-center gap-1">
+                                    {t('category')}
+                                    {sortField === 'category' && (sortOrder === 'asc' ? '▲' : '▼')}
+                                </div>
+                                <div onMouseDown={(e) => startResizing(2, e)} className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-green-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </th>
+                            <th 
+                                className="px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors group relative"
+                                onClick={() => {
+                                    const nextOrder = sortField === 'productName' && sortOrder === 'asc' ? 'desc' : 'asc';
+                                    setSortField('productName');
+                                    setSortOrder(nextOrder);
+                                }}
+                                style={{ width: columnWidths[3] }}
+                            >
+                                <div className="flex items-center gap-1">
+                                    {t('productName')}
+                                    {sortField === 'productName' && (sortOrder === 'asc' ? '▲' : '▼')}
+                                </div>
+                                <div onMouseDown={(e) => startResizing(3, e)} className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-green-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </th>
+                            <th 
+                                className="px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors group relative"
+                                onClick={() => {
+                                    const nextOrder = sortField === 'productCode' && sortOrder === 'asc' ? 'desc' : 'asc';
+                                    setSortField('productCode');
+                                    setSortOrder(nextOrder);
+                                }}
+                                style={{ width: columnWidths[4] }}
+                            >
+                                <div className="flex items-center gap-1">
+                                    {t('productCode')}
+                                    {sortField === 'productCode' && (sortOrder === 'asc' ? '▲' : '▼')}
+                                </div>
+                                <div onMouseDown={(e) => startResizing(4, e)} className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-green-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </th>
+                            <th className="px-4 py-3 text-center text-blue-600 dark:text-blue-400 relative group" style={{ width: columnWidths[5] }}>
+                                {t('stockIn')}
+                                <div onMouseDown={(e) => startResizing(5, e)} className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-green-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </th>
+                            <th className="px-4 py-3 text-center text-red-600 dark:text-red-400 relative group" style={{ width: columnWidths[6] }}>
+                                {t('stockOut')}
+                                <div onMouseDown={(e) => startResizing(6, e)} className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-green-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </th>
+                            <th className="px-4 py-3 text-center font-bold text-green-600 relative group" style={{ width: columnWidths[7] }}>
+                                {t('currentStock')}
+                                <div onMouseDown={(e) => startResizing(7, e)} className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-green-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </th>
+                            <th className="px-4 py-3 text-right" style={{ width: columnWidths[8] }}>{t('actions')}</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
                         {loading ? (
-                            <tr><td colSpan="9" className="px-4 py-10 text-center text-gray-400">{t('loading')}</td></tr>
+                            <tr><td colSpan="9" className="px-4 py-10 text-center text-gray-400 font-medium">{t('loading')}</td></tr>
                         ) : filteredInventory.length === 0 ? (
-                            <tr><td colSpan="9" className="px-4 py-10 text-center text-gray-400">{t('noData')}</td></tr>
-                        ) : filteredInventory.map((item) => {
-                            const currentStock = (item.initialStock || 0) + (item.stockIn || 0) - (item.stockOut || 0);
-                            return (
-                                <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                                    <td className="px-4 py-3"><span className="bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded text-[10px] font-bold">{item.category}</span></td>
-                                    <td className="px-4 py-3 font-bold text-gray-800 dark:text-white">{item.productName}</td>
-                                    <td className="px-4 py-3 text-blue-500 font-mono text-xs">{item.productCode}</td>
-                                    <td className="px-4 py-3 text-center text-gray-500">{item.initialStock}</td>
-                                    <td className="px-4 py-3 text-center text-blue-600 dark:text-blue-400 font-semibold">{item.stockIn}</td>
-                                    <td className="px-4 py-3 text-center text-red-600 dark:text-red-400 font-semibold">{item.stockOut}</td>
-                                    <td className={`px-4 py-3 text-center font-bold ${currentStock <= 5 ? 'text-red-600 animate-pulse' : 'text-green-600'}`}>
-                                        {currentStock}
-                                    </td>
-                                    <td className="px-4 py-3 text-xs text-gray-500">{item.client}</td>
-                                    <td className="px-4 py-3 text-right text-base">
-                                        <div className="flex justify-end gap-2">
-                                            <button onClick={() => handleEdit(item)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
-                                            <button onClick={() => handleDelete(item.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            );
-                        })}
+                            <tr><td colSpan="9" className="px-4 py-10 text-center text-gray-400 font-medium">{t('noData')}</td></tr>
+                        ) : filteredInventory.map((item, index) => (
+                            <tr 
+                              key={item.id} 
+                              draggable={!searchTerm}
+                              onDragStart={(e) => handleDragStart(e, index)}
+                              onDragOver={(e) => handleDragOver(e, index)}
+                              onDrop={(e) => handleDrop(e, index)}
+                              className={`
+                                hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group
+                                ${draggedItemIndex === index ? 'opacity-40 bg-blue-50' : ''}
+                                cursor-grab active:cursor-grabbing
+                              `}
+                            >
+                                <td className="px-4 py-3 text-center font-medium text-gray-400 group-hover:text-green-500 transition-colors flex items-center justify-center gap-2">
+                                    <svg className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" /></svg>
+                                    {index + 1}
+                                </td>
+                                <td className="px-4 py-3 text-[10px] text-gray-500 font-mono leading-tight truncate" title={item.date}>{item.date}</td>
+                                <td className="px-4 py-3 truncate" title={item.category}><span className="bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded text-[10px] font-bold">{item.category}</span></td>
+                                <td className="px-4 py-3 font-bold text-gray-800 dark:text-white truncate" title={item.productName}>{item.productName}</td>
+                                <td className="px-4 py-3 text-blue-500 font-mono text-xs truncate" title={item.productCode}>{item.productCode}</td>
+                                <td className="px-4 py-3 text-center text-blue-600 dark:text-blue-400 font-semibold">{item.stockIn}</td>
+                                <td className="px-4 py-3 text-center text-red-600 dark:text-red-400 font-semibold">{item.stockOut}</td>
+                                <td className="px-4 py-3 text-center font-bold text-green-600">{item.currentStock}</td>
+                                <td className="px-4 py-3 text-right text-base">
+                                    <div className="flex justify-end gap-2">
+                                        <button onClick={() => handleEdit(item)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
+                                        <button onClick={() => handleDelete(item.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded-lg transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        ))}
                     </tbody>
                 </table>
             </div>
@@ -198,13 +401,13 @@ export default function InventoryManagement() {
 function InputField({ label, value, onChange, type = "text", required = false }) {
     return (
         <div className="flex flex-col gap-1">
-            <label className="text-xs font-bold text-gray-500">{label} {required && "*"}</label>
+            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{label} {required && "*"}</label>
             <input 
                 type={type} 
                 required={required}
                 value={value} 
                 onChange={(e) => onChange(e.target.value)}
-                className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-400 outline-none transition-all"
+                className="w-full px-4 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-400 outline-none transition-all duration-200"
             />
         </div>
     );

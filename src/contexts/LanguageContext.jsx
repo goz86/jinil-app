@@ -100,7 +100,14 @@ const translations = {
         contactName: "Tên người liên hệ",
         noData: "Không có dữ liệu",
         search: "Tìm kiếm",
-        addNew: "Thêm mới"
+        addNew: "Thêm mới",
+        confirmDeleteTitle: "Bạn có chắc chắn?",
+        confirmDeleteText: "Hành động này không thể hoàn tác!",
+        yes: "Đồng ý",
+        no: "Hủy",
+        number: "STT",
+        success: "Thành công",
+        error: "Lỗi"
     },
     ko: {
         appTitle: "진일 라벨",
@@ -201,7 +208,14 @@ const translations = {
         contactName: "담당자명",
         noData: "데이터가 없습니다",
         search: "검색",
-        addNew: "새로 추가"
+        addNew: "새로 추가",
+        confirmDeleteTitle: "정말 삭제하시겠습니까?",
+        confirmDeleteText: "이 작업은 되돌릴 수 없습니다!",
+        yes: "예",
+        no: "아니오",
+        number: "번호",
+        success: "성공",
+        error: "오류"
     }
 };
 

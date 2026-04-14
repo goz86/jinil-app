@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
+import { getFirestore, initializeFirestore, memoryLocalCache } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
@@ -19,9 +19,9 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const provider = new GoogleAuthProvider();
 
-// Use initializeFirestore with long polling for Electron file:// protocol stability
+// Initialize Firestore with ONLY memory cache to fix the persistent Assertion Failures
 export const db = initializeFirestore(app, {
-    experimentalForceLongPolling: true,
+    localCache: memoryLocalCache()
 });
 
 export const storage = getStorage(app);

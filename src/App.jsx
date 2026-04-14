@@ -10,6 +10,9 @@ import MarketDeliveryTabs from './components/MarketDeliveryTabs';
 import AuthWidget from './components/AuthWidget';
 import DeliveryGallery from './components/DeliveryGallery';
 import AnalyticsModal from './components/AnalyticsModal';
+import GenericModal from './components/GenericModal';
+import ClientAddressBook from './components/ClientAddressBook';
+import InventoryManagement from './components/InventoryManagement';
 import StockTicker from './components/StockTicker';
 import { auth, db } from './firebase';
 import { signInWithCredential, signInWithEmailAndPassword, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
@@ -35,6 +38,8 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
+  const [isClientsOpen, setIsClientsOpen] = useState(false);
+  const [isInventoryOpen, setIsInventoryOpen] = useState(false);
 
   // Auto-update selectedDate when the calendar day changes (at midnight)
   useEffect(() => {
@@ -64,8 +69,11 @@ function App() {
     }
     let isInitialLoad = true;
 
-    // Listen for global deliveries, tying it to auth state changes ensures fresh connection with new JWT
-    const qDeliveries = query(collection(db, "deliveries"), orderBy("timestamp", "desc"));
+    // Listen for global deliveries
+    const qDeliveries = query(
+      collection(db, "deliveries"), 
+      orderBy("timestamp", "desc")
+    );
     const unsubDeliveries = onSnapshot(qDeliveries, (snapshot) => {
       setDeliveryData(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
 
@@ -75,13 +83,11 @@ function App() {
       }
 
       snapshot.docChanges().forEach((change) => {
-        // Only show notification for new documents that were NOT uploaded by the current local client
         if (change.type === "added" && !change.doc.metadata.hasPendingWrites) {
           const newData = change.doc.data();
           const title = t('newUpload');
           const text = `${t('invoice')}: ${newData.barcode || newData.trackingNumber || 'N/A'}`;
 
-          // In-app toast notification
           Swal.fire({
             icon: 'info',
             title: title,
@@ -92,23 +98,10 @@ function App() {
             timer: 3000
           });
 
-          // OS-level notification (for when app is minimized to tray)
           if (window.electronAPI && window.electronAPI.showNotification) {
             window.electronAPI.showNotification(title, text);
-            // Flash the Windows taskbar icon if the app is not focused
             if (window.electronAPI.flashFrame) {
               window.electronAPI.flashFrame(true);
-            }
-          } else {
-            // Fallback for regular web browsers
-            if (Notification.permission === 'granted') {
-              new Notification(title, { body: text });
-            } else if (Notification.permission !== 'denied') {
-              Notification.requestPermission().then(permission => {
-                if (permission === 'granted') {
-                  new Notification(title, { body: text });
-                }
-              });
             }
           }
         }
@@ -120,7 +113,6 @@ function App() {
   }, [user]);
 
   useEffect(() => {
-    // Auto-cleanup for deliveries older than 60 days
     const cleanupOldDeliveries = async () => {
       const sixtyDaysAgo = new Date();
       sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
@@ -135,9 +127,6 @@ function App() {
         snapshot.forEach(async (document) => {
           await deleteDoc(doc(db, "deliveries", document.id));
         });
-        if (snapshot.size > 0) {
-          console.log(`Cleaned up ${snapshot.size} old delivery records.`);
-        }
       } catch (error) {
         console.error("Cleanup error:", error);
       }
@@ -167,56 +156,54 @@ function App() {
     }).length;
 
   useEffect(() => {
-    // Fallback timeout in case Firebase hangs (especially in file:// protocol)
+    // Fallback timeout
     const timeoutId = setTimeout(() => {
-      console.warn("Firebase auth timeout, falling back to local storage");
-      try {
-        const saved = localStorage.getItem('todos');
-        setTasks(saved ? JSON.parse(saved) : []);
-      } catch (e) {
-        console.error("Local storage parse error:", e);
-        setTasks([]);
-      }
       setLoading(false);
-    }, 3000);
+    }, 2000);
 
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      clearTimeout(timeoutId); // Clear timeout since callback fired
+      clearTimeout(timeoutId);
       setUser(currentUser);
+      
       if (currentUser) {
-        // Lắng nghe dữ liệu từ Firestore
+        const userTodoKey = `todos_${currentUser.uid}`;
         let isFirstSnapshot = true;
+        
         const unsubStore = onSnapshot(doc(db, "users", currentUser.uid), (docSnap) => {
           if (docSnap.exists()) {
             const cloudTasks = docSnap.data().tasks || [];
             
             if (isFirstSnapshot) {
               isFirstSnapshot = false;
-              // Only merge localStorage on FIRST load (initial login)
-              const saved = localStorage.getItem('todos');
+              // Only merge user-specific localStorage on initial load
+              const saved = localStorage.getItem(userTodoKey);
               const localTasks = saved ? JSON.parse(saved) : [];
-              const cloudIds = new Set(cloudTasks.map(t => t.id));
-              const localOnly = localTasks.filter(t => !cloudIds.has(t.id));
-              if (localOnly.length > 0) {
+              
+              if (localTasks.length > 0) {
+                const cloudIds = new Set(cloudTasks.map(t => t.id));
+                const localOnly = localTasks.filter(t => !cloudIds.has(t.id));
                 const merged = [...localOnly, ...cloudTasks];
                 setTasks(merged);
-                localStorage.setItem('todos', JSON.stringify(merged));
+                localStorage.setItem(userTodoKey, JSON.stringify(merged));
                 setDoc(doc(db, "users", currentUser.uid), { tasks: merged });
               } else {
                 setTasks(cloudTasks);
-                localStorage.setItem('todos', JSON.stringify(cloudTasks));
+                localStorage.setItem(userTodoKey, JSON.stringify(cloudTasks));
               }
             } else {
-              // Subsequent updates: just use cloud data directly
               setTasks(cloudTasks);
-              localStorage.setItem('todos', JSON.stringify(cloudTasks));
+              localStorage.setItem(userTodoKey, JSON.stringify(cloudTasks));
             }
           } else {
-            // Lần đầu đăng nhập, nếu chưa có data trên cloud, ta đẩy data dưới localstorage (nếu có) lên
-            const saved = localStorage.getItem('todos');
+            // First time user: check user-specific storage, or fallback to general 'todos' for migration once
+            const saved = localStorage.getItem(userTodoKey) || localStorage.getItem('todos');
             const localTasks = saved ? JSON.parse(saved) : [];
             setTasks(localTasks);
             setDoc(doc(db, "users", currentUser.uid), { tasks: localTasks });
+            // Cleanup legacy key after migration
+            if (!localStorage.getItem(userTodoKey) && localStorage.getItem('todos')) {
+               localStorage.removeItem('todos');
+            }
           }
           setLoading(false);
         }, (error) => {
@@ -225,20 +212,12 @@ function App() {
         });
         return () => unsubStore();
       } else {
-        // Fallback or Local state when logged out
-        const saved = localStorage.getItem('todos');
-        if (saved) {
-          setTasks(JSON.parse(saved));
-        } else {
-          setTasks([]);
-        }
+        setTasks([]); // Clear tasks when logged out
         setLoading(false);
       }
     }, (error) => {
       clearTimeout(timeoutId);
       console.error("Auth error:", error);
-      const saved = localStorage.getItem('todos');
-      setTasks(saved ? JSON.parse(saved) : []);
       setLoading(false);
     });
 
@@ -251,9 +230,9 @@ function App() {
   const updateTasks = async (newTasks) => {
     setTasks(newTasks);
     if (user) {
+      const userTodoKey = `todos_${user.uid}`;
+      localStorage.setItem(userTodoKey, JSON.stringify(newTasks));
       await setDoc(doc(db, "users", user.uid), { tasks: newTasks });
-    } else {
-      localStorage.setItem('todos', JSON.stringify(newTasks));
     }
   };
 
@@ -464,10 +443,28 @@ function App() {
             selectedDate={selectedDate}
             deliveryCount={deliveryCount}
             deliveries={deliveryData}
+            onOpenClients={() => setIsClientsOpen(true)}
+            onOpenInventory={() => setIsInventoryOpen(true)}
           />
         </div>
       </div>
       </div>
+
+      <GenericModal 
+        isOpen={isClientsOpen} 
+        onClose={() => setIsClientsOpen(false)} 
+        title={t('clientAddressBook')}
+      >
+        <ClientAddressBook user={user} />
+      </GenericModal>
+
+      <GenericModal 
+        isOpen={isInventoryOpen} 
+        onClose={() => setIsInventoryOpen(false)} 
+        title={t('inventoryManagement')}
+      >
+        <InventoryManagement user={user} />
+      </GenericModal>
     </div>
   );
 }
