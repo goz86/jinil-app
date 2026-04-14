@@ -222,18 +222,43 @@ if (!gotTheLock) {
                     }
                     autoUpdater.autoDownload = true;
                     autoUpdater.autoInstallOnAppQuit = true;
-                    autoUpdater.on('update-available', (info) => { console.log("Update available:", info.version); });
+
+                    autoUpdater.on('checking-for-update', () => {
+                        console.log('Checking for update...');
+                    });
+
+                    autoUpdater.on('update-available', (info) => {
+                        console.log('Update available:', info.version);
+                        new Notification({ 
+                            title: '프로그램 업데이트', 
+                            body: `새로운 버전(${info.version})을 찾았습니다. 다운로드 중...` 
+                        }).show();
+                    });
+
+                    autoUpdater.on('update-not-available', (info) => {
+                        console.log('Update not available.');
+                    });
+
+                    autoUpdater.on('error', (err) => {
+                        console.error('Update error:', err);
+                    });
+
                     autoUpdater.on('update-downloaded', (info) => {
+                        console.log('Update downloaded:', info.version);
                         dialog.showMessageBox({
-                            type: 'info', title: '프로그램 업데이트',
+                            type: 'info',
+                            title: '프로그램 업데이트',
                             message: `새 버전(${info.version})이 다운로드되었습니다!`,
                             detail: '지금 업데이트를 설치하고 앱을 다시 시작하시겠습니까?',
                             buttons: ['지금 다시 시작', '나중에']
                         }).then((result) => {
-                            if (result.response === 0) { isQuitting = true; autoUpdater.quitAndInstall(); }
+                            if (result.response === 0) {
+                                isQuitting = true;
+                                autoUpdater.quitAndInstall();
+                            }
                         });
-
                     });
+
                     autoUpdater.checkForUpdatesAndNotify();
                 } catch (err) { console.error('Non-critical init error:', err); }
             }
