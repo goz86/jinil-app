@@ -11,9 +11,6 @@ export default function InventoryManagement({ user }) {
     const [loading, setLoading] = useState(true);
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
-    const [sortField, setSortField] = useState('productName');
-    const [sortOrder, setSortOrder] = useState('asc');
-
     const [sortField, setSortField] = useState('custom'); // 'custom' or field name
     const [sortOrder, setSortOrder] = useState('asc');
 
