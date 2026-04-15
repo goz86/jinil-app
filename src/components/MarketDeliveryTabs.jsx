@@ -3,7 +3,7 @@ import MarketWidget from './MarketWidget';
 import DeliveryWidget from './DeliveryWidget';
 import { useLanguage } from '../contexts/LanguageContext';
 
-export default function MarketDeliveryTabs({ selectedDate, deliveryCount, deliveries, onOpenClients, onOpenInventory }) {
+export default function MarketDeliveryTabs({ selectedDate, deliveryCount, deliveries, onOpenClients, onOpenInventory, onOpenLabelPrint }) {
     const { t } = useLanguage();
     const [activeTab, setActiveTab] = useState('market'); // Only for market and delivery
     const deliveryLabel = `${t('delivery')} (${deliveryCount || 0})`;
@@ -49,14 +49,23 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
                 </svg>
             )
+        },
+        {
+            key: 'labelPrint', 
+            label: t('labelPrinting'), 
+            onClick: onOpenLabelPrint,
+            icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+            )
         }
     ];
 
     return (
         <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300 overflow-hidden">
-            {/* 2x2 Tab Grid */}
+            {/* Row 1: Market & Delivery (Inline) */}
             <div className="grid grid-cols-2">
-                {/* Row 1: Market & Delivery (Inline) */}
                 {inlineTabs.map((tab) => (
                     <button
                         key={tab.key}
@@ -74,8 +83,10 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
                         )}
                     </button>
                 ))}
+            </div>
                 
-                {/* Row 2: Clients & Inventory (Modals) */}
+            {/* Row 2: Clients, Inventory & Label Print (Modals) */}
+            <div className="grid grid-cols-3 border-b border-gray-50 dark:border-gray-700">
                 {modalTabs.map((tab) => (
                     <button
                         key={tab.key}

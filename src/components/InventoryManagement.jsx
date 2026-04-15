@@ -226,6 +226,97 @@ export default function InventoryManagement({ user }) {
         setShowForm(true);
     };
 
+    const handlePrintA4 = () => {
+        const printWindow = window.open('', '_blank');
+        
+        let tableRows = filteredInventory.map((item, index) => `
+            <tr>
+                <td style="text-align: center;">${index + 1}</td>
+                <td>${item.date || ''}</td>
+                <td>${item.category || ''}</td>
+                <td style="font-weight: bold;">${item.productName || ''}</td>
+                <td>${item.productCode || ''}</td>
+                <td style="text-align: right; color: #2563eb;">${item.stockIn || 0}</td>
+                <td style="text-align: right; color: #dc2626;">${item.stockOut || 0}</td>
+                <td style="text-align: right; font-weight: bold; color: #16a34a;">${item.currentStock || 0}</td>
+                <td style="text-align: center;">${item.unit || ''}</td>
+            </tr>
+        `).join('');
+
+        const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="utf-8">
+            <title>재고 목록 인쇄</title>
+            <style>
+                @page { size: A4 portrait; margin: 15mm; }
+                body { 
+                    font-family: 'Malgun Gothic', 'Noto Sans KR', sans-serif; 
+                    margin: 0; padding: 0;
+                    color: #111;
+                }
+                .header { text-align: center; margin-bottom: 20px; }
+                h1 { margin: 0 0 5px 0; font-size: 24px; }
+                .date-stamp { font-size: 12px; color: #666; text-align: right; margin-bottom: 10px; }
+                table { 
+                    width: 100%; 
+                    border-collapse: collapse; 
+                    font-size: 11px;
+                }
+                th, td { 
+                    border: 1px solid #ccc; 
+                    padding: 8px 6px; 
+                }
+                th { 
+                    background-color: #f3f4f6; 
+                    font-weight: bold; 
+                    text-align: center;
+                }
+                @media print {
+                    -webkit-print-color-adjust: exact;
+                    print-color-adjust: exact;
+                }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>재고 목록 (Inventory List)</h1>
+            </div>
+            <div class="date-stamp">출력일시: ${getCurrentLocalTime()} | 총 ${filteredInventory.length}건</div>
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 40px;">No</th>
+                        <th style="width: 100px;">날짜</th>
+                        <th style="width: 80px;">분류</th>
+                        <th>상품명</th>
+                        <th style="width: 100px;">상품코드</th>
+                        <th style="width: 50px;">입고</th>
+                        <th style="width: 50px;">출고</th>
+                        <th style="width: 50px;">재고</th>
+                        <th style="width: 40px;">단위</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tableRows}
+                </tbody>
+            </table>
+            <script>
+                window.onload = function() { 
+                    setTimeout(() => {
+                        window.print(); 
+                    }, 500);
+                };
+            </script>
+        </body>
+        </html>
+        `;
+
+        printWindow.document.write(html);
+        printWindow.document.close();
+    };
+
     return (
         <div className="flex flex-col h-full bg-white dark:bg-gray-800 rounded-xl">
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 p-2">
@@ -239,13 +330,22 @@ export default function InventoryManagement({ user }) {
                     />
                     <svg className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </div>
-                <button 
-                    onClick={() => { setShowForm(true); setEditingId(null); resetForm(); }}
-                    className="w-full md:w-auto px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
-                >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
-                    {t('addNew')}
-                </button>
+                <div className="flex w-full md:w-auto gap-2">
+                    <button 
+                        onClick={handlePrintA4}
+                        className="w-full md:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                        {t('printA4')}
+                    </button>
+                    <button 
+                        onClick={() => { setShowForm(true); setEditingId(null); resetForm(); }}
+                        className="w-full md:w-auto px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 4v16m8-8H4" /></svg>
+                        {t('addNew')}
+                    </button>
+                </div>
             </div>
 
             {/* Form Modal */}

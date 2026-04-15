@@ -13,6 +13,7 @@ import AnalyticsModal from './components/AnalyticsModal';
 import GenericModal from './components/GenericModal';
 import ClientAddressBook from './components/ClientAddressBook';
 import InventoryManagement from './components/InventoryManagement';
+import LabelPrinter from './components/LabelPrinter';
 import StockTicker from './components/StockTicker';
 import { auth, db } from './firebase';
 import { signInWithCredential, signInWithEmailAndPassword, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
@@ -41,6 +42,7 @@ function App() {
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
   const [isClientsOpen, setIsClientsOpen] = useState(false);
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
+  const [isLabelPrintOpen, setIsLabelPrintOpen] = useState(false);
 
   // Auto-update selectedDate when the calendar day changes (at midnight)
   useEffect(() => {
@@ -469,6 +471,7 @@ function App() {
             deliveries={deliveryData}
             onOpenClients={() => setIsClientsOpen(true)}
             onOpenInventory={() => setIsInventoryOpen(true)}
+            onOpenLabelPrint={() => setIsLabelPrintOpen(true)}
           />
         </div>
       </div>
@@ -488,6 +491,14 @@ function App() {
         title={t('inventoryManagement')}
       >
         <InventoryManagement user={user} />
+      </GenericModal>
+
+      <GenericModal 
+        isOpen={isLabelPrintOpen} 
+        onClose={() => setIsLabelPrintOpen(false)} 
+        title={t('labelPrinting')}
+      >
+        <LabelPrinter user={user} />
       </GenericModal>
     </div>
   );
