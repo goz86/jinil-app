@@ -353,6 +353,12 @@ function App() {
   const totalTasks = selectedDate ? tasks.filter(t => t.date === selectedDate).length : tasks.length;
   const completedTasks = selectedDate ? tasks.filter(t => t.date === selectedDate && t.completed).length : tasks.filter((t) => t.completed).length;
 
+  const lastFiredAlarm = React.useRef(null);
+  const DAILY_ALARMS = [
+    { time: '12:00', title: '점심 식사 시간입니다! 🍱' },
+    { time: '17:00', title: '택배 발송 시간입니다! 📦' }
+  ];
+
   useEffect(() => {
     const interval = setInterval(() => {
       const now = new Date();
@@ -361,6 +367,29 @@ function App() {
       const currentMinutes = String(now.getMinutes()).padStart(2, '0');
       const currentTimeStr = `${currentHours}:${currentMinutes}`;
 
+      // 1. Kiểm tra Daily Alarms cố định
+      const alarmToFire = DAILY_ALARMS.find(a => a.time === currentTimeStr);
+      if (alarmToFire && lastFiredAlarm.current !== currentTimeStr) {
+        if (window.electronAPI && window.electronAPI.showNotification) {
+          window.electronAPI.showNotification('진일 알리미', alarmToFire.title);
+        } else {
+            Swal.fire({
+                title: '알림',
+                text: alarmToFire.title,
+                icon: 'info',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 5000
+            });
+        }
+        lastFiredAlarm.current = currentTimeStr;
+      } else if (!alarmToFire && lastFiredAlarm.current) {
+        // Reset khi qua phút đó
+        lastFiredAlarm.current = null;
+      }
+
+      // 2. Kiểm tra Tasks
       let changed = false;
       const updatedTasks = tasks.map(task => {
         if (!task.completed && task.date === today && task.time === currentTimeStr && !task.reminded) {
