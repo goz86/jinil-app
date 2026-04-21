@@ -293,11 +293,33 @@ function App() {
     setLoginError('');
     try {
       await signInWithEmailAndPassword(auth, email.trim(), password.trim());
+      
+      // Save for Multi-Account Switcher (Base64 encoded for basic obfuscation)
+      const savedAccs = JSON.parse(localStorage.getItem('jinil_saved_accounts') || '[]');
+      const newAcc = { email: email.trim(), p: btoa(password.trim()) };
+      const filtered = savedAccs.filter(a => a.email !== newAcc.email);
+      filtered.push(newAcc);
+      localStorage.setItem('jinil_saved_accounts', JSON.stringify(filtered));
+
       setEmail('');
       setPassword('');
     } catch (error) {
       console.error("Email login failed", error);
       setLoginError(t('invalidEmailPass'));
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  const handleSwitchAccount = async (switchEmail, switchPassword) => {
+    setLoginLoading(true);
+    setLoginError('');
+    try {
+      if (user) await signOut(auth); // Sign out current active user
+      await signInWithEmailAndPassword(auth, switchEmail, switchPassword);
+    } catch (e) {
+      console.error("Switch failed", e);
+      setLoginError("Lỗi đăng nhập: " + e.message);
     } finally {
       setLoginLoading(false);
     }
@@ -493,6 +515,7 @@ function App() {
             onEmailLogin={handleEmailLogin}
             loginLoading={loginLoading}
             loginError={loginError}
+            onSwitchAccount={handleSwitchAccount}
           />
           <MarketDeliveryTabs
             selectedDate={selectedDate}
