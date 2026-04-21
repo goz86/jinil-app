@@ -506,6 +506,7 @@ export default function InventoryManagement({ user }) {
                                 className={`
                                 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group
                                 ${draggedItemIndex === index ? 'opacity-40 bg-blue-50' : ''}
+                                ${Number(item.currentStock) === 0 ? 'bg-red-50 dark:bg-red-900/10' : ''}
                                 cursor-grab active:cursor-grabbing
                               `}
                             >
@@ -519,7 +520,7 @@ export default function InventoryManagement({ user }) {
                                 <td className="px-4 py-3 text-blue-500 font-mono text-xs truncate" title={item.productCode}>{item.productCode}</td>
                                 <td className="px-4 py-3 text-center text-blue-600 dark:text-blue-400 font-semibold">{item.stockIn}</td>
                                 <td className="px-4 py-3 text-center text-red-600 dark:text-red-400 font-semibold">{item.stockOut}</td>
-                                <td className="px-4 py-3 text-center font-bold text-green-600">{item.currentStock}</td>
+                                <td className={`px-4 py-3 text-center font-bold ${Number(item.currentStock) === 0 ? 'text-red-600 animate-pulse' : 'text-green-600'}`}>{item.currentStock}</td>
                                 <td className="px-4 py-3 text-center text-gray-600">{item.unit || '-'}</td>
                                 <td className="px-4 py-3 text-right text-base">
                                     <div className="flex justify-end gap-2">
