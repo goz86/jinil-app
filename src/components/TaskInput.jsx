@@ -11,6 +11,8 @@ export default function TaskInput({ onAdd }) {
     const [tempHour, setTempHour] = useState('');
     const [tempMinute, setTempMinute] = useState('');
     const timePickerRef = useRef(null);
+    const hourScrollRef = useRef(null);
+    const minuteScrollRef = useRef(null);
 
     useEffect(() => {
         if (!time) {
@@ -54,6 +56,27 @@ export default function TaskInput({ onAdd }) {
         document.addEventListener('mousedown', handleClickOutside);
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
+
+    // Auto-scroll to selected time when picker opens
+    useEffect(() => {
+        if (showTimePicker) {
+            // Small timeout to ensure DOM is rendered
+            setTimeout(() => {
+                if (hourScrollRef.current) {
+                    const activeHour = hourScrollRef.current.querySelector('[data-active="true"]');
+                    if (activeHour) {
+                        activeHour.scrollIntoView({ block: 'center', behavior: 'auto' });
+                    }
+                }
+                if (minuteScrollRef.current) {
+                    const activeMinute = minuteScrollRef.current.querySelector('[data-active="true"]');
+                    if (activeMinute) {
+                        activeMinute.scrollIntoView({ block: 'center', behavior: 'auto' });
+                    }
+                }
+            }, 50);
+        }
+    }, [showTimePicker]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -187,12 +210,13 @@ export default function TaskInput({ onAdd }) {
                                 {/* Hour column */}
                                 <div className="flex-1">
                                     <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5 text-center">시</p>
-                                    <div className="h-36 overflow-y-auto custom-scrollbar rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                                    <div ref={hourScrollRef} className="h-36 overflow-y-auto custom-scrollbar rounded-lg bg-gray-50 dark:bg-gray-700/50">
                                         {hours.map(h => (
                                             <button
                                                 key={h}
                                                 type="button"
                                                 onClick={() => setTempHour(h)}
+                                                data-active={tempHour === h}
                                                 className={`w-full py-1.5 text-sm font-medium rounded-lg transition-all ${tempHour === h
                                                     ? 'bg-blue-500 text-white shadow-sm'
                                                     : 'text-gray-600 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900/30'
@@ -208,12 +232,13 @@ export default function TaskInput({ onAdd }) {
                                 {/* Minute column */}
                                 <div className="flex-1">
                                     <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5 text-center">분</p>
-                                    <div className="h-36 overflow-y-auto custom-scrollbar rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                                    <div ref={minuteScrollRef} className="h-36 overflow-y-auto custom-scrollbar rounded-lg bg-gray-50 dark:bg-gray-700/50">
                                         {minutes.map(m => (
                                             <button
                                                 key={m}
                                                 type="button"
                                                 onClick={() => setTempMinute(m)}
+                                                data-active={tempMinute === m}
                                                 className={`w-full py-1.5 text-sm font-medium rounded-lg transition-all ${tempMinute === m
                                                     ? 'bg-blue-500 text-white shadow-sm'
                                                     : 'text-gray-600 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900/30'
