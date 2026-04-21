@@ -49,7 +49,7 @@ html.is-mini body {
   flex-direction: row !important;
   flex-wrap: nowrap !important;
   white-space: nowrap;
-  animation: marquee 150s linear infinite;
+  animation: marquee 350s linear infinite;
   width: max-content;
 }
 
