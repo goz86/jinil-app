@@ -14,4 +14,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     copyImage: (url) => ipcRenderer.invoke('copy-image', url),
     saveImage: (url, filename) => ipcRenderer.invoke('save-image', url, filename),
     printImage: (url) => ipcRenderer.invoke('print-image', url),
+    getBarTenderConfig: () => ipcRenderer.invoke('bartender-get-config'),
+    pickBarTenderExecutable: () => ipcRenderer.invoke('bartender-pick-executable'),
+    pickBarTenderTemplate: () => ipcRenderer.invoke('bartender-pick-template'),
+    pickBarTenderExcel: () => ipcRenderer.invoke('bartender-pick-excel'),
+    printWithBarTender: (payload) => ipcRenderer.invoke('bartender-print', payload),
 });

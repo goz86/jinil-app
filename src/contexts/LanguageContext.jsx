@@ -125,7 +125,8 @@ const translations = {
         labelImportInventory: "Từ kho",
         labelSelectProduct: "Chọn sản phẩm",
         labelTip: "Mẹo",
-        labelTipText: "Chọn kích cỡ giấy phù hợp với máy in. Thiết lập kích cỡ giấy tùy chỉnh trong cài đặt máy in trước khi in."
+        labelTipText: "Chọn kích cỡ giấy phù hợp với máy in. Thiết lập kích cỡ giấy tùy chỉnh trong cài đặt máy in trước khi in.",
+        labelShowBarcodeText: "Hiện mã số"
     },
     ko: {
         appTitle: "진일 라벨",
@@ -251,7 +252,8 @@ const translations = {
         labelImportInventory: "재고에서 가져오기",
         labelSelectProduct: "상품 선택",
         labelTip: "팁",
-        labelTipText: "프린터에 맞는 용지 크기를 선택하세요. 인쇄 전 프린터 설정에서 사용자 정의 용지 크기를 설정하세요."
+        labelTipText: "프린터에 맞는 용지 크기를 선택하세요. 인쇄 전 프린터 설정에서 사용자 정의 용지 크기를 설정하세요.",
+        labelShowBarcodeText: "바코드 텍스트 표시"
     }
 };
 

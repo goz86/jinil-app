@@ -79,7 +79,7 @@ export default function InventoryManagement({ user }) {
 
     const resetForm = () => {
         setFormData({
-            category: '', productName: '', productCode: '', 
+            category: '', productName: '', productCode: '',
             stockIn: 0, stockOut: 0, currentStock: 0,
             unit: '',
             date: getCurrentLocalTime()
@@ -88,12 +88,12 @@ export default function InventoryManagement({ user }) {
 
     useEffect(() => {
         const q = query(collection(db, 'inventory'));
-        
-        const unsubscribe = onSnapshot(q, 
+
+        const unsubscribe = onSnapshot(q,
             { includeMetadataChanges: true },
             (snapshot) => {
                 let data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                
+
                 // Sort locally based on current sortField
                 data.sort((a, b) => {
                     if (sortField === 'custom') {
@@ -135,9 +135,9 @@ export default function InventoryManagement({ user }) {
                 await updateDoc(doc(db, 'inventory', editingId), dataToSave);
                 Swal.fire(t('success'), '', 'success');
             } else {
-                const maxSortIndex = inventory.length > 0 
-                  ? Math.max(...inventory.map(i => i.sortIndex || 0)) 
-                  : 0;
+                const maxSortIndex = inventory.length > 0
+                    ? Math.max(...inventory.map(i => i.sortIndex || 0))
+                    : 0;
 
                 await addDoc(collection(db, 'inventory'), {
                     ...dataToSave,
@@ -172,10 +172,10 @@ export default function InventoryManagement({ user }) {
 
         const newItems = [...inventory];
         const draggedItem = newItems[draggedItemIndex];
-        
+
         newItems.splice(draggedItemIndex, 1);
         newItems.splice(targetIndex, 0, draggedItem);
-        
+
         setInventory(newItems);
         setDraggedItemIndex(null);
 
@@ -214,21 +214,24 @@ export default function InventoryManagement({ user }) {
         }
     };
 
-    const filteredInventory = inventory.filter(i => 
+    const filteredInventory = inventory.filter(i =>
         i.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         i.productCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         i.category?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     const handleEdit = (item) => {
-        setFormData({ ...item });
+        setFormData({
+            ...item,
+            date: getCurrentLocalTime()
+        });
         setEditingId(item.id);
         setShowForm(true);
     };
 
     const handlePrintA4 = () => {
         const printWindow = window.open('', '_blank');
-        
+
         let tableRows = filteredInventory.map((item, index) => `
             <tr>
                 <td style="text-align: center;">${index + 1}</td>
@@ -321,9 +324,9 @@ export default function InventoryManagement({ user }) {
         <div className="flex flex-col h-full bg-white dark:bg-gray-800 rounded-xl">
             <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 p-2">
                 <div className="relative w-full md:w-64">
-                    <input 
-                        type="text" 
-                        placeholder={t('search')} 
+                    <input
+                        type="text"
+                        placeholder={t('search')}
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full pl-10 pr-4 py-2 border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white text-sm focus:ring-2 focus:ring-blue-400 outline-none transition-all"
@@ -331,14 +334,14 @@ export default function InventoryManagement({ user }) {
                     <svg className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
                 </div>
                 <div className="flex w-full md:w-auto gap-2">
-                    <button 
+                    <button
                         onClick={handlePrintA4}
                         className="w-full md:w-auto px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
                         {t('printA4')}
                     </button>
-                    <button 
+                    <button
                         onClick={() => { setShowForm(true); setEditingId(null); resetForm(); }}
                         className="w-full md:w-auto px-6 py-2 bg-green-600 hover:bg-green-700 text-white font-bold rounded-xl transition-all shadow-md flex items-center justify-center gap-2"
                     >
@@ -354,15 +357,44 @@ export default function InventoryManagement({ user }) {
                     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg overflow-y-auto max-h-[90vh] p-6 border border-gray-100 dark:border-gray-700">
                         <h2 className="text-xl font-bold mb-6 text-gray-800 dark:text-white">{editingId ? t('edit') : t('addNew')}</h2>
                         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                            <InputField label={t('category')} value={formData.category} onChange={v => setFormData({...formData, category: v})} required />
-                            <InputField label={t('productName')} value={formData.productName} onChange={v => setFormData({...formData, productName: v})} required />
-                            <InputField label={t('productCode')} value={formData.productCode} onChange={v => setFormData({...formData, productCode: v})} required />
-                            <InputField label={t('stockIn')} value={formData.stockIn} onChange={v => setFormData({...formData, stockIn: v})} type="number" />
-                            <InputField label={t('stockOut')} value={formData.stockOut} onChange={v => setFormData({...formData, stockOut: v})} type="number" />
-                            <InputField label={t('currentStock')} value={formData.currentStock} onChange={v => setFormData({...formData, currentStock: v})} type="number" />
-                            <InputField label="단위" value={formData.unit} onChange={v => setFormData({...formData, unit: v})} placeholder="예: PAIR, KG, 개" />
-                            <InputField label={t('date')} value={formData.date} onChange={v => setFormData({...formData, date: v})} />
-                            
+                            <InputField label={t('category')} value={formData.category} onChange={v => setFormData({ ...formData, category: v })} required />
+                            <InputField label={t('productName')} value={formData.productName} onChange={v => setFormData({ ...formData, productName: v })} required />
+                            <InputField label={t('productCode')} value={formData.productCode} onChange={v => setFormData({ ...formData, productCode: v })} required />
+                            <InputField
+                                label={t('stockIn')}
+                                value={formData.stockIn}
+                                onChange={v => {
+                                    const diff = Number(v) - Number(formData.stockIn || 0);
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        stockIn: v,
+                                        currentStock: Number(prev.currentStock || 0) + diff
+                                    }));
+                                }}
+                                type="number"
+                            />
+                            <InputField
+                                label={t('stockOut')}
+                                value={formData.stockOut}
+                                onChange={v => {
+                                    const diff = Number(v) - Number(formData.stockOut || 0);
+                                    setFormData(prev => ({
+                                        ...prev,
+                                        stockOut: v,
+                                        currentStock: Number(prev.currentStock || 0) - diff
+                                    }));
+                                }}
+                                type="number"
+                            />
+                            <InputField
+                                label={t('currentStock')}
+                                value={formData.currentStock}
+                                onChange={v => setFormData({ ...formData, currentStock: v })}
+                                type="number"
+                            />
+                            <InputField label="단위" value={formData.unit} onChange={v => setFormData({ ...formData, unit: v })} placeholder="예: PAIR, KG, 개" />
+                            <InputField label={t('date')} value={formData.date} onChange={v => setFormData({ ...formData, date: v })} />
+
                             <div className="flex justify-end gap-3 mt-4">
                                 <button type="button" onClick={() => setShowForm(false)} className="px-6 py-2 text-gray-500 font-bold border border-gray-200 rounded-xl hover:bg-gray-50">{t('cancel')}</button>
                                 <button type="submit" className="px-6 py-2 bg-green-600 text-white font-bold rounded-xl hover:bg-green-700">{t('save')}</button>
@@ -380,7 +412,7 @@ export default function InventoryManagement({ user }) {
                                 {t('number')}
                                 <div onMouseDown={(e) => startResizing(0, e)} className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-green-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </th>
-                            <th 
+                            <th
                                 className="px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors group relative"
                                 onClick={() => {
                                     const nextOrder = sortField === 'date' && sortOrder === 'asc' ? 'desc' : 'asc';
@@ -395,7 +427,7 @@ export default function InventoryManagement({ user }) {
                                 </div>
                                 <div onMouseDown={(e) => startResizing(1, e)} className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-green-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </th>
-                            <th 
+                            <th
                                 className="px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors group relative"
                                 onClick={() => {
                                     const nextOrder = sortField === 'category' && sortOrder === 'asc' ? 'desc' : 'asc';
@@ -410,7 +442,7 @@ export default function InventoryManagement({ user }) {
                                 </div>
                                 <div onMouseDown={(e) => startResizing(2, e)} className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-green-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </th>
-                            <th 
+                            <th
                                 className="px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors group relative"
                                 onClick={() => {
                                     const nextOrder = sortField === 'productName' && sortOrder === 'asc' ? 'desc' : 'asc';
@@ -425,7 +457,7 @@ export default function InventoryManagement({ user }) {
                                 </div>
                                 <div onMouseDown={(e) => startResizing(3, e)} className="absolute right-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-green-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                             </th>
-                            <th 
+                            <th
                                 className="px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors group relative"
                                 onClick={() => {
                                     const nextOrder = sortField === 'productCode' && sortOrder === 'asc' ? 'desc' : 'asc';
@@ -465,13 +497,13 @@ export default function InventoryManagement({ user }) {
                         ) : filteredInventory.length === 0 ? (
                             <tr><td colSpan="9" className="px-4 py-10 text-center text-gray-400 font-medium">{t('noData')}</td></tr>
                         ) : filteredInventory.map((item, index) => (
-                            <tr 
-                              key={item.id} 
-                              draggable={!searchTerm}
-                              onDragStart={(e) => handleDragStart(e, index)}
-                              onDragOver={(e) => handleDragOver(e, index)}
-                              onDrop={(e) => handleDrop(e, index)}
-                              className={`
+                            <tr
+                                key={item.id}
+                                draggable={!searchTerm}
+                                onDragStart={(e) => handleDragStart(e, index)}
+                                onDragOver={(e) => handleDragOver(e, index)}
+                                onDrop={(e) => handleDrop(e, index)}
+                                className={`
                                 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group
                                 ${draggedItemIndex === index ? 'opacity-40 bg-blue-50' : ''}
                                 cursor-grab active:cursor-grabbing
@@ -508,10 +540,10 @@ function InputField({ label, value, onChange, type = "text", required = false })
     return (
         <div className="flex flex-col gap-1">
             <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">{label} {required && "*"}</label>
-            <input 
-                type={type} 
+            <input
+                type={type}
                 required={required}
-                value={value} 
+                value={value}
                 onChange={(e) => onChange(e.target.value)}
                 className="w-full px-4 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white focus:ring-2 focus:ring-green-400 outline-none transition-all duration-200"
             />

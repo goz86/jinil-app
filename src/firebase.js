@@ -19,7 +19,7 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const provider = new GoogleAuthProvider();
 
-// Initialize Firestore with ONLY memory cache to fix the persistent Assertion Failures
+// Initialize Firestore with ONLY memory cache to fix the persistent Assertion Failures (Internal SDK bugs)
 export const db = initializeFirestore(app, {
     localCache: memoryLocalCache()
 });

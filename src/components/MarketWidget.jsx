@@ -75,31 +75,91 @@ export default function MarketWidget() {
 
     const { t } = useLanguage();
 
-    // Kho dữ liệu Top Korea Stocks
+    // Kho dữ liệu Top Korea Stocks (Mở rộng đa ngành nghề)
     const KOREAN_TOP_STOCKS = [
+        // IT / Tech / Platform
         { symbol: '005930.KS', name: 'Samsung Elec' },
         { symbol: '000660.KS', name: 'SK Hynix' },
-        { symbol: '373220.KS', name: 'LG Energy' },
-        { symbol: '207940.KS', name: 'Samsung Biologics' },
-        { symbol: '005380.KS', name: 'Hyundai Motor' },
-        { symbol: '000270.KS', name: 'Kia Corp' },
-        { symbol: '068270.KS', name: 'Celltrion' },
-        { symbol: '005490.KS', name: 'POSCO' },
         { symbol: '035420.KS', name: 'NAVER' },
+        { symbol: '035720.KS', name: 'Kakao' },
+        { symbol: '066570.KS', name: 'LG Electronics' },
+        { symbol: '018260.KS', name: 'Samsung SDS' },
+
+        // Battery / EV / Chemical
+        { symbol: '373220.KS', name: 'LG Energy' },
         { symbol: '006400.KS', name: 'Samsung SDI' },
         { symbol: '051910.KS', name: 'LG Chem' },
-        { symbol: '105560.KS', name: 'KB Financial' },
-        { symbol: '028260.KS', name: 'Samsung C&T' },
+        { symbol: '247540.KQ', name: 'Ecopro BM' },
+        { symbol: '086520.KQ', name: 'Ecopro' },
+        { symbol: '003670.KS', name: 'POSCO Future M' },
+
+        // Automakers
+        { symbol: '005380.KS', name: 'Hyundai Motor' },
+        { symbol: '000270.KS', name: 'Kia Corp' },
         { symbol: '012330.KS', name: 'Hyundai Mobis' },
-        { symbol: '035720.KS', name: 'Kakao' },
+        { symbol: '000150.KS', name: 'Doosan' },
+
+        // Bio / Healthcare
+        { symbol: '207940.KS', name: 'Samsung Biologics' },
+        { symbol: '068270.KS', name: 'Celltrion' },
+        { symbol: '302440.KS', name: 'SK Bioscience' },
+        { symbol: '000100.KS', name: 'Yuhan' },
+        { symbol: '096530.KQ', name: 'Seegene' },
+        { symbol: '214150.KQ', name: 'Classys' },
+
+        // Entertainment / K-Pop
+        { symbol: '352820.KS', name: 'HYBE' },
+        { symbol: '035900.KQ', name: 'JYP Ent.' },
+        { symbol: '041510.KQ', name: 'SM Ent.' },
+        { symbol: '122870.KQ', name: 'YG Ent.' },
+        { symbol: '011115.KS', name: 'CJ ENM' },
+
+        // Game / Gaming
+        { symbol: '259960.KS', name: 'Krafton' },
+        { symbol: '036570.KS', name: 'NCSoft' },
+        { symbol: '251270.KS', name: 'Netmarble' },
+        { symbol: '263750.KQ', name: 'Pearl Abyss' },
+        { symbol: '293490.KQ', name: 'Kakao Games' },
+
+        // Finance / Banking
+        { symbol: '105560.KS', name: 'KB Financial' },
         { symbol: '055550.KS', name: 'Shinhan Financial' },
-        { symbol: '066570.KS', name: 'LG Electronics' },
+        { symbol: '086790.KS', name: 'Hana Financial' },
+        { symbol: '316140.KS', name: 'Woori Financial' },
+        { symbol: '323410.KS', name: 'Kakao Bank' },
         { symbol: '032830.KS', name: 'Samsung Life' },
+        { symbol: '006800.KS', name: 'Mirae Asset Sec.' },
+
+        // Heavy Industry / Manufacturing / Logistics
+        { symbol: '005490.KS', name: 'POSCO Holdings' },
+        { symbol: '010130.KS', name: 'Korea Zinc' },
+        { symbol: '028260.KS', name: 'Samsung C&T' },
+        { symbol: '012450.KS', name: 'Hanwha Aerospace' },
+        { symbol: '047810.KS', name: 'KAI' },
         { symbol: '011200.KS', name: 'HMM' },
         { symbol: '015760.KS', name: 'KEPCO' },
-        // Tiền điện tử (Crypto)
-        { symbol: 'BTC.KRW', name: 'Bitcoin' },
-        { symbol: 'ETH.KRW', name: 'Ethereum' }
+        { symbol: '090430.KS', name: 'Amorepacific' },
+
+        // Telecom
+        { symbol: '017670.KS', name: 'SK Telecom' },
+        { symbol: '030200.KS', name: 'KT' },
+        { symbol: '032640.KS', name: 'LG Uplus' },
+
+        // Popular ETFs
+        { symbol: '069500.KS', name: 'KODEX 200' },
+        { symbol: '114800.KS', name: 'KODEX Inverse' },
+        { symbol: '314250.KS', name: 'TIGER US Tech Top 10' },
+        { symbol: '360750.KS', name: 'TIGER S&P500' },
+        { symbol: '252670.KS', name: 'KODEX 200 Futures Invr2X' },
+
+        // Crypto (Upbit)
+        { symbol: 'BTC.KRW', name: 'Bitcoin (BTC)' },
+        { symbol: 'ETH.KRW', name: 'Ethereum (ETH)' },
+        { symbol: 'XRP.KRW', name: 'Ripple (XRP)' },
+        { symbol: 'SOL.KRW', name: 'Solana (SOL)' },
+        { symbol: 'DOGE.KRW', name: 'Dogecoin' },
+        { symbol: 'LINK.KRW', name: 'Chainlink' },
+        { symbol: 'SHIB.KRW', name: 'Shiba Inu' }
     ];
 
     const defaultStocks = ['005930.KS', '000660.KS', '005380.KS'];
@@ -210,6 +270,7 @@ export default function MarketWidget() {
                                 change: coin.signed_change_rate * 100,
                                 sparklineData: sparklinePrices.length === 7 ? sparklinePrices : []
                             };
+                            await new Promise(r => setTimeout(r, 200)); // Delay nhẹ Upbit
                         }
                     }
                 } catch (err) {
@@ -222,6 +283,7 @@ export default function MarketWidget() {
             const regularSymbols = savedStockSymbols.filter(s => !s.includes('.KRW'));
             let goldPrice = null;
             const stockDataMap = {};
+            const delay = ms => new Promise(res => setTimeout(res, ms));
 
             // Add Gold (GC=F) explicitly to fetch list if we have any stocks requested
             if (!regularSymbols.includes('GC=F')) {
@@ -229,15 +291,15 @@ export default function MarketWidget() {
             }
 
             if (regularSymbols.length > 0) {
-                await Promise.allSettled(regularSymbols.map(async (symbol) => {
+                // Fetch tuần tự (Sequential) với độ trễ để chống bị Yahoo block IP do Request liên tục
+                for (const symbol of regularSymbols) {
                     try {
-                        // Gọi Yahoo Finance API với tham số lịch sử 7 ngày
                         const targetUrl = import.meta.env.DEV
                             ? `/api/yahoo/${symbol}?range=7d&interval=1d`
                             : `https://query2.finance.yahoo.com/v8/finance/chart/${symbol}?range=7d&interval=1d`;
 
                         const yahooRes = await fetch(targetUrl);
-                        if (!yahooRes.ok) return;
+                        if (!yahooRes.ok) continue;
                         const yahooData = await yahooRes.json();
 
                         if (yahooData && yahooData.chart && yahooData.chart.result && yahooData.chart.result.length > 0) {
@@ -271,9 +333,10 @@ export default function MarketWidget() {
                             }
                         }
                     } catch (err) {
-                        console.error(`Yahoo Finance API Error for ${symbol}:`, err);
+                        console.error(`Yahoo API Error for ${symbol}:`, err);
                     }
-                }));
+                    await delay(300); // Nghỉ 300ms sau mỗi request để an toàn
+                }
             }
 
             // 4. Merge all data into the UI format
@@ -332,7 +395,7 @@ export default function MarketWidget() {
         };
 
         loadData();
-        const interval = setInterval(loadData, 60000);
+        const interval = setInterval(loadData, 180000); // 3 phút thay vì 1 phút (chống bị chặn)
 
         return () => {
             isMounted = false;
