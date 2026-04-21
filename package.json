@@ -6,7 +6,7 @@
   "description": "Jinil Todo Application",
   "author": "Jinil",
   "version": "1.1.4",
-  "main": "electron/main.js",
+  "main": "jinil web app/main.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -59,7 +59,7 @@
     },
     "files": [
       "dist/**/*",
-      "electron/**/*"
+      "jinil web app/**/*"
     ],
     "asar": true,
     "win": {
