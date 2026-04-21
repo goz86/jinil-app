@@ -409,15 +409,15 @@ export default function ClientAddressBook({ user }) {
                                 if (client.lastCopiedAt) dates.push(client.lastCopiedAt.toDate ? client.lastCopiedAt.toDate() : new Date(client.lastCopiedAt));
                                 if (client.createdAt) dates.push(client.createdAt.toDate ? client.createdAt.toDate() : new Date(client.createdAt));
                                 
-                                if (dates.length === 0) return { label: 'Đang dùng', rowColor: 'hover:bg-gray-50 dark:hover:bg-gray-700/50', textColor: 'text-gray-800 dark:text-white', dot: 'bg-green-500', days: 0 };
+                                if (dates.length === 0) return { label: '최근 사용', rowColor: 'hover:bg-gray-50 dark:hover:bg-gray-700/50', textColor: 'text-gray-800 dark:text-white', dot: 'bg-green-500', days: 0 };
                                 
                                 const lastActive = new Date(Math.max(...dates));
                                 const diffTime = Math.abs(new Date() - lastActive);
                                 const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
                                 
-                                if (diffDays >= 180) return { label: 'Ngủ đông', rowColor: 'bg-gray-50/70 dark:bg-gray-800/20 opacity-60 hover:opacity-100', textColor: 'text-gray-400 dark:text-gray-500', dot: 'bg-gray-300', days: diffDays };
-                                if (diffDays >= 90) return { label: 'Ít dùng', rowColor: 'bg-orange-50/20 dark:bg-orange-900/10 hover:bg-orange-50/40', textColor: 'text-gray-600 dark:text-gray-300', dot: 'bg-orange-400', days: diffDays };
-                                return { label: 'Đang dùng', rowColor: 'hover:bg-gray-50 dark:hover:bg-gray-700/50', textColor: 'text-gray-800 dark:text-white', dot: 'bg-green-500', days: diffDays };
+                                if (diffDays >= 180) return { label: '장기 미사용', rowColor: 'bg-gray-50/70 dark:bg-gray-800/20 opacity-60 hover:opacity-100', textColor: 'text-gray-400 dark:text-gray-500', dot: 'bg-gray-300', days: diffDays };
+                                if (diffDays >= 60) return { label: '사용 안함', rowColor: 'bg-orange-50/20 dark:bg-orange-900/10 hover:bg-orange-50/40', textColor: 'text-gray-600 dark:text-gray-300', dot: 'bg-orange-400', days: diffDays };
+                                return { label: '최근 사용', rowColor: 'hover:bg-gray-50 dark:hover:bg-gray-700/50', textColor: 'text-gray-800 dark:text-white', dot: 'bg-green-500', days: diffDays };
                             };
                             const status = getStatusObj(c);
 
@@ -445,7 +445,7 @@ export default function ClientAddressBook({ user }) {
                                     onClick={(e) => { e.stopPropagation(); handleCopy(c, c.name, 'name'); }}
                                 >
                                     <div className="flex items-center gap-2">
-                                        <span className={`min-w-[8px] h-2 rounded-full ${status.dot}`} title={`${status.label} (Cập nhật ${status.days} ngày trước)`}></span>
+                                        <span className={`min-w-[8px] h-2 rounded-full ${status.dot}`} title={`${status.label} (${status.days}일 전)`}></span>
                                         <span className="truncate">{c.name}</span>
                                     </div>
                                 </td>
