@@ -74,8 +74,16 @@ export default function TaskInput({ onAdd }) {
             setTempMinute(m);
         } else {
             const now = new Date();
-            setTempHour(String(now.getHours()).padStart(2, '0'));
-            setTempMinute(String(now.getMinutes()).padStart(2, '0'));
+            const h = String(now.getHours()).padStart(2, '0');
+            // Round minutes to the nearest multiple of 5 to match the picker options
+            const rawMinutes = now.getMinutes();
+            let roundedMinutes = Math.round(rawMinutes / 5) * 5;
+            if (roundedMinutes === 60) roundedMinutes = 55; // Keep it within 0-55
+            
+            const m = String(roundedMinutes).padStart(2, '0');
+            
+            setTempHour(h);
+            setTempMinute(m);
         }
         setShowTimePicker(true);
     };
