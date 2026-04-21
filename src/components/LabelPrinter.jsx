@@ -868,7 +868,10 @@ export default function LabelPrinter({ user }) {
         const ox = printOffsetX || 0;
         const oy = printOffsetY || 0;
         const win = window.open('', '_blank');
-        win.document.write(`<html><head><link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet"><style>@page{size:${pw}mm ${ph}mm;margin:0}body{margin:0;padding:0;box-sizing:border-box;transform:translate(${ox}mm,${oy}mm)}*{box-sizing:inherit}</style></head><body>${html}<script>document.fonts.ready.then(() => { setTimeout(() => window.print(), 100); });</script></body></html>`);
+        
+        // Add window title, fix @page orientation explicit declaration, increase delay for layout, and auto-close window after print dialog
+        const pageDirection = pw > ph ? 'landscape' : 'portrait';
+        win.document.write(`<html><head><title>진일 라벨 인쇄</title><link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet"><style>@page{size:${pw}mm ${ph}mm ${pageDirection};margin:0}body{margin:0;padding:0;box-sizing:border-box;transform:translate(${ox}mm,${oy}mm)}*{box-sizing:inherit}</style></head><body>${html}<script>window.onload = function() { document.fonts.ready.then(() => { setTimeout(() => { window.print(); window.close(); }, 500); }); };</script></body></html>`);
         win.document.close();
     };
 
