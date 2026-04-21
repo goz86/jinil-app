@@ -103,7 +103,10 @@ export default function ClientAddressBook({ user }) {
         e.preventDefault();
         try {
             if (editingId) {
-                await updateDoc(doc(db, 'clients', editingId), formData);
+                await updateDoc(doc(db, 'clients', editingId), {
+                    ...formData,
+                    updatedAt: new Date()
+                });
                 Swal.fire(t('success'), '', 'success');
             } else {
                 // For new docs, put them at the end
@@ -201,9 +204,15 @@ export default function ClientAddressBook({ user }) {
         setShowForm(true);
     };
 
-    const handleCopy = (text, type) => {
+    const handleCopy = async (client, text, type) => {
         if (!text) return;
         navigator.clipboard.writeText(text);
+
+        try {
+            if (client && client.id) {
+                await updateDoc(doc(db, 'clients', client.id), { lastCopiedAt: new Date() });
+            }
+        } catch (e) {}
 
         // Toast notification
         const Toast = Swal.mixin({
@@ -224,7 +233,7 @@ export default function ClientAddressBook({ user }) {
         });
     };
 
-    const handleCopyAll = (e, client) => {
+    const handleCopyAll = async (e, client) => {
         e.stopPropagation();
         const textToCopy = [
             `업체명: ${client.name || ''}`,
@@ -234,6 +243,12 @@ export default function ClientAddressBook({ user }) {
         ].join('\n');
 
         navigator.clipboard.writeText(textToCopy);
+
+        try {
+            if (client && client.id) {
+                await updateDoc(doc(db, 'clients', client.id), { lastCopiedAt: new Date() });
+            }
+        } catch (e) {}
 
         const Toast = Swal.mixin({
             toast: true,
@@ -387,7 +402,26 @@ export default function ClientAddressBook({ user }) {
                             <tr><td colSpan="7" className="px-4 py-10 text-center text-gray-400 font-medium">{t('loading')}</td></tr>
                         ) : filteredClients.length === 0 ? (
                             <tr><td colSpan="7" className="px-4 py-10 text-center text-gray-400 font-medium">{t('noData')}</td></tr>
-                        ) : filteredClients.map((c, index) => (
+                        ) : filteredClients.map((c, index) => {
+                            const getStatusObj = (client) => {
+                                let dates = [];
+                                if (client.updatedAt) dates.push(client.updatedAt.toDate ? client.updatedAt.toDate() : new Date(client.updatedAt));
+                                if (client.lastCopiedAt) dates.push(client.lastCopiedAt.toDate ? client.lastCopiedAt.toDate() : new Date(client.lastCopiedAt));
+                                if (client.createdAt) dates.push(client.createdAt.toDate ? client.createdAt.toDate() : new Date(client.createdAt));
+                                
+                                if (dates.length === 0) return { label: 'Đang dùng', rowColor: 'hover:bg-gray-50 dark:hover:bg-gray-700/50', textColor: 'text-gray-800 dark:text-white', dot: 'bg-green-500', days: 0 };
+                                
+                                const lastActive = new Date(Math.max(...dates));
+                                const diffTime = Math.abs(new Date() - lastActive);
+                                const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
+                                
+                                if (diffDays >= 180) return { label: 'Ngủ đông', rowColor: 'bg-gray-50/70 dark:bg-gray-800/20 opacity-60 hover:opacity-100', textColor: 'text-gray-400 dark:text-gray-500', dot: 'bg-gray-300', days: diffDays };
+                                if (diffDays >= 90) return { label: 'Ít dùng', rowColor: 'bg-orange-50/20 dark:bg-orange-900/10 hover:bg-orange-50/40', textColor: 'text-gray-600 dark:text-gray-300', dot: 'bg-orange-400', days: diffDays };
+                                return { label: 'Đang dùng', rowColor: 'hover:bg-gray-50 dark:hover:bg-gray-700/50', textColor: 'text-gray-800 dark:text-white', dot: 'bg-green-500', days: diffDays };
+                            };
+                            const status = getStatusObj(c);
+
+                            return (
                             <tr
                                 key={c.id}
                                 draggable={!searchTerm} // Disable drag while searching
@@ -395,7 +429,8 @@ export default function ClientAddressBook({ user }) {
                                 onDragOver={(e) => handleDragOver(e, index)}
                                 onDrop={(e) => handleDrop(e, index)}
                                 className={`
-                                hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group
+                                transition-colors group
+                                ${status.rowColor}
                                 ${draggedItemIndex === index ? 'opacity-40 bg-blue-50' : ''}
                                 cursor-grab active:cursor-grabbing
                               `}
@@ -405,25 +440,28 @@ export default function ClientAddressBook({ user }) {
                                     {index + 1}
                                 </td>
                                 <td
-                                    className="px-4 py-3 font-bold text-gray-800 dark:text-white truncate cursor-pointer hover:underline active:text-blue-600 transition-all"
+                                    className={`px-4 py-3 font-bold truncate cursor-pointer hover:underline active:text-blue-600 transition-all ${status.textColor}`}
                                     title={t('clickToCopy') || 'Nhấn để copy'}
-                                    onClick={(e) => { e.stopPropagation(); handleCopy(c.name, 'name'); }}
+                                    onClick={(e) => { e.stopPropagation(); handleCopy(c, c.name, 'name'); }}
                                 >
-                                    {c.name}
+                                    <div className="flex items-center gap-2">
+                                        <span className={`min-w-[8px] h-2 rounded-full ${status.dot}`} title={`${status.label} (Cập nhật ${status.days} ngày trước)`}></span>
+                                        <span className="truncate">{c.name}</span>
+                                    </div>
                                 </td>
                                 <td className="px-4 py-3 text-gray-700 dark:text-gray-300 truncate" title={c.representative}>{c.representative}</td>
                                 <td className="px-4 py-3 text-gray-700 dark:text-gray-300 truncate" title={c.contactName}>{c.contactName}</td>
                                 <td
                                     className="px-4 py-3 text-blue-600 dark:text-blue-400 font-semibold truncate cursor-pointer hover:underline active:text-blue-800 transition-all"
                                     title={t('clickToCopy') || 'Nhấn để copy'}
-                                    onClick={(e) => { e.stopPropagation(); handleCopy(c.phone, 'phone'); }}
+                                    onClick={(e) => { e.stopPropagation(); handleCopy(c, c.phone, 'phone'); }}
                                 >
                                     {c.phone}
                                 </td>
                                 <td
                                     className="px-4 py-3 text-xs text-gray-600 dark:text-gray-400 whitespace-normal break-words leading-relaxed cursor-pointer hover:bg-blue-50/50 dark:hover:bg-blue-900/20 rounded-lg transition-all"
                                     title={t('clickToCopy') || 'Nhấn để copy'}
-                                    onClick={(e) => { e.stopPropagation(); handleCopy(c.address, 'address'); }}
+                                    onClick={(e) => { e.stopPropagation(); handleCopy(c, c.address, 'address'); }}
                                 >
                                     {c.address}
                                 </td>
@@ -435,7 +473,8 @@ export default function ClientAddressBook({ user }) {
                                     </div>
                                 </td>
                             </tr>
-                        ))}
+                            );
+                        })}
                     </tbody>
                 </table>
             </div>
