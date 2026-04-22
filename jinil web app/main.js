@@ -3,7 +3,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { execFile } from 'child_process';
-import * as XLSX from 'xlsx';
+import XLSX from 'xlsx';
 import pkg from 'electron-updater';
 const { autoUpdater } = pkg;
 
@@ -106,8 +106,9 @@ function sanitizeHeaderKey(header, index, seenKeys) {
     return candidate;
 }
 
-function parseExcelWorkbook(filePath) {
-    const workbook = XLSX.readFile(filePath, { raw: false, cellDates: false });
+async function parseExcelWorkbook(filePath) {
+    const buffer = await fs.readFile(filePath);
+    const workbook = XLSX.read(buffer, { raw: false, cellDates: false });
     const sheetName = workbook.SheetNames[0];
     if (!sheetName) {
         throw new Error('Excel sheet not found.');
@@ -504,7 +505,7 @@ function createWindow() {
             return null;
         }
 
-        return parseExcelWorkbook(result.filePaths[0]);
+        return await parseExcelWorkbook(result.filePaths[0]);
     });
 
     ipcMain.handle('bartender-print', async (event, payload) => {
