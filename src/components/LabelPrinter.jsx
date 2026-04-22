@@ -67,8 +67,11 @@ function createLabelItem(fieldKeys) {
     return item;
 }
 
+const barcodeCache = new Map();
 function generateBarcodeBase64(text, heightPt, displayValue = true) {
     if (!text) return '';
+    const cacheKey = `${text}_${heightPt}_${displayValue}`;
+    if (barcodeCache.has(cacheKey)) return barcodeCache.get(cacheKey);
     try {
         const canvas = document.createElement('canvas');
         JsBarcode(canvas, String(text), {
@@ -79,7 +82,10 @@ function generateBarcodeBase64(text, heightPt, displayValue = true) {
             margin: 0,
             background: "transparent"
         });
-        return canvas.toDataURL('image/png');
+        const base64 = canvas.toDataURL('image/png');
+        if (barcodeCache.size > 1000) barcodeCache.clear(); // simple memory limit
+        barcodeCache.set(cacheKey, base64);
+        return base64;
     } catch {
         return '';
     }
@@ -115,7 +121,7 @@ function inferMaxColIndex(rows, maxRows = 1000) {
 
 /** Max data rows + preamble scan rows — avoids loading huge sheets into one array (browser freeze). */
 const EXCEL_IMPORT_MAX_DATA_ROWS = 20000;
-const DATA_TABLE_PAGE_SIZE = 500;
+const DATA_TABLE_PAGE_SIZE = 100;
 const EXCEL_IMPORT_PREAMBLE_ROWS = 500;
 
 function capSheetRange(ws) {
@@ -257,6 +263,44 @@ function applyItemForwardFill(items) {
     // This resolves the issue where trailing/garbage excel rows get flooded with the last valid product code.
 }
 
+/* ───────── Sub-Components ───────── */
+const DataTableRow = React.memo(({
+    item, originalIdx, isActive, isSelected, fieldOrder, selectedField,
+    globalCopies, getFieldLabel, onRowClick, onToggleSelection,
+    onFocusField, onChangeField, onDuplicate, onRemove
+}) => {
+    return (
+        <tr onClick={() => onRowClick(originalIdx)} className={`group transition-colors ${isActive ? 'bg-blue-50/30' : 'hover:bg-slate-50/40'}`}>
+            <td className="px-3 py-1.5 text-center">
+                <input type="checkbox" checked={isSelected} onChange={() => onToggleSelection(item.id)} onClick={e => e.stopPropagation()} className="w-4 h-4 rounded accent-blue-600 cursor-pointer" />
+            </td>
+            <td className="px-2 py-1.5 text-center">
+                <span className={`text-[11px] font-bold ${isActive ? 'text-blue-500' : 'text-slate-300'}`}>{originalIdx + 1}</span>
+            </td>
+            {fieldOrder.map(k => (
+                <td key={k} className="px-1 py-1.5">
+                    <input type="text" value={item[k] || ''} onFocus={() => onFocusField(k)} onChange={e => onChangeField(item.id, k, e.target.value)}
+                        className={`w-full h-8 px-2.5 bg-white border rounded-md text-[13px] font-bold text-slate-800 outline-none transition-all placeholder:text-slate-300 ${selectedField === k ? 'ring-2 ring-blue-400/20 border-blue-300' : 'border-slate-200 group-hover:border-slate-300'}`} placeholder={getFieldLabel(k)} />
+                </td>
+            ))}
+            <td className="px-2 py-1.5">
+                <input type="number" min="1" value={item._copies || ''} onChange={e => onChangeField(item.id, '_copies', parseInt(e.target.value) || '')}
+                    className="w-full h-8 px-3 bg-white border border-slate-200 rounded-md text-[13px] font-bold text-center text-slate-800 outline-none group-hover:border-slate-300" placeholder={String(globalCopies)} />
+            </td>
+            <td className="px-2 py-1.5">
+                <div className="flex gap-1 justify-end items-center opacity-50 group-hover:opacity-100 transition-opacity">
+                    <button onClick={e => { e.stopPropagation(); onDuplicate(item.id); }} className="w-6 h-6 flex justify-center items-center text-blue-500 hover:bg-blue-50 rounded transition-all">
+                        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                    </button>
+                    <button onClick={e => { e.stopPropagation(); onRemove(item.id); }} className="w-6 h-6 flex justify-center items-center text-red-400 hover:bg-red-50 rounded transition-all">
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    );
+});
+
 /* ───────── Component ───────── */
 export default function LabelPrinter({ user }) {
     const { t: _t } = useLanguage();
@@ -273,6 +317,8 @@ export default function LabelPrinter({ user }) {
     const [orientation, setOrientation] = useState('portrait');
     const [showPriceUnit, setShowPriceUnit] = useState(false);
     const [showBarcodeText, setShowBarcodeText] = useState(false);
+    const [showExtra1Prefix, setShowExtra1Prefix] = useState(() => ls('label_printer_show_extra1_prefix', false));
+    const [showExtra2Prefix, setShowExtra2Prefix] = useState(() => ls('label_printer_show_extra2_prefix', false));
     const [isImporting, setIsImporting] = useState(false);
     const [showGrid, setShowGrid] = useState(false);
 
@@ -281,6 +327,8 @@ export default function LabelPrinter({ user }) {
     const [printOffsetY, setPrintOffsetY] = useState(() => parseFloat(localStorage.getItem('label_printer_offset_y') || '0'));
     useEffect(() => { localStorage.setItem('label_printer_offset_x', String(printOffsetX)); }, [printOffsetX]);
     useEffect(() => { localStorage.setItem('label_printer_offset_y', String(printOffsetY)); }, [printOffsetY]);
+    useEffect(() => { localStorage.setItem('label_printer_show_extra1_prefix', JSON.stringify(showExtra1Prefix)); }, [showExtra1Prefix]);
+    useEffect(() => { localStorage.setItem('label_printer_show_extra2_prefix', JSON.stringify(showExtra2Prefix)); }, [showExtra2Prefix]);
 
     /* ── Custom columns ── */
     const [customFields, setCustomFields] = useState(() => ls('label_printer_custom_fields', [
@@ -288,9 +336,9 @@ export default function LabelPrinter({ user }) {
         { key: 'extra2', label: '추가2' },
     ]));
     useEffect(() => { localStorage.setItem('label_printer_custom_fields', JSON.stringify(customFields)); }, [customFields]);
-    const fieldOrder = [...CORE_FIELD_KEYS, ...customFields.map(f => f.key)];
+    const fieldOrder = useMemo(() => [...CORE_FIELD_KEYS, ...customFields.map(f => f.key)], [customFields]);
 
-    const getFieldLabel = (key) => CORE_FIELD_LABELS[key] || (customFields || []).find(f => f.key === key)?.label || key;
+    const getFieldLabel = useCallback((key) => CORE_FIELD_LABELS[key] || (customFields || []).find(f => f.key === key)?.label || key, [customFields]);
 
     /* ── Inventory ── */
     const [showInventoryPicker, setShowInventoryPicker] = useState(false);
@@ -520,15 +568,15 @@ export default function LabelPrinter({ user }) {
         return d <= 25 ? 6 : d <= 30 ? 7 : d <= 40 ? 8 : d <= 50 ? 9 : 10;
     };
 
-    const activeItem = labelItems[activeItemIndex] || labelItems[0];
-    const curStyle = fieldStyles[selectedField] || DEFAULT_FIELD_STYLES.productName;
-    const curFontSize = calculateFontSize(getWidth(), getHeight()) + (curStyle.sizeOffset || 0);
+    const activeItem = useMemo(() => labelItems[activeItemIndex] || labelItems[0], [labelItems, activeItemIndex]);
+    const curStyle = useMemo(() => fieldStyles[selectedField] || DEFAULT_FIELD_STYLES.productName, [fieldStyles, selectedField]);
+    const curFontSize = useMemo(() => calculateFontSize(getWidth(), getHeight()) + (curStyle.sizeOffset || 0), [fontSize, paperSize, customWidth, customHeight, orientation, curStyle.sizeOffset]);
 
     /* ────────────── Actions ────────────── */
 
-    const addLabelItem = () => {
+    const addLabelItem = useCallback(() => {
         setLabelItems(prev => [...prev, createLabelItem(fieldOrder)]);
-    };
+    }, [fieldOrder]);
 
     const removeLabelItem = (id) => {
         if (labelItems.length <= 1) {
@@ -545,13 +593,16 @@ export default function LabelPrinter({ user }) {
         if (activeItemIndex >= labelItems.length - 1) setActiveItemIndex(Math.max(0, labelItems.length - 2));
     };
 
-    const updateLabelItem = (id, field, value) =>
-        setLabelItems(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
+    const updateLabelItem = useCallback((id, field, value) =>
+        setLabelItems(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item)), []);
 
-    const duplicateLabelItem = (id) => {
-        const item = labelItems.find(i => i.id === id);
-        if (item) setLabelItems(prev => [...prev, { ...item, id: createStableId('row_') }]);
-    };
+    const duplicateLabelItem = useCallback((id) => {
+        setLabelItems(prev => {
+            const item = prev.find(i => i.id === id);
+            if (item) return [...prev, { ...item, id: createStableId('row_') }];
+            return prev;
+        });
+    }, []);
 
     const clearAllItems = () => {
         Swal.fire({ title: '전체 초기화', text: '모든 데이터가 삭제됩니다.', icon: 'warning', showCancelButton: true, confirmButtonColor: '#ef4444', confirmButtonText: '삭제', cancelButtonText: '취소' })
@@ -807,24 +858,24 @@ export default function LabelPrinter({ user }) {
     }, [draggingField, handleMouseMove, handleMouseUp]);
 
     /* ── Row selection helpers ── */
-    const toggleRowSelection = (id) => {
+    const toggleRowSelection = useCallback((id) => {
         setSelectedRows(prev => {
             const next = { ...prev };
             if (next[id]) delete next[id]; else next[id] = true;
             return next;
         });
-    };
-    const allSelected = labelItems.length > 0 && labelItems.every(i => selectedRows[i.id]);
+    }, []);
+    const allSelected = useMemo(() => labelItems.length > 0 && labelItems.every(i => selectedRows[i.id]), [labelItems, selectedRows]);
 
-    const toggleAllRows = () => {
-        if (allSelected) {
-            setSelectedRows({});
-        } else {
+    const toggleAllRows = useCallback(() => {
+        setSelectedRows(prev => {
+            const all = labelItems.length > 0 && labelItems.every(i => prev[i.id]);
+            if (all) return {};
             const next = {};
             labelItems.forEach(i => { next[i.id] = true; });
-            setSelectedRows(next);
-        }
-    };
+            return next;
+        });
+    }, [labelItems]);
 
     /* ── Keyboard shortcuts ── */
 
@@ -842,6 +893,8 @@ export default function LabelPrinter({ user }) {
                 let fields = '';
                 fieldOrder.forEach(key => {
                     let val = item[key]; if (key === 'price' && showPriceUnit && val) val += ' 원';
+                    if (key === 'extra1' && showExtra1Prefix && val) val = 'NO.' + val;
+                    if (key === 'extra2' && showExtra2Prefix && val) val = '수량:' + val;
                     if (!val) return;
 
                     const pos = fieldPositions[key];
@@ -888,6 +941,7 @@ export default function LabelPrinter({ user }) {
     return (
         <div className="min-h-screen bg-white px-5 py-4">
             {printMode === 'manual' ?
+                <>
                 <div className="flex lg:flex-row flex-col gap-8 items-start animate-in fade-in duration-300">
                     {/* ═══ Left Column: All Controls & Data ═══ */}
                     <div className="flex-1 min-w-0 w-full flex flex-col gap-5">
@@ -936,7 +990,7 @@ export default function LabelPrinter({ user }) {
                                                             }}>
                                                                 {isBc ? (
                                                                     <img src={generateBarcodeBase64(val || '12345678', fs, showBarcodeText) || ''} style={{ height: `${fs * 5.2}px`, pointerEvents: 'none', maxWidth: '100%' }} />
-                                                                ) : (fk === 'price' && showPriceUnit && dummy[fk]) ? `₩${Number(dummy[fk]).toLocaleString()} 원` : val}
+                                                                ) : (fk === 'price' && showPriceUnit && dummy[fk]) ? `₩${Number(dummy[fk]).toLocaleString()} 원` : (fk === 'extra1' && showExtra1Prefix && val) ? `NO.${val}` : (fk === 'extra2' && showExtra2Prefix && val) ? `수량:${val}` : val}
                                                             </div>
                                                         );
                                                     })}
@@ -1135,142 +1189,9 @@ export default function LabelPrinter({ user }) {
                             </div>
                         )}
 
-                        {/* ═══ Data Table ═══ */}
-                        <div className="bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col">
-                            <div className="overflow-x-auto max-h-[600px] scrollbar-thin">
-                                <table className="w-full">
-                                    <thead className="sticky top-0 z-10">
-                                        <tr className="bg-slate-50 border-b border-slate-200">
-                                            <th className="px-3 py-2.5 text-center w-10">
-                                                <input type="checkbox" checked={allSelected} onChange={toggleAllRows} className="w-4 h-4 rounded accent-blue-600 cursor-pointer" />
-                                            </th>
-                                            <th className="px-2 py-2.5 text-center text-[10px] font-bold text-slate-300 w-8">#</th>
-                                            {fieldOrder.map(k => (
-                                                <th key={k} className="px-2 py-2.5 text-left">
-                                                    <div className="flex items-center gap-1.5">
-                                                        <span className={`text-[11px] font-bold ${selectedField === k ? 'text-blue-600' : 'text-slate-400'}`}>{getFieldLabel(k)}</span>
-                                                        {customFields.some(f => f.key === k) && (
-                                                            <button onClick={() => removeCustomColumn(k)} className="w-4 h-4 rounded-full text-slate-300 hover:text-red-500 flex items-center justify-center" title="컬럼 삭제">
-                                                                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3"><path d="M18 6L6 18M6 6l12 12" /></svg>
-                                                            </button>
-                                                        )}
-                                                        {k === 'price' && (
-                                                            <label className="flex items-center gap-1 cursor-pointer ml-auto bg-white px-1.5 py-0.5 rounded border border-slate-200 hover:border-blue-300 transition-all">
-                                                                <input type="checkbox" checked={showPriceUnit} onChange={e => setShowPriceUnit(e.target.checked)} className="w-3 h-3 rounded accent-blue-600" />
-                                                                <span className="text-[9px] font-bold text-slate-500">₩</span>
-                                                            </label>
-                                                        )}
-                                                    </div>
-                                                </th>
-                                            ))}
-                                            <th className="px-3 py-2.5 text-center text-[10px] font-bold text-slate-400 w-24">매수</th>
-                                            <th className="px-3 py-2.5 w-24">
-                                                <div className="flex items-center justify-end gap-1.5">
-                                                    <button onClick={addCustomColumn} className="w-6 h-6 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all">
-                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3"><path d="M12 4v16m8-8H4" /></svg>
-                                                    </button>
-                                                    <button onClick={clearAllItems} className="w-6 h-6 rounded-md bg-red-50 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all">
-                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                                    </button>
-                                                </div>
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-50">
-                                        {paginatedItems.map((item, idxInPage) => {
-                                            const originalIdx = (currentPage - 1) * DATA_TABLE_PAGE_SIZE + idxInPage;
-                                            return (
-                                                <tr key={item.id} onClick={() => setActiveItemIndex(originalIdx)} className={`group transition-colors ${activeItemIndex === originalIdx ? 'bg-blue-50/30' : 'hover:bg-slate-50/40'}`}>
-                                                    <td className="px-3 py-1.5 text-center">
-                                                        <input type="checkbox" checked={!!selectedRows[item.id]} onChange={() => toggleRowSelection(item.id)} onClick={e => e.stopPropagation()} className="w-4 h-4 rounded accent-blue-600 cursor-pointer" />
-                                                    </td>
-                                                    <td className="px-2 py-1.5 text-center">
-                                                        <span className={`text-[11px] font-bold ${activeItemIndex === originalIdx ? 'text-blue-500' : 'text-slate-300'}`}>{originalIdx + 1}</span>
-                                                    </td>
-                                                    {fieldOrder.map(k => (
-                                                        <td key={k} className="px-1 py-1.5">
-                                                            <input type="text" value={item[k] || ''} onFocus={() => setSelectedField(k)} onChange={e => updateLabelItem(item.id, k, e.target.value)}
-                                                                className={`w-full h-8 px-2.5 bg-white border rounded-md text-[13px] font-bold text-slate-800 outline-none transition-all placeholder:text-slate-300 ${selectedField === k ? 'ring-2 ring-blue-400/20 border-blue-300' : 'border-slate-200 group-hover:border-slate-300'}`} placeholder={getFieldLabel(k)} />
-                                                        </td>
-                                                    ))}
-                                                    <td className="px-2 py-1.5">
-                                                        <input type="number" min="1" value={item._copies || ''} onChange={e => updateLabelItem(item.id, '_copies', parseInt(e.target.value) || '')}
-                                                            className="w-full h-8 px-3 bg-white border border-slate-200 rounded-md text-[13px] font-bold text-center text-slate-800 outline-none group-hover:border-slate-300" placeholder={String(copies)} />
-                                                    </td>
-                                                    <td className="px-2 py-1.5">
-                                                        <div className="flex gap-1 justify-end items-center opacity-50 group-hover:opacity-100 transition-opacity">
-                                                            <button onClick={e => { e.stopPropagation(); duplicateLabelItem(item.id); }} className="w-6 h-6 flex justify-center items-center text-blue-500 hover:bg-blue-50 rounded transition-all">
-                                                                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                                                            </button>
-                                                            <button onClick={e => { e.stopPropagation(); removeLabelItem(item.id); }} className="w-6 h-6 flex justify-center items-center text-red-400 hover:bg-red-50 rounded transition-all">
-                                                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                                            </button>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                            {/* Pagination */}
-                            <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-3">
-                                <div className="flex items-center gap-1.5">
-                                    <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed text-[12px] font-bold transition-all">«</button>
-                                    <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed text-[12px] transition-all">‹</button>
-                                    <div className="flex items-center gap-1 px-2 h-8 bg-white border border-slate-200 rounded-lg">
-                                        <input type="number" min="1" max={totalPages} value={currentPage} onChange={e => { const v = parseInt(e.target.value); if (v >= 1 && v <= totalPages) setCurrentPage(v); }} className="w-10 bg-transparent text-center text-[12px] font-bold text-slate-800 outline-none" />
-                                        <span className="text-slate-300 text-[11px]">/</span>
-                                        <span className="text-slate-500 text-[11px] font-bold">{totalPages || 1}</span>
-                                    </div>
-                                    <button onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage >= totalPages} className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed text-[12px] transition-all">›</button>
-                                    <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage >= totalPages} className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed text-[12px] font-bold transition-all">»</button>
-                                </div>
-                                <div className="text-[11px] font-bold text-slate-400">
-                                    <span className="text-slate-700">{Math.min(labelItems.length, (currentPage - 1) * DATA_TABLE_PAGE_SIZE + 1).toLocaleString()}</span>
-                                    <span className="mx-0.5">~</span>
-                                    <span className="text-slate-700">{Math.min(labelItems.length, currentPage * DATA_TABLE_PAGE_SIZE).toLocaleString()}</span>
-                                    <span className="mx-1">/</span>
-                                    <span className="text-blue-600">{labelItems.length.toLocaleString()}</span>
-                                </div>
-                                <button onClick={addLabelItem} className="h-8 px-4 bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 text-slate-500 rounded-lg font-bold text-[12px] transition-all flex items-center gap-1.5">
-                                    <span>+</span> 행 추가
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* ═══ Inventory Modal ═══ */}
-                        {showInventoryPicker && (
-                            <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-6 animate-in fade-in duration-200">
-                                <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-                                    <div className="p-5 border-b flex justify-between items-center">
-                                        <h3 className="text-lg font-bold text-slate-800">재고 데이터 가져오기</h3>
-                                        <button onClick={() => setShowInventoryPicker(false)} className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-800 transition-all text-xl">×</button>
-                                    </div>
-                                    <div className="px-5 py-3 border-b">
-                                        <input type="text" placeholder="상품명 또는 바코드..." value={inventorySearch} onChange={e => setInventorySearch(e.target.value)}
-                                            className="w-full h-10 px-4 bg-slate-50 rounded-lg border border-slate-200 text-[14px] font-bold outline-none focus:ring-2 focus:ring-blue-400/20 focus:border-blue-300 placeholder:text-slate-300" />
-                                    </div>
-                                    <div className="flex-1 overflow-y-auto p-3">
-                                        {inventoryItems.filter(i => (i.productName + i.productCode).includes(inventorySearch)).map(inv => (
-                                            <button key={inv.id} onClick={() => importFromInventory(inv)} className="w-full text-left p-3.5 hover:bg-blue-50 rounded-xl mb-1 transition-all flex justify-between items-center group">
-                                                <div>
-                                                    <div className="font-bold text-[14px] text-slate-800 group-hover:text-blue-600 transition-colors">{inv.productName}</div>
-                                                    <div className="text-[11px] font-bold text-slate-400 group-hover:text-blue-500">{inv.productCode}</div>
-                                                </div>
-                                                <svg className="w-4 h-4 text-slate-300 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M9 5l7 7-7 7" /></svg>
-                                            </button>
-                                        ))}
-                                        {inventoryItems.filter(i => (i.productName + i.productCode).includes(inventorySearch)).length === 0 && (
-                                            <div className="py-8 text-center text-slate-300 text-xs font-bold">검색 결과 없음</div>
-                                        )}
-                                    </div>
-                                </div>
-                            </div>
-                        )}
                     </div>
                     {/* ═══ Right Column: Sticky Preview ═══ */}
-                    <div className="w-[300px] shrink-0 sticky top-4">
+                    <div className="w-[300px] shrink-0 sticky top-4 z-30 self-start">
                         {/* Right: Preview */}
                         <div className="w-[300px] shrink-0">
                             <div className="flex items-center justify-between mb-3">
@@ -1348,7 +1269,7 @@ export default function LabelPrinter({ user }) {
                                                     style={{ left: `${actualPos.x}%`, top: `${actualPos.y}%`, transform: `translate(${tr})`, fontWeight: st.fontWeight, fontSize: `${fs}px`, fontFamily: st.fontFamily, textAlign: st.textAlign, whiteSpace: 'nowrap' }}>
                                                     {st.fontFamily === 'Barcode' ? (
                                                         <img src={generateBarcodeBase64(val || '123456789', fs, showBarcodeText) || ''} style={{ height: `${fs * 5.2}px`, pointerEvents: 'none', maxWidth: '100%' }} />
-                                                    ) : (k === 'price' && showPriceUnit && val) ? `₩${Number(val).toLocaleString()} 원` : val || <span className="bg-blue-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full">데이터 입력...</span>}
+                                                    ) : (k === 'price' && showPriceUnit && val) ? `₩${Number(val).toLocaleString()} 원` : (k === 'extra1' && showExtra1Prefix && val) ? `NO.${val}` : (k === 'extra2' && showExtra2Prefix && val) ? `수량:${val}` : val || <span className="bg-blue-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full">데이터 입력...</span>}
                                                 </div>
                                             );
                                         })}
@@ -1371,6 +1292,141 @@ export default function LabelPrinter({ user }) {
                         </div>
                     </div>
                 </div>
+
+                {/* ═══ Full-Width Data Table ═══ */}
+                <div className="bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col mt-5">
+                            <div className="overflow-x-auto max-h-[600px] scrollbar-thin">
+                                <table className="w-full">
+                                    <thead className="sticky top-0 z-10">
+                                        <tr className="bg-slate-50 border-b border-slate-200">
+                                            <th className="px-3 py-2.5 text-center w-10">
+                                                <input type="checkbox" checked={allSelected} onChange={toggleAllRows} className="w-4 h-4 rounded accent-blue-600 cursor-pointer" />
+                                            </th>
+                                            <th className="px-2 py-2.5 text-center text-[10px] font-bold text-slate-300 w-8">#</th>
+                                            {fieldOrder.map(k => (
+                                                <th key={k} className="px-2 py-2.5 text-left">
+                                                    <div className="flex items-center gap-1.5 whitespace-nowrap">
+                                                        <span className={`text-[11px] font-bold ${selectedField === k ? 'text-blue-600' : 'text-slate-400'}`}>{getFieldLabel(k)}</span>
+                                                        {customFields.some(f => f.key === k) && (
+                                                            <button onClick={() => removeCustomColumn(k)} className="w-4 h-4 rounded-full text-slate-300 hover:text-red-500 flex items-center justify-center" title="컬럼 삭제">
+                                                                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                                                            </button>
+                                                        )}
+                                                        {k === 'price' && (
+                                                            <label className="flex items-center gap-1 cursor-pointer ml-auto bg-white px-1.5 py-0.5 rounded border border-slate-200 hover:border-blue-300 transition-all">
+                                                                <input type="checkbox" checked={showPriceUnit} onChange={e => setShowPriceUnit(e.target.checked)} className="w-3 h-3 rounded accent-blue-600" />
+                                                                <span className="text-[9px] font-bold text-slate-500">₩</span>
+                                                            </label>
+                                                        )}
+                                                        {k === 'extra1' && (
+                                                            <label className="flex items-center gap-1 cursor-pointer ml-auto bg-white px-1.5 py-0.5 rounded border border-slate-200 hover:border-blue-300 transition-all">
+                                                                <input type="checkbox" checked={showExtra1Prefix} onChange={e => setShowExtra1Prefix(e.target.checked)} className="w-3 h-3 rounded accent-blue-600" />
+                                                                <span className="text-[9px] font-bold text-slate-500">NO.</span>
+                                                            </label>
+                                                        )}
+                                                        {k === 'extra2' && (
+                                                            <label className="flex items-center gap-1 cursor-pointer ml-auto bg-white px-1.5 py-0.5 rounded border border-slate-200 hover:border-blue-300 transition-all">
+                                                                <input type="checkbox" checked={showExtra2Prefix} onChange={e => setShowExtra2Prefix(e.target.checked)} className="w-3 h-3 rounded accent-blue-600" />
+                                                                <span className="text-[9px] font-bold text-slate-500">수량</span>
+                                                            </label>
+                                                        )}
+                                                    </div>
+                                                </th>
+                                            ))}
+                                            <th className="px-3 py-2.5 text-center text-[10px] font-bold text-slate-400 w-24">매수</th>
+                                            <th className="px-3 py-2.5 w-24">
+                                                <div className="flex items-center justify-end gap-1.5">
+                                                    <button onClick={addCustomColumn} className="w-6 h-6 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center hover:bg-blue-600 hover:text-white transition-all">
+                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3"><path d="M12 4v16m8-8H4" /></svg>
+                                                    </button>
+                                                    <button onClick={clearAllItems} className="w-6 h-6 rounded-md bg-red-50 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all">
+                                                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                                    </button>
+                                                </div>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50">
+                                        {paginatedItems.map((item, idxInPage) => (
+                                            <DataTableRow
+                                                key={item.id}
+                                                item={item}
+                                                idxInPage={idxInPage}
+                                                originalIdx={(currentPage - 1) * DATA_TABLE_PAGE_SIZE + idxInPage}
+                                                isActive={activeItemIndex === ((currentPage - 1) * DATA_TABLE_PAGE_SIZE + idxInPage)}
+                                                isSelected={!!selectedRows[item.id]}
+                                                fieldOrder={fieldOrder}
+                                                selectedField={selectedField}
+                                                globalCopies={copies}
+                                                getFieldLabel={getFieldLabel}
+                                                onRowClick={setActiveItemIndex}
+                                                onToggleSelection={toggleRowSelection}
+                                                onFocusField={setSelectedField}
+                                                onChangeField={updateLabelItem}
+                                                onDuplicate={duplicateLabelItem}
+                                                onRemove={removeLabelItem}
+                                            />
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {/* Pagination */}
+                            <div className="px-4 py-2.5 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-3">
+                                <div className="flex items-center gap-1.5">
+                                    <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed text-[12px] font-bold transition-all">«</button>
+                                    <button onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))} disabled={currentPage === 1} className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed text-[12px] transition-all">‹</button>
+                                    <div className="flex items-center gap-1 px-2 h-8 bg-white border border-slate-200 rounded-lg">
+                                        <input type="number" min="1" max={totalPages} value={currentPage} onChange={e => { const v = parseInt(e.target.value); if (v >= 1 && v <= totalPages) setCurrentPage(v); }} className="w-10 bg-transparent text-center text-[12px] font-bold text-slate-800 outline-none" />
+                                        <span className="text-slate-300 text-[11px]">/</span>
+                                        <span className="text-slate-500 text-[11px] font-bold">{totalPages || 1}</span>
+                                    </div>
+                                    <button onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))} disabled={currentPage >= totalPages} className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed text-[12px] transition-all">›</button>
+                                    <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage >= totalPages} className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 hover:text-blue-600 disabled:opacity-30 disabled:cursor-not-allowed text-[12px] font-bold transition-all">»</button>
+                                </div>
+                                <div className="text-[11px] font-bold text-slate-400">
+                                    <span className="text-slate-700">{Math.min(labelItems.length, (currentPage - 1) * DATA_TABLE_PAGE_SIZE + 1).toLocaleString()}</span>
+                                    <span className="mx-0.5">~</span>
+                                    <span className="text-slate-700">{Math.min(labelItems.length, currentPage * DATA_TABLE_PAGE_SIZE).toLocaleString()}</span>
+                                    <span className="mx-1">/</span>
+                                    <span className="text-blue-600">{labelItems.length.toLocaleString()}</span>
+                                </div>
+                                <button onClick={addLabelItem} className="h-8 px-4 bg-white border border-slate-200 hover:border-blue-400 hover:text-blue-600 text-slate-500 rounded-lg font-bold text-[12px] transition-all flex items-center gap-1.5">
+                                    <span>+</span> 행 추가
+                                </button>
+                            </div>
+                        </div>
+
+
+                {/* ═══ Inventory Modal ═══ */}
+                {showInventoryPicker && (
+                    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-6 animate-in fade-in duration-200">
+                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+                            <div className="p-5 border-b flex justify-between items-center">
+                                <h3 className="text-lg font-bold text-slate-800">재고 데이터 가져오기</h3>
+                                <button onClick={() => setShowInventoryPicker(false)} className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-800 transition-all text-xl">×</button>
+                            </div>
+                            <div className="px-5 py-3 border-b">
+                                <input type="text" placeholder="상품명 또는 바코드..." value={inventorySearch} onChange={e => setInventorySearch(e.target.value)}
+                                    className="w-full h-10 px-4 bg-slate-50 rounded-lg border border-slate-200 text-[14px] font-bold outline-none focus:ring-2 focus:ring-blue-400/20 focus:border-blue-300 placeholder:text-slate-300" />
+                            </div>
+                            <div className="flex-1 overflow-y-auto p-3">
+                                {inventoryItems.filter(i => (i.productName + i.productCode).includes(inventorySearch)).map(inv => (
+                                    <button key={inv.id} onClick={() => importFromInventory(inv)} className="w-full text-left p-3.5 hover:bg-blue-50 rounded-xl mb-1 transition-all flex justify-between items-center group">
+                                        <div>
+                                            <div className="font-bold text-[14px] text-slate-800 group-hover:text-blue-600 transition-colors">{inv.productName}</div>
+                                            <div className="text-[11px] font-bold text-slate-400 group-hover:text-blue-500">{inv.productCode}</div>
+                                        </div>
+                                        <svg className="w-4 h-4 text-slate-300 group-hover:text-blue-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M9 5l7 7-7 7" /></svg>
+                                    </button>
+                                ))}
+                                {inventoryItems.filter(i => (i.productName + i.productCode).includes(inventorySearch)).length === 0 && (
+                                    <div className="py-8 text-center text-slate-300 text-xs font-bold">검색 결과 없음</div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                )}
+                </>
                 :
                 <BarTenderPrintPanel user={user} />
             }
