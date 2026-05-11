@@ -1074,6 +1074,19 @@ export default function LabelPrinter({ user }) {
                                 <input type="number" min="1" value={copies} onChange={e => setCopies(parseInt(e.target.value) || 1)}
                                     className="h-9 w-14 px-2 bg-white border border-slate-300 rounded-lg text-[13px] font-bold text-center text-slate-800 outline-none hover:border-blue-400" />
                             </div>
+                            <div className="flex flex-col gap-1">
+                                <span className="text-[11px] font-bold text-slate-400 pl-0.5">인쇄 위치 보정</span>
+                                <div className="flex items-center gap-1">
+                                    <span className="text-[11px] font-bold text-slate-400 w-4 text-center">X</span>
+                                    <button onClick={() => setPrintOffsetX(v => Math.round((v - 0.5) * 10) / 10)} className="h-9 w-7 flex items-center justify-center bg-white border border-slate-300 rounded-l-lg text-slate-500 hover:bg-slate-50 font-bold text-[14px]">−</button>
+                                    <span className="h-9 w-12 flex items-center justify-center bg-white border-t border-b border-slate-300 text-[12px] font-bold text-slate-700">{printOffsetX > 0 ? '+' : ''}{printOffsetX}㎜</span>
+                                    <button onClick={() => setPrintOffsetX(v => Math.round((v + 0.5) * 10) / 10)} className="h-9 w-7 flex items-center justify-center bg-white border border-slate-300 rounded-r-lg text-slate-500 hover:bg-slate-50 font-bold text-[14px]">+</button>
+                                    <span className="text-[11px] font-bold text-slate-400 w-4 text-center ml-1">Y</span>
+                                    <button onClick={() => setPrintOffsetY(v => Math.round((v - 0.5) * 10) / 10)} className="h-9 w-7 flex items-center justify-center bg-white border border-slate-300 rounded-l-lg text-slate-500 hover:bg-slate-50 font-bold text-[14px]">−</button>
+                                    <span className="h-9 w-12 flex items-center justify-center bg-white border-t border-b border-slate-300 text-[12px] font-bold text-slate-700">{printOffsetY > 0 ? '+' : ''}{printOffsetY}㎜</span>
+                                    <button onClick={() => setPrintOffsetY(v => Math.round((v + 0.5) * 10) / 10)} className="h-9 w-7 flex items-center justify-center bg-white border border-slate-300 rounded-r-lg text-slate-500 hover:bg-slate-50 font-bold text-[14px]">+</button>
+                                </div>
+                            </div>
 
                             {/* Field Style Toolbar (Moved here) */}
                             <div className="flex flex-col gap-1">
