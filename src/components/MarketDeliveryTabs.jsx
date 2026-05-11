@@ -31,8 +31,8 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
 
     const modalTabs = [
         {
-            key: 'clients', 
-            label: t('clientAddressBook'), 
+            key: 'clients',
+            label: t('clientAddressBook'),
             onClick: onOpenClients,
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -41,8 +41,8 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
             )
         },
         {
-            key: 'inventory', 
-            label: t('inventoryManagement'), 
+            key: 'inventory',
+            label: t('inventoryManagement'),
             onClick: onOpenInventory,
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -51,8 +51,18 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
             )
         },
         {
-            key: 'labelPrint', 
-            label: t('labelPrinting'), 
+            key: 'orderManagement',
+            label: '주문관리',
+            onClick: () => window.open('https://www.jinil.top/', '_blank'),
+            icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                </svg>
+            )
+        },
+        {
+            key: 'labelPrint',
+            label: t('labelPrinting'),
             onClick: onOpenLabelPrint,
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -85,16 +95,16 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
                 ))}
             </div>
                 
-            {/* Row 2: Clients, Inventory & Label Print (Modals) */}
-            <div className="grid grid-cols-3 border-b border-gray-50 dark:border-gray-700">
+            {/* Row 2: Clients, Inventory, Order Management & Label Print (Modals) */}
+            <div className="grid grid-cols-4 border-b border-gray-50 dark:border-gray-700">
                 {modalTabs.map((tab) => (
                     <button
                         key={tab.key}
                         onClick={tab.onClick}
-                        className="flex flex-col items-center justify-center gap-1.5 py-3 px-2 text-[12px] font-bold text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-all duration-300 border-r last:border-r-0 border-gray-50 dark:border-gray-700"
+                        className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 text-[10px] font-bold text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-all duration-300 border-r last:border-r-0 border-gray-50 dark:border-gray-700"
                     >
                         {tab.icon}
-                        <span>{tab.label}</span>
+                        <span className="whitespace-nowrap">{tab.label}</span>
                     </button>
                 ))}
             </div>
