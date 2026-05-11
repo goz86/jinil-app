@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, net, Notification, dialog, clipboard } from 'electron';
+import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, net, Notification, dialog, clipboard, shell } from 'electron';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -380,6 +380,7 @@ function createWindow() {
         return enable;
     });
 
+    ipcMain.handle('open-external', (event, url) => { shell.openExternal(url); });
     ipcMain.on('set-progress', (event, progress) => { if (mainWindow) mainWindow.setProgressBar(progress); });
     ipcMain.on('flash-frame', (event, flash) => { if (mainWindow) mainWindow.flashFrame(flash); });
 
