@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { db, storage } from '../firebase';
-import { collection, onSnapshot, deleteDoc, doc, addDoc, query, orderBy, serverTimestamp } from 'firebase/firestore';
+import { collection, onSnapshot, deleteDoc, doc, addDoc, setDoc, query, orderBy, serverTimestamp } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { useLanguage } from '../contexts/LanguageContext';
 import Swal from 'sweetalert2';
@@ -19,6 +19,8 @@ export default function DeliveryWidget({ selectedDate, deliveries = [] }) {
     const [uploadProgress, setUploadProgress] = useState(0);
     const fileInputRef = useRef(null);
     const [menuPos, setMenuPos] = useState(null);
+    // State to control expansion of delivery tracking history timeline
+    const [expandedTimelineId, setExpandedTimelineId] = useState(null);
 
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -175,14 +177,14 @@ export default function DeliveryWidget({ selectedDate, deliveries = [] }) {
                     // 2. Get download URL
                     const imageUrl = await getDownloadURL(uploadTask.snapshot.ref);
 
-                    // 3. Save record to Firestore
-                    await addDoc(collection(db, "deliveries"), {
+                    // 3. Save record to Firestore using barcode as document ID for upsert/merge support
+                    await setDoc(doc(db, "deliveries", barcode.trim()), {
                         barcode: barcode.trim(),
                         imageUrl,
                         imagePath: fileName, // Save path for easier cleanup later
                         timestamp: serverTimestamp(),
-                        uploadedBy: "Team"
-                    });
+                        uploadedBy: "Scanner App"
+                    }, { merge: true });
 
                     // Reset form
                     setBarcode('');
@@ -522,8 +524,64 @@ export default function DeliveryWidget({ selectedDate, deliveries = [] }) {
                             </div>
 
                             {item.uploadedBy && (
-                                <div className="text-xs text-gray-400 dark:text-gray-500 pt-1">
-                                    {item.uploadedBy}
+                                <div className="text-[11px] text-gray-400 dark:text-gray-500 pt-0.5">
+                                    등록처: {item.uploadedBy}
+                                </div>
+                            )}
+
+                            {/* Hiển thị thông tin đối tác & chi nhánh đồng bộ từ B2B Web App */}
+                            {(item.company_name || item.location_name) && (
+                                <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 pt-1">
+                                    고객사: {item.company_name || "미지정"} {item.location_name ? `(${item.location_name})` : ""}
+                                </div>
+                            )}
+
+                            {/* Hiển thị thông tin người nhận & địa chỉ giao hàng */}
+                            {(item.recipient_name || item.recipient_address) && (
+                                <div className="text-xs text-gray-600 dark:text-gray-400 pt-1 border-t border-gray-100 dark:border-gray-700/50 mt-1 space-y-0.5">
+                                    {item.recipient_name && <div>수하인: <span className="font-semibold text-gray-800 dark:text-gray-200">{item.recipient_name}</span></div>}
+                                    {item.recipient_address && <div className="break-all text-[11px] leading-relaxed">주소: {item.recipient_address}</div>}
+                                </div>
+                            )}
+
+                            {/* Hiển thị trạng thái giao hàng từ Supabase */}
+                            {item.tracking_status_label && (
+                                <div className="pt-2 flex flex-wrap items-center gap-1.5">
+                                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-900/30 px-2.5 py-0.5 text-[11px] font-bold text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/20">
+                                        🚚 {item.tracking_status_label}
+                                    </span>
+                                    {item.latest_location && (
+                                        <span className="text-[10px] text-gray-400 dark:text-gray-500">
+                                            ({item.latest_location} - {item.latest_description})
+                                        </span>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Hiển thị lịch sử hành trình chi tiết (Tracking Timeline) */}
+                            {item.tracking_events && item.tracking_events.length > 0 && (
+                                <div className="pt-2 border-t border-dashed border-gray-100 dark:border-gray-700/50 mt-2">
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setExpandedTimelineId(expandedTimelineId === item.id ? null : item.id);
+                                        }}
+                                        className="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 font-semibold flex items-center gap-1 cursor-pointer focus:outline-none"
+                                    >
+                                        {expandedTimelineId === item.id ? '▲ 배송 경로 접기' : '▼ 배송 경로 보기'}
+                                    </button>
+                                    {expandedTimelineId === item.id && (
+                                        <div className="mt-2 pl-2.5 border-l-2 border-blue-200 dark:border-blue-800 space-y-2 py-1 max-h-40 overflow-y-auto">
+                                            {item.tracking_events.map((evt, idx) => (
+                                                <div key={idx} className="text-[10px] text-gray-500 dark:text-gray-400 space-y-0.5">
+                                                    <div className="font-semibold text-gray-700 dark:text-gray-300">
+                                                        {evt.timeString || evt.time} - {evt.status || evt.status_label}
+                                                    </div>
+                                                    <div>{evt.location} ({evt.description})</div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             )}
                         </div>
