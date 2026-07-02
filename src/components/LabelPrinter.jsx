@@ -921,8 +921,7 @@ export default function LabelPrinter({ user }) {
         const ox = printOffsetX || 0;
         const oy = printOffsetY || 0;
         const win = window.open('', '_blank');
-        const pageOrientation = orientation === 'landscape' ? 'landscape' : 'portrait';
-        win.document.write(`<html><head><title>진일 라벨 인쇄</title><link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet"><style>@page{size:${pw}mm ${ph}mm ${pageOrientation};margin:0}@media print{@page{size:${pw}mm ${ph}mm ${pageOrientation};margin:0}}html{margin:0;padding:0;overflow:hidden}body{margin:0;padding:0;overflow:hidden;width:${pw}mm;box-sizing:border-box;transform:translate(${ox}mm,${oy}mm)}*{box-sizing:border-box}</style></head><body>${html}<script>window.onload = function() { document.fonts.ready.then(function() { setTimeout(function() { window.print(); setTimeout(function() { window.close(); }, 500); }, 800); }); };</script></body></html>`);
+        win.document.write(`<html><head><title>진일 라벨 인쇄</title><link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet"><style>@page{size:${pw}mm ${ph}mm;margin:0}@media print{@page{size:${pw}mm ${ph}mm;margin:0}}html{margin:0;padding:0;overflow:hidden}body{margin:0;padding:0;overflow:hidden;width:${pw}mm;box-sizing:border-box;transform:translate(${ox}mm,${oy}mm)}*{box-sizing:border-box}</style></head><body>${html}<script>window.onload = function() { document.fonts.ready.then(function() { setTimeout(function() { window.print(); setTimeout(function() { window.close(); }, 500); }, 800); }); };</script></body></html>`);
         win.document.close();
     };
 
