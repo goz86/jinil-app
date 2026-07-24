@@ -86,6 +86,7 @@ function StockChartContent({ stock, isOpen, onClose }) {
             const sym = String(stock.symbol || stock.code || '').toUpperCase().trim();
             const name = stock.name || '';
             const isIntraday = ['5M', '15M', '1H', '4H'].includes(interval);
+            const now = Math.floor(Date.now() / 1000);
 
             try {
                 // 1. Upbit API for Crypto (.KRW)
@@ -149,21 +150,28 @@ function StockChartContent({ stock, isOpen, onClose }) {
                     else if (sym === 'GOLD' || sym === 'GC=F' || name.includes('금')) yahooSymbol = 'GC=F';
                 }
 
-                let yahooInterval = '1d';
-                let yahooRange = '6m';
+                let targetUrl = '';
+                if (interval === '1D') {
+                    const period1 = now - (180 * 24 * 3600);
+                    targetUrl = import.meta.env.DEV
+                        ? `/api/yahoo/${yahooSymbol}?period1=${period1}&period2=${now}&interval=1d`
+                        : `https://query2.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?period1=${period1}&period2=${now}&interval=1d`;
+                } else if (interval === '1W') {
+                    const period1 = now - (365 * 24 * 3600);
+                    targetUrl = import.meta.env.DEV
+                        ? `/api/yahoo/${yahooSymbol}?period1=${period1}&period2=${now}&interval=1wk`
+                        : `https://query2.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?period1=${period1}&period2=${now}&interval=1wk`;
+                } else {
+                    let yahooInterval = '5m';
+                    let yahooRange = '1d';
+                    if (interval === '15M') { yahooInterval = '15m'; yahooRange = '5d'; }
+                    else if (interval === '1H') { yahooInterval = '60m'; yahooRange = '1mo'; }
+                    else if (interval === '4H') { yahooInterval = '60m'; yahooRange = '3mo'; }
 
-                switch (interval) {
-                    case '5M': yahooInterval = '5m'; yahooRange = '1d'; break;
-                    case '15M': yahooInterval = '15m'; yahooRange = '5d'; break;
-                    case '1H': yahooInterval = '60m'; yahooRange = '1mo'; break;
-                    case '4H': yahooInterval = '60m'; yahooRange = '3mo'; break;
-                    case '1W': yahooInterval = '1wk'; yahooRange = '1y'; break;
-                    default: yahooInterval = '1d'; yahooRange = '6m'; break;
+                    targetUrl = import.meta.env.DEV
+                        ? `/api/yahoo/${yahooSymbol}?interval=${yahooInterval}&range=${yahooRange}`
+                        : `https://query2.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=${yahooInterval}&range=${yahooRange}`;
                 }
-
-                const targetUrl = import.meta.env.DEV
-                    ? `/api/yahoo/${yahooSymbol}?interval=${yahooInterval}&range=${yahooRange}`
-                    : `https://query2.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=${yahooInterval}&range=${yahooRange}`;
 
                 const res = await fetch(targetUrl);
                 if (res.ok) {
@@ -185,7 +193,7 @@ function StockChartContent({ stock, isOpen, onClose }) {
                             if (closes[i] !== null && closes[i] !== undefined && opens[i] !== null && opens[i] !== undefined) {
                                 let timeVal;
                                 if (isIntraday) {
-                                    timeVal = timestamps[i]; // seconds timestamp
+                                    timeVal = timestamps[i];
                                 } else {
                                     const dateObj = new Date(timestamps[i] * 1000);
                                     const y = dateObj.getFullYear();
@@ -285,8 +293,6 @@ function StockChartContent({ stock, isOpen, onClose }) {
 
         try {
             chartContainerRef.current.innerHTML = '';
-
-            const isIntraday = ['5M', '15M', '1H', '4H'].includes(interval);
 
             const chart = createChart(chartContainerRef.current, {
                 width: chartContainerRef.current.clientWidth || 800,
