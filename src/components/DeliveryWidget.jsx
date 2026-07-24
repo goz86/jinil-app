@@ -353,7 +353,7 @@ export default function DeliveryWidget({ selectedDate, deliveries = [], onOpenIn
                         className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all duration-200
                             bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shadow-sm active:scale-95 whitespace-nowrap"
                     >
-                        🚚 배송 중인 운송장 내역
+                        배송 중인 운송장 내역
                     </button>
                 )}
                 {filteredDeliveries.length > 0 && (
