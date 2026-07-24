@@ -70,6 +70,8 @@ export default function ClientAddressBook({ user }) {
 
         const loadCombinedClients = async () => {
             let supabasePartners = [];
+            const supabasePartnerNames = new Set();
+
             try {
                 const { data, error } = await supabase
                     .from('partners')
@@ -77,16 +79,20 @@ export default function ClientAddressBook({ user }) {
                     .order('company_name', { ascending: true });
 
                 if (!error && data) {
-                    supabasePartners = data.map((p) => ({
-                        id: p.id,
-                        isSupabase: true,
-                        name: p.company_name || p.partner_name || '',
-                        representative: p.representative_name || '',
-                        contactName: p.contact_person || '',
-                        phone: p.phone || '',
-                        address: p.address || p.default_address || '',
-                        sortIndex: 0,
-                    }));
+                    supabasePartners = data.map((p) => {
+                        const name = p.company_name || p.partner_name || '';
+                        if (name) supabasePartnerNames.add(name.trim().toLowerCase());
+                        return {
+                            id: p.id,
+                            isSupabase: true,
+                            name: name,
+                            representative: p.representative_name || '',
+                            contactName: p.contact_person || '',
+                            phone: p.phone || '',
+                            address: p.address || p.default_address || '',
+                            sortIndex: 0,
+                        };
+                    });
                 }
             } catch (err) {
                 console.error("Supabase load error:", err);
@@ -96,9 +102,33 @@ export default function ClientAddressBook({ user }) {
             onSnapshot(q, { includeMetadataChanges: true }, (snapshot) => {
                 const firestoreData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 
+                // Auto-sync Firestore clients to Supabase partners table if missing
+                void (async () => {
+                    for (const c of firestoreData) {
+                        const name = (c.name || '').trim();
+                        if (!name || supabasePartnerNames.has(name.toLowerCase())) continue;
+                        try {
+                            const { data: inserted } = await supabase.from('partners').insert([{
+                                company_name: name,
+                                representative_name: c.representative || '',
+                                contact_person: c.contactName || '',
+                                phone: c.phone || '',
+                                address: c.address || '',
+                                default_address: c.address || '',
+                            }]).select('*');
+
+                            if (inserted && inserted[0]) {
+                                supabasePartnerNames.add(name.toLowerCase());
+                            }
+                        } catch (e) {
+                            console.error('Auto sync to Supabase partners error:', e);
+                        }
+                    }
+                })();
+
                 // Combine Supabase partners and Firestore clients (avoid duplicates by name)
-                const existingNames = new Set(firestoreData.map(c => c.name?.trim().toLowerCase()));
-                const uniqueSupabase = supabasePartners.filter(p => !existingNames.has(p.name?.trim().toLowerCase()));
+                const existingFsNames = new Set(firestoreData.map(c => (c.name || '').trim().toLowerCase()));
+                const uniqueSupabase = supabasePartners.filter(p => !existingFsNames.has((p.name || '').trim().toLowerCase()));
                 let merged = [...firestoreData, ...uniqueSupabase];
 
                 merged.sort((a, b) => {

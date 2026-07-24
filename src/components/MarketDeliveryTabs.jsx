@@ -18,7 +18,7 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
                 const { count, error } = await supabase
                     .from('b2b_shipments')
                     .select('*', { count: 'exact', head: true })
-                    .neq('tracking_status', 'Delivered');
+                    .or('is_delivered.eq.false,is_delivered.is.null');
 
                 if (!error && count !== null && isMounted) {
                     setLiveActiveCount(count);

@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import { db } from '../firebase';
+import { collection, getDocs, query as fsQuery, orderBy as fsOrderBy, limit as fsLimit } from 'firebase/firestore';
 import Swal from 'sweetalert2';
 
 export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount }) {
@@ -10,22 +12,76 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
 
   const fetchInTransitShipments = useCallback(async () => {
     setLoading(true);
+    let combined = [];
+
+    // 1. Fetch from Supabase b2b_shipments
     try {
-      const { data, error } = await supabase
+      const { data: sbData, error: sbError } = await supabase
         .from('b2b_shipments')
         .select('*')
-        .neq('tracking_status', 'Delivered')
-        .order('shipment_date', { ascending: false })
+        .or('is_delivered.eq.false,is_delivered.is.null')
+        .order('pickup_date', { ascending: false })
         .limit(100);
 
-      if (error) throw error;
-      setShipments(data || []);
-      if (onRefreshCount) onRefreshCount(data?.length || 0);
+      if (!sbError && sbData) {
+        sbData.forEach((s) => {
+          if (s.tracking_status_label === '배달완료') return;
+          combined.push({
+            id: s.id || s.tracking_number,
+            shipment_date: s.pickup_date || s.shipment_date || s.created_at || '-',
+            partner_name: s.company_name || s.partner_name || s.partner_code || '미지정',
+            customer_name: s.recipient_name || s.customer_name || s.location_name || '-',
+            tracking_number: s.tracking_number,
+            tracking_status_label: s.tracking_status_label || '배송중',
+            source: 'supabase',
+          });
+        });
+      }
     } catch (err) {
-      console.error('Failed to fetch in-transit shipments:', err);
-    } finally {
-      setLoading(false);
+      console.error('Supabase b2b_shipments fetch error:', err);
     }
+
+    // 2. Fetch from Firebase Firestore deliveries collection
+    try {
+      const q = fsQuery(collection(db, 'deliveries'), fsLimit(100));
+      const fsSnap = await getDocs(q);
+      fsSnap.docs.forEach((docSnap) => {
+        const item = docSnap.data();
+        const trackingNum = item.barcode || item.tracking_number || docSnap.id;
+        if (!trackingNum) return;
+
+        // Avoid duplicate tracking numbers if already in Supabase
+        const exists = combined.some((c) => c.tracking_number === trackingNum);
+        if (!exists) {
+          const status = item.tracking_status_label || (item.is_delivered ? '배달완료' : '배송중');
+          if (status === '배달완료') return;
+
+          let dateStr = '-';
+          if (item.pickup_date) {
+            dateStr = item.pickup_date;
+          } else if (item.timestamp) {
+            const d = item.timestamp.toDate ? item.timestamp.toDate() : new Date(item.timestamp);
+            dateStr = d.toISOString().split('T')[0];
+          }
+
+          combined.push({
+            id: docSnap.id,
+            shipment_date: dateStr,
+            partner_name: item.company_name || item.partner_name || '미지정',
+            customer_name: item.recipient_name || item.customer_name || item.location_name || '-',
+            tracking_number: trackingNum,
+            tracking_status_label: status,
+            source: 'firestore',
+          });
+        }
+      });
+    } catch (err) {
+      console.error('Firestore deliveries fetch error:', err);
+    }
+
+    setShipments(combined);
+    if (onRefreshCount) onRefreshCount(combined.length);
+    setLoading(false);
   }, [onRefreshCount]);
 
   useEffect(() => {
