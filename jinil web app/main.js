@@ -654,6 +654,16 @@ if (!gotTheLock) {
                     });
 
                     autoUpdater.checkForUpdatesAndNotify();
+
+                    // Tự động kiểm tra cập nhật mỗi khi hiện cửa sổ hoặc định kỳ 15 phút
+                    if (mainWindow) {
+                        mainWindow.on('show', () => {
+                            autoUpdater.checkForUpdatesAndNotify().catch(() => {});
+                        });
+                    }
+                    setInterval(() => {
+                        autoUpdater.checkForUpdatesAndNotify().catch(() => {});
+                    }, 15 * 60 * 1000);
                 } catch (err) { console.error('Non-critical init error:', err); }
             }
             app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow(); });
