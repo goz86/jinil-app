@@ -77,89 +77,112 @@ export default function MarketWidget() {
 
     // Kho dữ liệu Top Korea Stocks (Mở rộng đa ngành nghề)
     const KOREAN_TOP_STOCKS = [
-        // IT / Tech / Platform
-        { symbol: '005930.KS', name: 'Samsung Elec' },
-        { symbol: '000660.KS', name: 'SK Hynix' },
-        { symbol: '035420.KS', name: 'NAVER' },
-        { symbol: '035720.KS', name: 'Kakao' },
-        { symbol: '066570.KS', name: 'LG Electronics' },
-        { symbol: '018260.KS', name: 'Samsung SDS' },
+        // IT / 반도체 / 플랫폼
+        { symbol: '005930.KS', name: '삼성전자', alias: 'Samsung Elec' },
+        { symbol: '000660.KS', name: 'SK하이닉스', alias: 'SK Hynix' },
+        { symbol: '035420.KS', name: 'NAVER', alias: '네이버' },
+        { symbol: '035720.KS', name: '카카오', alias: 'Kakao' },
+        { symbol: '066570.KS', name: 'LG전자', alias: 'LG Elec' },
+        { symbol: '018260.KS', name: '삼성SDS', alias: 'Samsung SDS' },
+        { symbol: '042700.KS', name: '한미반도체', alias: 'Hanmi Semi' },
+        { symbol: '058470.KQ', name: '리노공업', alias: 'Leeno' },
+        { symbol: '403870.KQ', name: 'HPSP', alias: '에이치피에스피' },
+        { symbol: '357780.KQ', name: '솔브레인', alias: 'Soulbrain' },
+        { symbol: '005290.KQ', name: '동진쎄미켐', alias: 'Dongjin' },
 
-        // Battery / EV / Chemical
-        { symbol: '373220.KS', name: 'LG Energy' },
-        { symbol: '006400.KS', name: 'Samsung SDI' },
-        { symbol: '051910.KS', name: 'LG Chem' },
-        { symbol: '247540.KQ', name: 'Ecopro BM' },
-        { symbol: '086520.KQ', name: 'Ecopro' },
-        { symbol: '003670.KS', name: 'POSCO Future M' },
+        // 2차전지 / 자동차 / 화학
+        { symbol: '373220.KS', name: 'LG에너지솔루션', alias: 'LG Energy' },
+        { symbol: '006400.KS', name: '삼성SDI', alias: 'Samsung SDI' },
+        { symbol: '051910.KS', name: 'LG화학', alias: 'LG Chem' },
+        { symbol: '247540.KQ', name: '에코프로비엠', alias: 'Ecopro BM' },
+        { symbol: '086520.KQ', name: '에코프로', alias: 'Ecopro' },
+        { symbol: '003670.KS', name: '포스코퓨처엠', alias: 'POSCO Future M' },
+        { symbol: '096770.KS', name: 'SK이노베이션', alias: 'SK Innovation' },
+        { symbol: '005380.KS', name: '현대차', alias: 'Hyundai Motor' },
+        { symbol: '000270.KS', name: '기아', alias: 'Kia' },
+        { symbol: '012330.KS', name: '현대모비스', alias: 'Hyundai Mobis' },
+        { symbol: '086280.KS', name: '현대글로비스', alias: 'Hyundai Glovis' },
+        { symbol: '204320.KS', name: 'HL만도', alias: 'Mando' },
+        { symbol: '001570.KS', name: '금양', alias: 'Kumyang' },
 
-        // Automakers
-        { symbol: '005380.KS', name: 'Hyundai Motor' },
-        { symbol: '000270.KS', name: 'Kia Corp' },
-        { symbol: '012330.KS', name: 'Hyundai Mobis' },
-        { symbol: '000150.KS', name: 'Doosan' },
+        // 방산 / 조선 / 중공업
+        { symbol: '012450.KS', name: '한화에어로스페이스', alias: 'Hanwha Aero' },
+        { symbol: '047810.KS', name: '한국항공우주', alias: 'KAI' },
+        { symbol: '079550.KS', name: 'LIG넥스원', alias: 'LIG Nex1' },
+        { symbol: '272210.KS', name: '한화시스템', alias: 'Hanwha Systems' },
+        { symbol: '329180.KS', name: 'HD현대중공업', alias: 'HD Hyundai' },
+        { symbol: '009540.KS', name: 'HD한국조선해양', alias: 'KSOE' },
+        { symbol: '010140.KS', name: '삼성중공업', alias: 'Samsung Heavy' },
+        { symbol: '042660.KS', name: '한화오션', alias: 'Hanwha Ocean' },
+        { symbol: '034020.KS', name: '두산에너빌리티', alias: 'Doosan Enerbility' },
+        { symbol: '241560.KS', name: '두산밥캣', alias: 'Doosan Bobcat' },
+        { symbol: '000150.KS', name: '두산', alias: 'Doosan' },
 
-        // Bio / Healthcare
-        { symbol: '207940.KS', name: 'Samsung Biologics' },
-        { symbol: '068270.KS', name: 'Celltrion' },
-        { symbol: '302440.KS', name: 'SK Bioscience' },
-        { symbol: '000100.KS', name: 'Yuhan' },
-        { symbol: '096530.KQ', name: 'Seegene' },
-        { symbol: '214150.KQ', name: 'Classys' },
+        // 바이오 / 제약
+        { symbol: '207940.KS', name: '삼성바이오로직스', alias: 'Samsung Bio' },
+        { symbol: '068270.KS', name: '셀트리온', alias: 'Celltrion' },
+        { symbol: '302440.KS', name: 'SK바이오사이언스', alias: 'SK Bioscience' },
+        { symbol: '326030.KS', name: 'SK바이오팜', alias: 'SK Biopharm' },
+        { symbol: '000100.KS', name: '유한양행', alias: 'Yuhan' },
+        { symbol: '128940.KS', name: '한미약품', alias: 'Hanmi Pharm' },
+        { symbol: '196170.KQ', name: '알테오젠', alias: 'Alteogen' },
+        { symbol: '028300.KQ', name: 'HLB', alias: '에이치엘비' },
+        { symbol: '096530.KQ', name: '씨젠', alias: 'Seegene' },
+        { symbol: '069620.KS', name: '대웅제약', alias: 'Daewoong' },
 
-        // Entertainment / K-Pop
-        { symbol: '352820.KS', name: 'HYBE' },
-        { symbol: '035900.KQ', name: 'JYP Ent.' },
-        { symbol: '041510.KQ', name: 'SM Ent.' },
-        { symbol: '122870.KQ', name: 'YG Ent.' },
-        { symbol: '011115.KS', name: 'CJ ENM' },
+        // 엔터 / 유통 / 소비재 / 물류
+        { symbol: '352820.KS', name: '하이브', alias: 'HYBE' },
+        { symbol: '035900.KQ', name: 'JYP Ent.', alias: '제이와이피' },
+        { symbol: '041510.KQ', name: 'SM Ent.', alias: '에스엠' },
+        { symbol: '122870.KQ', name: 'YG Ent.', alias: '와이지' },
+        { symbol: '011115.KS', name: 'CJ ENM', alias: '씨제이이엔엠' },
+        { symbol: '090430.KS', name: '아모레퍼시픽', alias: 'Amorepacific' },
+        { symbol: '051900.KS', name: 'LG생활건강', alias: 'LG H&H' },
+        { symbol: '383220.KS', name: 'F&F', alias: '에프앤에프' },
+        { symbol: '111770.KS', name: '영원무역', alias: 'Youngone' },
+        { symbol: '081660.KS', name: '휠라홀딩스', alias: 'Fila' },
+        { symbol: '004170.KS', name: '신세계', alias: 'Shinsegae' },
+        { symbol: '069960.KS', name: '현대백화점', alias: 'Hyundai Dept' },
+        { symbol: '139480.KS', name: '이마트', alias: 'E-Mart' },
+        { symbol: '000120.KS', name: 'CJ대한통운', alias: 'CJ Logistics' },
+        { symbol: '033780.KS', name: 'KT&G', alias: '케이티앤지' },
 
-        // Game / Gaming
-        { symbol: '259960.KS', name: 'Krafton' },
-        { symbol: '036570.KS', name: 'NCSoft' },
-        { symbol: '251270.KS', name: 'Netmarble' },
-        { symbol: '263750.KQ', name: 'Pearl Abyss' },
-        { symbol: '293490.KQ', name: 'Kakao Games' },
+        // 금융 / 지주사
+        { symbol: '105560.KS', name: 'KB금융', alias: 'KB Financial' },
+        { symbol: '055550.KS', name: '신한지주', alias: 'Shinhan' },
+        { symbol: '086790.KS', name: '하나금융지주', alias: 'Hana' },
+        { symbol: '316140.KS', name: '우리금융지주', alias: 'Woori' },
+        { symbol: '323410.KS', name: '카카오뱅크', alias: 'Kakao Bank' },
+        { symbol: '032830.KS', name: '삼성생명', alias: 'Samsung Life' },
+        { symbol: '000810.KS', name: '삼성화재', alias: 'Samsung F&M' },
+        { symbol: '138040.KS', name: '메리츠금융지주', alias: 'Meritz' },
+        { symbol: '006800.KS', name: '미래에셋증권', alias: 'Mirae Asset' },
+        { symbol: '005490.KS', name: 'POSCO홀딩스', alias: 'POSCO' },
+        { symbol: '010130.KS', name: '고려아연', alias: 'Korea Zinc' },
+        { symbol: '028260.KS', name: '삼성물산', alias: 'Samsung C&T' },
+        { symbol: '015760.KS', name: '한국전력', alias: 'KEPCO' },
 
-        // Finance / Banking
-        { symbol: '105560.KS', name: 'KB Financial' },
-        { symbol: '055550.KS', name: 'Shinhan Financial' },
-        { symbol: '086790.KS', name: 'Hana Financial' },
-        { symbol: '316140.KS', name: 'Woori Financial' },
-        { symbol: '323410.KS', name: 'Kakao Bank' },
-        { symbol: '032830.KS', name: 'Samsung Life' },
-        { symbol: '006800.KS', name: 'Mirae Asset Sec.' },
+        // 통신 / 게임
+        { symbol: '017670.KS', name: 'SK텔레콤', alias: 'SK Telecom' },
+        { symbol: '030200.KS', name: 'KT', alias: '케이티' },
+        { symbol: '032640.KS', name: 'LG유플러스', alias: 'LG Uplus' },
+        { symbol: '259960.KS', name: '크래프톤', alias: 'Krafton' },
+        { symbol: '036570.KS', name: '엔씨소프트', alias: 'NCSoft' },
+        { symbol: '251270.KS', name: '넷마블', alias: 'Netmarble' },
+        { symbol: '263750.KQ', name: '펄어비스', alias: 'Pearl Abyss' },
+        { symbol: '293490.KQ', name: '카카오게임즈', alias: 'Kakao Games' },
+        { symbol: '078340.KQ', name: '컴투스', alias: 'Com2uS' },
 
-        // Heavy Industry / Manufacturing / Logistics
-        { symbol: '005490.KS', name: 'POSCO Holdings' },
-        { symbol: '010130.KS', name: 'Korea Zinc' },
-        { symbol: '028260.KS', name: 'Samsung C&T' },
-        { symbol: '012450.KS', name: 'Hanwha Aerospace' },
-        { symbol: '047810.KS', name: 'KAI' },
-        { symbol: '011200.KS', name: 'HMM' },
-        { symbol: '015760.KS', name: 'KEPCO' },
-        { symbol: '090430.KS', name: 'Amorepacific' },
-
-        // Telecom
-        { symbol: '017670.KS', name: 'SK Telecom' },
-        { symbol: '030200.KS', name: 'KT' },
-        { symbol: '032640.KS', name: 'LG Uplus' },
-
-        // Popular ETFs
-        { symbol: '069500.KS', name: 'KODEX 200' },
-        { symbol: '114800.KS', name: 'KODEX Inverse' },
-        { symbol: '314250.KS', name: 'TIGER US Tech Top 10' },
-        { symbol: '360750.KS', name: 'TIGER S&P500' },
-        { symbol: '252670.KS', name: 'KODEX 200 Futures Invr2X' },
-
-        // Crypto (Upbit)
-        { symbol: 'BTC.KRW', name: 'Bitcoin (BTC)' },
-        { symbol: 'ETH.KRW', name: 'Ethereum (ETH)' },
-        { symbol: 'XRP.KRW', name: 'Ripple (XRP)' },
-        { symbol: 'SOL.KRW', name: 'Solana (SOL)' },
-        { symbol: 'DOGE.KRW', name: 'Dogecoin' },
-        { symbol: 'LINK.KRW', name: 'Chainlink' },
-        { symbol: 'SHIB.KRW', name: 'Shiba Inu' }
+        // 지수 ETF & 가상화폐 (Upbit)
+        { symbol: '069500.KS', name: 'KODEX 200', alias: '코덱스200' },
+        { symbol: '314250.KS', name: 'TIGER Top10', alias: '타이거 탑10' },
+        { symbol: '122630.KS', name: 'KODEX 레버리지', alias: '레버리지' },
+        { symbol: '252670.KS', name: 'KODEX 200선물인버스2X', alias: '곱버스' },
+        { symbol: 'BTC.KRW', name: '비트코인 (BTC)', alias: 'Bitcoin' },
+        { symbol: 'ETH.KRW', name: '이더리움 (ETH)', alias: 'Ethereum' },
+        { symbol: 'XRP.KRW', name: '리플 (XRP)', alias: 'Ripple' },
+        { symbol: 'SOL.KRW', name: '솔라나 (SOL)', alias: 'Solana' },
+        { symbol: 'DOGE.KRW', name: '도지코인 (DOGE)', alias: 'Dogecoin' }
     ];
 
     const defaultStocks = ['005930.KS', '000660.KS', '005380.KS'];
@@ -418,10 +441,14 @@ export default function MarketWidget() {
         saveStocksToCloud(newSaved);
     };
 
-    const searchResults = KOREAN_TOP_STOCKS.filter(stock =>
-        stock.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        stock.symbol.includes(searchTerm)
-    ).filter(stock => !savedStockSymbols.includes(stock.symbol));
+    const searchResults = KOREAN_TOP_STOCKS.filter(stock => {
+        const term = searchTerm.toLowerCase().trim();
+        return (
+            stock.name.toLowerCase().includes(term) ||
+            (stock.alias && stock.alias.toLowerCase().includes(term)) ||
+            stock.symbol.toLowerCase().includes(term)
+        );
+    }).filter(stock => !savedStockSymbols.includes(stock.symbol));
 
     const formatCurrency = (val, currency = '') => {
         if (!val) return '...';

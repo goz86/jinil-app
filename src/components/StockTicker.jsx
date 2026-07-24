@@ -184,27 +184,27 @@ export default function StockTicker() {
 
     if (loading && stocks.length === 0) {
         return (
-            <div className="w-full bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 h-9 flex items-center px-8 overflow-hidden marquee-container z-50">
-                <span className="text-[11px] font-bold text-gray-400 dark:text-gray-500 animate-pulse uppercase tracking-tighter">Đang tải dữ liệu thị trường (Loading Market Data)...</span>
+            <div className="w-full bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 h-10 flex items-center px-8 overflow-hidden marquee-container z-50">
+                <span className="text-xs font-bold text-gray-400 dark:text-gray-500 animate-pulse uppercase tracking-tighter">Đang tải dữ liệu thị trường (Loading Market Data)...</span>
             </div>
         );
     }
 
     return (
-        <div className="w-full bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 h-9 flex items-center overflow-hidden marquee-container z-50">
+        <div className="w-full bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 h-10 flex items-center overflow-hidden marquee-container z-50">
             <div className="animate-marquee">
                 {/* 
                   Double the items for seamless loop (0 to -50% translateX)
                   The .animate-marquee class in index.css handles display: flex and white-space: nowrap
                 */}
                 {stocks.concat(stocks).map((stock, idx) => (
-                    <div key={`${stock.symbol}-${idx}`} className="flex items-center px-8 border-r border-gray-100 dark:border-gray-700 h-9 shrink-0">
-                        <span className="text-[11px] font-bold text-gray-500 dark:text-gray-400 mr-2 uppercase tracking-tighter whitespace-nowrap">{stock.name}</span>
-                        <span className="text-[12px] font-bold text-gray-800 dark:text-white mr-2 whitespace-nowrap">
+                    <div key={`${stock.symbol}-${idx}`} className="flex items-center px-8 border-r border-gray-100 dark:border-gray-700 h-10 shrink-0">
+                        <span className="text-[13px] font-extrabold text-gray-700 dark:text-gray-200 mr-2.5 tracking-tight whitespace-nowrap">{stock.name}</span>
+                        <span className="text-[14px] font-black text-gray-900 dark:text-white mr-2.5 whitespace-nowrap">
                             {formatCurrency(stock.price, stock.symbol)} 
-                            <span className="text-[9px] text-gray-400 ml-1 font-medium">KRW</span>
+                            <span className="text-[10px] text-gray-400 ml-1 font-semibold">KRW</span>
                         </span>
-                        <span className={`text-[11px] font-bold ${stock.change >= 0 ? 'text-red-500' : 'text-blue-500'} whitespace-nowrap`}>
+                        <span className={`text-[13px] font-extrabold ${stock.change >= 0 ? 'text-red-500' : 'text-blue-500'} whitespace-nowrap`}>
                             {stock.change >= 0 ? '▲' : '▼'} {Math.abs(stock.change).toFixed(2)}%
                         </span>
                     </div>
