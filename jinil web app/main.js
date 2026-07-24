@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, net, Notification, dialog, clipboard, shell } from 'electron';
+import { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, net, Notification, dialog, clipboard, shell, screen } from 'electron';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -305,11 +305,41 @@ if (process.platform === 'win32') {
     app.setAppUserModelId("com.jinil.todos");
 }
 
+function positionMiniNextToMain() {
+    if (!mainWindow || !miniWindow) return;
+    try {
+        if (!mainWindow.isVisible() || mainWindow.isMinimized()) return;
+        const [mainX, mainY] = mainWindow.getPosition();
+        const [mainWidth, mainHeight] = mainWindow.getSize();
+        const primaryDisplay = screen.getPrimaryDisplay();
+        const workArea = primaryDisplay.workArea;
+
+        const miniBounds = miniWindow.getBounds();
+        const miniWidth = miniBounds.width || 300;
+        const miniHeight = Math.min(mainHeight, workArea.height - 40);
+
+        let nextX = mainX + mainWidth + 12;
+        if (nextX + miniWidth > workArea.x + workArea.width) {
+            nextX = Math.max(workArea.x + 10, mainX - miniWidth - 12);
+        }
+
+        miniWindow.setBounds({
+            x: Math.round(nextX),
+            y: Math.round(mainY),
+            width: Math.round(miniWidth),
+            height: Math.round(miniHeight)
+        });
+    } catch (err) {
+        console.error("Positioning mini window error:", err);
+    }
+}
+
 function createMiniWindow() {
     if (miniWindow) {
         if (miniWindow.isMinimized()) miniWindow.restore();
         miniWindow.show();
         miniWindow.focus();
+        positionMiniNextToMain();
         return;
     }
     const isDev = !app.isPackaged;
@@ -345,11 +375,34 @@ function createWindow() {
 
     mainWindow.once('ready-to-show', () => {
         mainWindow.show();
+        createMiniWindow();
+        setTimeout(positionMiniNextToMain, 300);
     });
-    mainWindow.on('closed', () => { console.log('[Main] mainWindow closed'); mainWindow = null; });
+
+    mainWindow.on('move', positionMiniNextToMain);
+    mainWindow.on('resize', positionMiniNextToMain);
+    mainWindow.on('show', () => {
+        if (!miniWindow) {
+            createMiniWindow();
+        } else {
+            miniWindow.show();
+        }
+        setTimeout(positionMiniNextToMain, 200);
+    });
+
+    mainWindow.on('closed', () => { 
+        console.log('[Main] mainWindow closed'); 
+        mainWindow = null; 
+        if (miniWindow) { miniWindow.close(); miniWindow = null; }
+    });
+
     mainWindow.on('close', (event) => {
         console.log('[Main] close event triggered, isQuitting:', isQuitting);
-        if (!isQuitting) { event.preventDefault(); mainWindow.hide(); }
+        if (!isQuitting) { 
+            event.preventDefault(); 
+            mainWindow.hide(); 
+            if (miniWindow) miniWindow.hide();
+        }
         return false;
     });
 
@@ -605,13 +658,19 @@ if (!gotTheLock) {
             createWindow();
             createTray();
             const isDev = !app.isPackaged;
+            if (process.platform === 'win32' && !isDev) {
+                try {
+                    app.setLoginItemSettings({ openAtLogin: true, path: app.getPath('exe'), args: [] });
+                } catch (e) {
+                    console.error('Failed to set login item settings:', e);
+                }
+            }
             if (!isDev) {
                 try {
                     const configPath = path.join(app.getPath('userData'), 'preferences.json');
                     try {
                         await fs.access(configPath);
                     } catch {
-                        app.setLoginItemSettings({ openAtLogin: true, path: app.getPath('exe'), args: [] });
                         await fs.writeFile(configPath, JSON.stringify({ autostartSet: true }));
                     }
                     autoUpdater.autoDownload = true;
