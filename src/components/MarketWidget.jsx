@@ -487,7 +487,7 @@ export default function MarketWidget() {
                     className="bg-gray-50 dark:bg-gray-700 p-3 rounded-2xl border border-gray-100 dark:border-gray-600 cursor-pointer hover:bg-blue-50/70 dark:hover:bg-gray-600 transition"
                     title="USD/KRW 클릭하여 차트 보기"
                 >
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">USD/KRW 📈</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">USD/KRW</p>
                     <p className="text-sm font-bold text-gray-800 dark:text-white">₩{formatCurrency(marketData.krwUsd)}</p>
                 </div>
                 <div 
@@ -495,7 +495,7 @@ export default function MarketWidget() {
                     className="bg-gray-50 dark:bg-gray-700 p-3 rounded-2xl border border-gray-100 dark:border-gray-600 cursor-pointer hover:bg-blue-50/70 dark:hover:bg-gray-600 transition"
                     title="KRW/VND 클릭하여 차트 보기"
                 >
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">KRW/VND 📈</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">KRW/VND</p>
                     <p className="text-sm font-bold text-gray-800 dark:text-white">₫{formatCurrency(marketData.krwVnd)}</p>
                 </div>
             </div>
@@ -509,7 +509,7 @@ export default function MarketWidget() {
                     <div className="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center mr-2 shadow-sm">
                         <span className="text-white text-xs font-bold">Au</span>
                     </div>
-                    <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">{t('goldPrice')} 📈</p>
+                    <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">{t('goldPrice')}</p>
                 </div>
                 <p className="text-sm font-bold text-yellow-900 dark:text-yellow-200">₩{formatCurrency(marketData.gold)}</p>
             </div>
