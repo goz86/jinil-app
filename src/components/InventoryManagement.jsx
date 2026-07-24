@@ -232,8 +232,10 @@ export default function InventoryManagement({ user }) {
     const handlePrintA4 = () => {
         const printWindow = window.open('', '_blank');
 
-        let tableRows = filteredInventory.map((item, index) => `
-            <tr>
+        let tableRows = filteredInventory.map((item, index) => {
+            const isZero = Number(item.currentStock) === 0;
+            return `
+            <tr class="${isZero ? 'out-of-stock' : ''}">
                 <td style="text-align: center;">${index + 1}</td>
                 <td>${item.date || ''}</td>
                 <td>${item.category || ''}</td>
@@ -241,10 +243,13 @@ export default function InventoryManagement({ user }) {
                 <td>${item.productCode || ''}</td>
                 <td style="text-align: right; color: #2563eb;">${item.stockIn || 0}</td>
                 <td style="text-align: right; color: #dc2626;">${item.stockOut || 0}</td>
-                <td style="text-align: right; font-weight: bold; color: #16a34a;">${item.currentStock || 0}</td>
+                <td style="text-align: center; font-weight: bold; ${isZero ? 'color: #dc2626;' : 'color: #16a34a;'}">
+                    ${isZero ? '<span class="zero-badge">0 (품절)</span>' : (item.currentStock || 0)}
+                </td>
                 <td style="text-align: center;">${item.unit || ''}</td>
             </tr>
-        `).join('');
+        `;
+        }).join('');
 
         const html = `
         <!DOCTYPE html>
@@ -276,9 +281,34 @@ export default function InventoryManagement({ user }) {
                     font-weight: bold; 
                     text-align: center;
                 }
+                /* Highlight Out of Stock (Stock = 0) with Diagonal Hatch & Strong Red Colors */
+                tr.out-of-stock {
+                    background-color: #fee2e2 !important;
+                    background-image: repeating-linear-gradient(45deg, rgba(239, 68, 68, 0.12), rgba(239, 68, 68, 0.12) 10px, transparent 10px, transparent 20px) !important;
+                }
+                tr.out-of-stock td {
+                    color: #991b1b !important;
+                }
+                .zero-badge {
+                    display: inline-block;
+                    background-color: #dc2626 !important;
+                    color: #ffffff !important;
+                    padding: 2px 8px;
+                    border-radius: 4px;
+                    font-weight: 900;
+                    font-size: 11px;
+                }
                 @media print {
                     -webkit-print-color-adjust: exact;
                     print-color-adjust: exact;
+                    tr.out-of-stock {
+                        background-color: #fee2e2 !important;
+                        background-image: repeating-linear-gradient(45deg, rgba(239, 68, 68, 0.15), rgba(239, 68, 68, 0.15) 10px, transparent 10px, transparent 20px) !important;
+                    }
+                    .zero-badge {
+                        background-color: #dc2626 !important;
+                        color: #ffffff !important;
+                    }
                 }
             </style>
         </head>
@@ -297,7 +327,7 @@ export default function InventoryManagement({ user }) {
                         <th style="width: 100px;">상품코드</th>
                         <th style="width: 50px;">입고</th>
                         <th style="width: 50px;">출고</th>
-                        <th style="width: 50px;">재고</th>
+                        <th style="width: 60px;">재고</th>
                         <th style="width: 40px;">단위</th>
                     </tr>
                 </thead>
@@ -506,7 +536,7 @@ export default function InventoryManagement({ user }) {
                                 className={`
                                 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group
                                 ${draggedItemIndex === index ? 'opacity-40 bg-blue-50' : ''}
-                                ${Number(item.currentStock) === 0 ? 'bg-red-50 dark:bg-red-900/10' : ''}
+                                ${Number(item.currentStock) === 0 ? 'bg-red-100/90 dark:bg-red-950/50 border-l-4 border-red-600 text-red-950 dark:text-red-100' : ''}
                                 cursor-grab active:cursor-grabbing
                               `}
                             >
@@ -514,14 +544,24 @@ export default function InventoryManagement({ user }) {
                                     <svg className="w-4 h-4 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8h16M4 16h16" /></svg>
                                     {index + 1}
                                 </td>
-                                <td className="px-4 py-3 text-[10px] text-gray-500 font-mono leading-tight truncate" title={item.date}>{item.date}</td>
+                                <td className="px-4 py-3 text-[10px] text-gray-500 dark:text-gray-400 font-mono leading-tight truncate" title={item.date}>{item.date}</td>
                                 <td className="px-4 py-3 truncate" title={item.category}><span className="bg-gray-100 dark:bg-gray-600 px-2 py-1 rounded text-[10px] font-bold">{item.category}</span></td>
                                 <td className="px-4 py-3 font-bold text-gray-800 dark:text-white truncate" title={item.productName}>{item.productName}</td>
                                 <td className="px-4 py-3 text-blue-500 font-mono text-xs truncate" title={item.productCode}>{item.productCode}</td>
                                 <td className="px-4 py-3 text-center text-blue-600 dark:text-blue-400 font-semibold">{item.stockIn}</td>
                                 <td className="px-4 py-3 text-center text-red-600 dark:text-red-400 font-semibold">{item.stockOut}</td>
-                                <td className={`px-4 py-3 text-center font-bold ${Number(item.currentStock) === 0 ? 'text-red-600 animate-pulse' : 'text-green-600'}`}>{item.currentStock}</td>
-                                <td className="px-4 py-3 text-center text-gray-600">{item.unit || '-'}</td>
+                                <td className="px-4 py-3 text-center">
+                                    {Number(item.currentStock) === 0 ? (
+                                        <span className="inline-flex items-center gap-1 bg-red-600 text-white font-extrabold text-xs px-2.5 py-1 rounded-full shadow-sm animate-pulse whitespace-nowrap">
+                                            0 (품절)
+                                        </span>
+                                    ) : (
+                                        <span className="font-extrabold text-green-600 dark:text-green-400">
+                                            {item.currentStock}
+                                        </span>
+                                    )}
+                                </td>
+                                <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-300 font-medium">{item.unit || '-'}</td>
                                 <td className="px-4 py-3 text-right text-base">
                                     <div className="flex justify-end gap-2">
                                         <button onClick={() => handleEdit(item)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"><svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
