@@ -91,13 +91,13 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
     setLoading(false);
   }, [onRefreshCount]);
 
+  const [syncProgress, setSyncProgress] = useState(null);
+
   useEffect(() => {
     if (isOpen) {
       void fetchInTransitShipments();
     }
   }, [isOpen, fetchInTransitShipments]);
-
-  if (!isOpen) return null;
 
   const filteredShipments = shipments.filter((s) => {
     if (!hideCancelledAndPreparing) return true;
@@ -105,23 +105,7 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
     return label !== '반품취소' && label !== '배송 준비 중';
   });
 
-  const handleCopyTrackingNumber = (number) => {
-    if (!number) return;
-    navigator.clipboard.writeText(number);
-    Swal.fire({
-      icon: 'success',
-      title: '운송장번호가 복사되었습니다',
-      text: number,
-      toast: true,
-      position: 'top-end',
-      showConfirmButton: false,
-      timer: 2000,
-    });
-  };
-
-  const [syncProgress, setSyncProgress] = useState(null);
-
-  const handleManualSync = async () => {
+  const handleManualSync = useCallback(async () => {
     if (syncing || filteredShipments.length === 0) return;
     setSyncing(true);
     const totalCount = filteredShipments.length;
@@ -155,18 +139,35 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
       setSyncing(false);
       setSyncProgress(null);
     }
-  };
+  }, [syncing, filteredShipments, fetchInTransitShipments]);
 
   useEffect(() => {
+    if (!isOpen) return;
     // 15분마다 전체 배송상태 자동 동기화
     const interval = setInterval(() => {
       if (filteredShipments.length > 0 && !syncing) {
-        handleManualSync();
+        void handleManualSync();
       }
     }, 15 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [filteredShipments, syncing]);
+  }, [isOpen, filteredShipments, syncing, handleManualSync]);
+
+  if (!isOpen) return null;
+
+  const handleCopyTrackingNumber = (number) => {
+    if (!number) return;
+    navigator.clipboard.writeText(number);
+    Swal.fire({
+      icon: 'success',
+      title: '운송장번호가 복사되었습니다',
+      text: number,
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      timer: 2000,
+    });
+  };
 
   const handleDeleteShipment = async (id, number) => {
     const result = await Swal.fire({
