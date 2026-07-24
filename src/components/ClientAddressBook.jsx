@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { db } from '../firebase';
 import { collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, doc, orderBy, serverTimestamp } from 'firebase/firestore';
+import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
 import Swal from 'sweetalert2';
 
@@ -65,16 +66,42 @@ export default function ClientAddressBook({ user }) {
     });
 
     useEffect(() => {
-        // Remove server-side orderBy to ensure docs missing 'sortIndex' aren't hidden
-        const q = query(collection(db, 'clients'));
+        let isMounted = true;
 
-        const unsubscribe = onSnapshot(q,
-            { includeMetadataChanges: true },
-            (snapshot) => {
-                let data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const loadCombinedClients = async () => {
+            let supabasePartners = [];
+            try {
+                const { data, error } = await supabase
+                    .from('partners')
+                    .select('*')
+                    .order('company_name', { ascending: true });
 
-                // Sort locally based on current sortField
-                data.sort((a, b) => {
+                if (!error && data) {
+                    supabasePartners = data.map((p) => ({
+                        id: p.id,
+                        isSupabase: true,
+                        name: p.company_name || p.partner_name || '',
+                        representative: p.representative_name || '',
+                        contactName: p.contact_person || '',
+                        phone: p.phone || '',
+                        address: p.address || p.default_address || '',
+                        sortIndex: 0,
+                    }));
+                }
+            } catch (err) {
+                console.error("Supabase load error:", err);
+            }
+
+            const q = query(collection(db, 'clients'));
+            onSnapshot(q, { includeMetadataChanges: true }, (snapshot) => {
+                const firestoreData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+                // Combine Supabase partners and Firestore clients (avoid duplicates by name)
+                const existingNames = new Set(firestoreData.map(c => c.name?.trim().toLowerCase()));
+                const uniqueSupabase = supabasePartners.filter(p => !existingNames.has(p.name?.trim().toLowerCase()));
+                let merged = [...firestoreData, ...uniqueSupabase];
+
+                merged.sort((a, b) => {
                     if (sortField === 'custom') {
                         const indexA = a.sortIndex !== undefined ? a.sortIndex : Number.MAX_SAFE_INTEGER;
                         const indexB = b.sortIndex !== undefined ? b.sortIndex : Number.MAX_SAFE_INTEGER;
@@ -88,28 +115,47 @@ export default function ClientAddressBook({ user }) {
                     }
                 });
 
-                setClients(data);
-                setLoading(false);
-            },
-            (error) => {
-                console.error("Snapshot error:", error);
-                setLoading(false);
-            }
-        );
-        return () => unsubscribe();
+                if (isMounted) {
+                    setClients(merged);
+                    setLoading(false);
+                }
+            });
+        };
+
+        void loadCombinedClients();
+        return () => { isMounted = false; };
     }, [sortField, sortOrder]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
+            // 1. Sync with Supabase partners table
+            const supabasePayload = {
+                company_name: formData.name,
+                representative_name: formData.representative,
+                contact_person: formData.contactName,
+                phone: formData.phone,
+                address: formData.address,
+                default_address: formData.address,
+            };
+
             if (editingId) {
-                await updateDoc(doc(db, 'clients', editingId), {
-                    ...formData,
-                    updatedAt: new Date()
-                });
+                try {
+                    await supabase.from('partners').update(supabasePayload).eq('id', editingId);
+                } catch (e) {}
+
+                try {
+                    await updateDoc(doc(db, 'clients', editingId), {
+                        ...formData,
+                        updatedAt: new Date()
+                    });
+                } catch (e) {}
                 Swal.fire(t('success'), '', 'success');
             } else {
-                // For new docs, put them at the end
+                try {
+                    await supabase.from('partners').insert([supabasePayload]);
+                } catch (e) {}
+
                 const maxSortIndex = clients.length > 0
                     ? Math.max(...clients.map(c => c.sortIndex || 0))
                     : 0;
@@ -188,7 +234,13 @@ export default function ClientAddressBook({ user }) {
             cancelButtonText: t('no')
         });
         if (result.isConfirmed) {
-            await deleteDoc(doc(db, 'clients', id));
+            try {
+                await supabase.from('partners').delete().eq('id', id);
+            } catch (e) {}
+            try {
+                await deleteDoc(doc(db, 'clients', id));
+            } catch (e) {}
+            setClients((prev) => prev.filter((c) => c.id !== id));
         }
     };
 

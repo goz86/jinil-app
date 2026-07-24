@@ -16,6 +16,7 @@
     "electron:build": "npm run build && cross-env CSC_SKIP=true electron-builder"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.110.8",
     "electron-updater": "^6.8.3",
     "xlsx": "^0.18.5"
   },

@@ -1,12 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import MarketWidget from './MarketWidget';
 import DeliveryWidget from './DeliveryWidget';
+import InTransitShipmentModal from './InTransitShipmentModal';
+import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
 
 export default function MarketDeliveryTabs({ selectedDate, deliveryCount, deliveries, onOpenClients, onOpenInventory, onOpenLabelPrint }) {
     const { t } = useLanguage();
     const [activeTab, setActiveTab] = useState('market'); // Only for market and delivery
-    const deliveryLabel = `${t('delivery')} (${deliveryCount || 0})`;
+    const [isInTransitModalOpen, setIsInTransitModalOpen] = useState(false);
+    const [liveActiveCount, setLiveActiveCount] = useState(null);
+
+    useEffect(() => {
+        let isMounted = true;
+        const fetchCount = async () => {
+            try {
+                const { count, error } = await supabase
+                    .from('b2b_shipments')
+                    .select('*', { count: 'exact', head: true })
+                    .neq('tracking_status', 'Delivered');
+
+                if (!error && count !== null && isMounted) {
+                    setLiveActiveCount(count);
+                }
+            } catch (err) {
+                console.error('Failed to fetch live shipment count:', err);
+            }
+        };
+        void fetchCount();
+        const interval = setInterval(() => void fetchCount(), 30000);
+        return () => {
+            isMounted = false;
+            clearInterval(interval);
+        };
+    }, []);
+
+    const countToDisplay = liveActiveCount !== null ? liveActiveCount : (deliveryCount || 0);
+    const deliveryLabel = `${t('delivery')} (${countToDisplay})`;
 
     const inlineTabs = [
         {
@@ -79,7 +109,12 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
                 {inlineTabs.map((tab) => (
                     <button
                         key={tab.key}
-                        onClick={() => setActiveTab(tab.key)}
+                        onClick={() => {
+                            setActiveTab(tab.key);
+                            if (tab.key === 'delivery') {
+                                setIsInTransitModalOpen(true);
+                            }
+                        }}
                         className={`flex flex-col items-center justify-center gap-1.5 py-3 px-2 text-[12px] font-bold transition-all duration-300 border-b border-r last:border-r-0 border-gray-50 dark:border-gray-700 relative
                             ${activeTab === tab.key
                                 ? 'text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/10'
@@ -114,9 +149,20 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
                 {activeTab === 'market' ? (
                     <MarketWidget />
                 ) : (
-                    <DeliveryWidget selectedDate={selectedDate} deliveries={deliveries} />
+                    <DeliveryWidget
+                        selectedDate={selectedDate}
+                        deliveries={deliveries}
+                        onOpenInTransitModal={() => setIsInTransitModalOpen(true)}
+                    />
                 )}
             </div>
+
+            {/* In-Transit Shipment Popup Modal */}
+            <InTransitShipmentModal
+                isOpen={isInTransitModalOpen}
+                onClose={() => setIsInTransitModalOpen(false)}
+                onRefreshCount={(count) => setLiveActiveCount(count)}
+            />
         </div>
     );
 }
