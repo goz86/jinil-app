@@ -42,11 +42,16 @@ function sanitizeTimeSeries(items) {
     if (!Array.isArray(items) || items.length === 0) return [];
     const map = new Map();
     items.forEach(item => {
-        if (item && item.time) {
+        if (item && item.time !== undefined && item.time !== null) {
             map.set(item.time, item);
         }
     });
-    return Array.from(map.values()).sort((a, b) => (a.time > b.time ? 1 : a.time < b.time ? -1 : 0));
+    return Array.from(map.values()).sort((a, b) => {
+        if (typeof a.time === 'number' && typeof b.time === 'number') {
+            return a.time - b.time;
+        }
+        return String(a.time).localeCompare(String(b.time));
+    });
 }
 
 function StockChartContent({ stock, isOpen, onClose }) {
@@ -54,7 +59,7 @@ function StockChartContent({ stock, isOpen, onClose }) {
     const chartInstanceRef = useRef(null);
 
     const [chartType, setChartType] = useState('candlestick'); // 'candlestick' | 'area'
-    const [timeframe, setTimeframe] = useState('6M'); // '1W', '1M', '3M', '6M', '1Y'
+    const [interval, setIntervalVal] = useState('1D'); // '5M', '15M', '1H', '4H', '1D', '1W'
     const [chartData, setChartData] = useState({ candles: [], volumes: [] });
     const [loading, setLoading] = useState(true);
     const [hoverData, setHoverData] = useState(null);
@@ -69,18 +74,7 @@ function StockChartContent({ stock, isOpen, onClose }) {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, onClose]);
 
-    const getDaysForTimeframe = (tf) => {
-        switch (tf) {
-            case '1W': return 7;
-            case '1M': return 30;
-            case '3M': return 90;
-            case '6M': return 180;
-            case '1Y': return 365;
-            default: return 180;
-        }
-    };
-
-    // Fetch candlestick & volume data
+    // Fetch candlestick & volume data based on interval
     useEffect(() => {
         if (!isOpen || !stock) return;
 
@@ -89,28 +83,42 @@ function StockChartContent({ stock, isOpen, onClose }) {
         setHoverData(null);
 
         const fetchHistory = async () => {
-            const days = getDaysForTimeframe(timeframe);
-            const now = Math.floor(Date.now() / 1000);
-            const period1 = now - (days * 24 * 3600);
-
             const sym = String(stock.symbol || stock.code || '').toUpperCase().trim();
             const name = stock.name || '';
+            const isIntraday = ['5M', '15M', '1H', '4H'].includes(interval);
 
             try {
                 // 1. Upbit API for Crypto (.KRW)
                 if (sym.includes('.KRW')) {
                     const coin = sym.replace('.KRW', '');
-                    const res = await fetch(`https://api.upbit.com/v1/candles/days?market=KRW-${coin}&count=${Math.min(days, 200)}`);
+                    let upbitEndpoint = '';
+
+                    switch (interval) {
+                        case '5M': upbitEndpoint = `candles/minutes/5?market=KRW-${coin}&count=200`; break;
+                        case '15M': upbitEndpoint = `candles/minutes/15?market=KRW-${coin}&count=200`; break;
+                        case '1H': upbitEndpoint = `candles/minutes/60?market=KRW-${coin}&count=200`; break;
+                        case '4H': upbitEndpoint = `candles/minutes/240?market=KRW-${coin}&count=200`; break;
+                        case '1W': upbitEndpoint = `candles/weeks?market=KRW-${coin}&count=100`; break;
+                        default: upbitEndpoint = `candles/days?market=KRW-${coin}&count=200`; break;
+                    }
+
+                    const res = await fetch(`https://api.upbit.com/v1/${upbitEndpoint}`);
                     const data = await res.json();
                     if (Array.isArray(data) && data.length > 0 && isMounted) {
                         const rawCandles = [];
                         const rawVolumes = [];
 
-                        data.forEach((c) => {
-                            const dateStr = c.candle_date_time_kms ? c.candle_date_time_kms.split('T')[0] : c.candle_date_time_utc.split('T')[0];
+                        [...data].reverse().forEach((c) => {
+                            let timeVal;
+                            if (isIntraday) {
+                                timeVal = Math.floor(new Date(c.candle_date_time_utc + 'Z').getTime() / 1000);
+                            } else {
+                                timeVal = c.candle_date_time_kms ? c.candle_date_time_kms.split('T')[0] : c.candle_date_time_utc.split('T')[0];
+                            }
+
                             const isUp = c.trade_price >= c.opening_price;
                             rawCandles.push({
-                                time: dateStr,
+                                time: timeVal,
                                 open: c.opening_price,
                                 high: c.high_price,
                                 low: c.low_price,
@@ -118,7 +126,7 @@ function StockChartContent({ stock, isOpen, onClose }) {
                                 value: c.trade_price,
                             });
                             rawVolumes.push({
-                                time: dateStr,
+                                time: timeVal,
                                 value: c.candle_acc_trade_volume,
                                 color: isUp ? 'rgba(239, 68, 68, 0.4)' : 'rgba(59, 130, 246, 0.4)'
                             });
@@ -141,9 +149,21 @@ function StockChartContent({ stock, isOpen, onClose }) {
                     else if (sym === 'GOLD' || sym === 'GC=F' || name.includes('금')) yahooSymbol = 'GC=F';
                 }
 
+                let yahooInterval = '1d';
+                let yahooRange = '6m';
+
+                switch (interval) {
+                    case '5M': yahooInterval = '5m'; yahooRange = '1d'; break;
+                    case '15M': yahooInterval = '15m'; yahooRange = '5d'; break;
+                    case '1H': yahooInterval = '60m'; yahooRange = '1mo'; break;
+                    case '4H': yahooInterval = '60m'; yahooRange = '3mo'; break;
+                    case '1W': yahooInterval = '1wk'; yahooRange = '1y'; break;
+                    default: yahooInterval = '1d'; yahooRange = '6m'; break;
+                }
+
                 const targetUrl = import.meta.env.DEV
-                    ? `/api/yahoo/${yahooSymbol}?period1=${period1}&period2=${now}&interval=1d`
-                    : `https://query2.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?period1=${period1}&period2=${now}&interval=1d`;
+                    ? `/api/yahoo/${yahooSymbol}?interval=${yahooInterval}&range=${yahooRange}`
+                    : `https://query2.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=${yahooInterval}&range=${yahooRange}`;
 
                 const res = await fetch(targetUrl);
                 if (res.ok) {
@@ -163,11 +183,16 @@ function StockChartContent({ stock, isOpen, onClose }) {
 
                         for (let i = 0; i < timestamps.length; i++) {
                             if (closes[i] !== null && closes[i] !== undefined && opens[i] !== null && opens[i] !== undefined) {
-                                const dateObj = new Date(timestamps[i] * 1000);
-                                const y = dateObj.getFullYear();
-                                const m = String(dateObj.getMonth() + 1).padStart(2, '0');
-                                const d = String(dateObj.getDate()).padStart(2, '0');
-                                const dateStr = `${y}-${m}-${d}`;
+                                let timeVal;
+                                if (isIntraday) {
+                                    timeVal = timestamps[i]; // seconds timestamp
+                                } else {
+                                    const dateObj = new Date(timestamps[i] * 1000);
+                                    const y = dateObj.getFullYear();
+                                    const m = String(dateObj.getMonth() + 1).padStart(2, '0');
+                                    const d = String(dateObj.getDate()).padStart(2, '0');
+                                    timeVal = `${y}-${m}-${d}`;
+                                }
 
                                 const o = Math.round(opens[i]);
                                 const h = Math.round(highs[i]);
@@ -177,7 +202,7 @@ function StockChartContent({ stock, isOpen, onClose }) {
                                 const isUp = c >= o;
 
                                 rawCandles.push({
-                                    time: dateStr,
+                                    time: timeVal,
                                     open: o,
                                     high: h,
                                     low: l,
@@ -185,7 +210,7 @@ function StockChartContent({ stock, isOpen, onClose }) {
                                     value: c
                                 });
                                 rawVolumes.push({
-                                    time: dateStr,
+                                    time: timeVal,
                                     value: v,
                                     color: isUp ? 'rgba(239, 68, 68, 0.4)' : 'rgba(59, 130, 246, 0.4)'
                                 });
@@ -211,13 +236,11 @@ function StockChartContent({ stock, isOpen, onClose }) {
                 const basePrice = stock.price || 100000;
                 const rawCandles = [];
                 const rawVolumes = [];
-                for (let i = days; i >= 0; i--) {
+                const count = isIntraday ? 60 : 120;
+                for (let i = count; i >= 0; i--) {
                     const d = new Date();
-                    d.setDate(d.getDate() - i);
-                    const y = d.getFullYear();
-                    const m = String(d.getMonth() + 1).padStart(2, '0');
-                    const day = String(d.getDate()).padStart(2, '0');
-                    const dateStr = `${y}-${m}-${day}`;
+                    d.setMinutes(d.getMinutes() - i * (interval === '5M' ? 5 : interval === '15M' ? 15 : 60));
+                    const timeVal = isIntraday ? Math.floor(d.getTime() / 1000) : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
                     const randomVar = (Math.random() - 0.49) * (basePrice * 0.02);
                     const c = Math.max(100, Math.round(basePrice + randomVar));
@@ -226,8 +249,8 @@ function StockChartContent({ stock, isOpen, onClose }) {
                     const l = Math.min(o, c) - Math.round(Math.random() * 500);
                     const isUp = c >= o;
 
-                    rawCandles.push({ time: dateStr, open: o, high: h, low: l, close: c, value: c });
-                    rawVolumes.push({ time: dateStr, value: Math.floor(Math.random() * 50000), color: isUp ? 'rgba(239, 68, 68, 0.4)' : 'rgba(59, 130, 246, 0.4)' });
+                    rawCandles.push({ time: timeVal, open: o, high: h, low: l, close: c, value: c });
+                    rawVolumes.push({ time: timeVal, value: Math.floor(Math.random() * 50000), color: isUp ? 'rgba(239, 68, 68, 0.4)' : 'rgba(59, 130, 246, 0.4)' });
                 }
                 setChartData({
                     candles: sanitizeTimeSeries(rawCandles),
@@ -239,7 +262,7 @@ function StockChartContent({ stock, isOpen, onClose }) {
 
         fetchHistory();
         return () => { isMounted = false; };
-    }, [isOpen, stock, timeframe]);
+    }, [isOpen, stock, interval]);
 
     // Statistics calculation
     const stats = useMemo(() => {
@@ -256,12 +279,14 @@ function StockChartContent({ stock, isOpen, onClose }) {
         return { min, max, first, last, change, changePct };
     }, [chartData]);
 
-    // Initialize TradingView lightweight-charts with v5 API: chart.addSeries(CandlestickSeries, ...)
+    // Initialize TradingView lightweight-charts with v5 API
     useEffect(() => {
         if (loading || !chartContainerRef.current || !chartData.candles || chartData.candles.length === 0) return;
 
         try {
             chartContainerRef.current.innerHTML = '';
+
+            const isIntraday = ['5M', '15M', '1H', '4H'].includes(interval);
 
             const chart = createChart(chartContainerRef.current, {
                 width: chartContainerRef.current.clientWidth || 800,
@@ -365,13 +390,22 @@ function StockChartContent({ stock, isOpen, onClose }) {
         } catch (err) {
             console.error("Error building TradingView chart:", err);
         }
-    }, [chartData, chartType, loading, stats.changePct]);
+    }, [chartData, chartType, loading, stats.changePct, interval]);
 
     if (!isOpen || !stock) return null;
 
     const formatCurrency = (val) => {
         if (!val && val !== 0) return '-';
         return new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 }).format(val);
+    };
+
+    const formatDisplayTime = (timeVal) => {
+        if (!timeVal) return '';
+        if (typeof timeVal === 'number') {
+            const d = new Date(timeVal * 1000);
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+        }
+        return String(timeVal);
     };
 
     const displayPoint = hoverData || (chartData.candles && chartData.candles.length > 0 ? chartData.candles[chartData.candles.length - 1] : null);
@@ -388,6 +422,15 @@ function StockChartContent({ stock, isOpen, onClose }) {
     };
 
     const externalTvSymbol = getTvExternalSymbol(stock.symbol || stock.code);
+
+    const INTERVAL_LABELS = [
+        { key: '5M', label: '5m' },
+        { key: '15M', label: '15m' },
+        { key: '1H', label: '1h' },
+        { key: '4H', label: '4h' },
+        { key: '1D', label: '1D' },
+        { key: '1W', label: '1W' },
+    ];
 
     return (
         <div 
@@ -419,7 +462,7 @@ function StockChartContent({ stock, isOpen, onClose }) {
                                 </span>
                                 {displayPoint?.time && (
                                     <span className="text-xs text-gray-400 font-mono">
-                                        [{displayPoint.time}]
+                                        [{formatDisplayTime(displayPoint.time)}]
                                     </span>
                                 )}
                             </div>
@@ -451,19 +494,19 @@ function StockChartContent({ stock, isOpen, onClose }) {
                             </button>
                         </div>
 
-                        {/* Timeframe Selector Pills */}
+                        {/* Intraday & Daily Candle Interval Selector Pills (5m, 15m, 1h, 4h, 1D, 1W) */}
                         <div className="flex items-center bg-gray-200 dark:bg-gray-700 p-1 rounded-xl gap-1">
-                            {['1W', '1M', '3M', '6M', '1Y'].map((tf) => (
+                            {INTERVAL_LABELS.map((item) => (
                                 <button
-                                    key={tf}
-                                    onClick={() => setTimeframe(tf)}
+                                    key={item.key}
+                                    onClick={() => setIntervalVal(item.key)}
                                     className={`px-2.5 py-1 text-xs font-extrabold rounded-lg transition-all ${
-                                        timeframe === tf
+                                        interval === item.key
                                             ? 'bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 shadow-sm'
                                             : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
                                     }`}
                                 >
-                                    {tf}
+                                    {item.label}
                                 </button>
                             ))}
                         </div>
@@ -527,15 +570,15 @@ function StockChartContent({ stock, isOpen, onClose }) {
                     {/* Official TradingView Lightweight Chart Canvas Container */}
                     <div className="flex-1 w-full relative min-h-[320px] rounded-2xl bg-gray-50/60 dark:bg-gray-900/40 p-2 border border-gray-100 dark:border-gray-700/60 overflow-hidden">
                         {loading && (
-                            <div className="absolute inset-0 flex items-center justify-center bg-white/70 dark:bg-gray-800/70 z-10 font-bold text-sm text-gray-500">
-                                TradingView 차트 데이터를 불러오는 중...
+                            <div className="absolute inset-0 flex items-center justify-center bg-white/70 dark:bg-gray-800/70 z-10 font-bold text-sm text-gray-500 animate-pulse">
+                                TradingView {interval} 차트 데이터를 불러오는 중...
                             </div>
                         )}
                         <div ref={chartContainerRef} className="w-full h-full" />
                     </div>
 
                     <div className="flex justify-between items-center text-[11px] text-gray-400 dark:text-gray-500 mt-2 px-1">
-                        <span>TradingView Lightweight Charts™ 엔진 (한국 시장 실시간 데이터)</span>
+                        <span>TradingView Lightweight Charts™ (Khung nến: {interval})</span>
                         <span>Shift + 마우스 휠로 축소/확대, 드래그로 이동</span>
                     </div>
                 </div>
