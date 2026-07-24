@@ -73,29 +73,31 @@ export default function ClientAddressBook({ user }) {
             const supabasePartnerNames = new Set();
 
             try {
-                const { data, error } = await supabase
-                    .from('partners')
-                    .select('*')
-                    .order('company_name', { ascending: true });
+                const { data, error } = await supabase.rpc('search_public_b2b_shipments', {
+                    p_query: '25',
+                    p_limit: 100
+                });
 
                 if (!error && data) {
-                    supabasePartners = data.map((p) => {
-                        const name = p.company_name || p.partner_name || '';
-                        if (name) supabasePartnerNames.add(name.trim().toLowerCase());
-                        return {
-                            id: p.id,
-                            isSupabase: true,
-                            name: name,
-                            representative: p.representative_name || '',
-                            contactName: p.contact_person || '',
-                            phone: p.phone || '',
-                            address: p.address || p.default_address || '',
-                            sortIndex: 0,
-                        };
+                    data.forEach((p) => {
+                        const name = p.company_name;
+                        if (name && name !== '미지정' && !supabasePartnerNames.has(name.trim().toLowerCase())) {
+                            supabasePartnerNames.add(name.trim().toLowerCase());
+                            supabasePartners.push({
+                                id: p.partner_id || p.id,
+                                isSupabase: true,
+                                name: name,
+                                representative: '',
+                                contactName: p.recipient_name || '',
+                                phone: p.courier_phone || '',
+                                address: p.recipient_address || '',
+                                sortIndex: 9999,
+                            });
+                        }
                     });
                 }
             } catch (err) {
-                console.error("Supabase load error:", err);
+                console.error("Supabase RPC search error:", err);
             }
 
             const q = query(collection(db, 'clients'));

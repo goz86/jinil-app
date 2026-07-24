@@ -14,31 +14,38 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
     setLoading(true);
     let combined = [];
 
-    // 1. Fetch from Supabase b2b_shipments
+    // 1. Fetch from Supabase via search_public_b2b_shipments RPC
     try {
-      const { data: sbData, error: sbError } = await supabase
-        .from('b2b_shipments')
-        .select('*')
-        .or('is_delivered.eq.false,is_delivered.is.null')
-        .order('pickup_date', { ascending: false })
-        .limit(100);
-
-      if (!sbError && sbData) {
-        sbData.forEach((s) => {
-          if (s.tracking_status_label === '배달완료') return;
-          combined.push({
-            id: s.id || s.tracking_number,
-            shipment_date: s.pickup_date || s.shipment_date || s.created_at || '-',
-            partner_name: s.company_name || s.partner_name || s.partner_code || '미지정',
-            customer_name: s.recipient_name || s.customer_name || s.location_name || '-',
-            tracking_number: s.tracking_number,
-            tracking_status_label: s.tracking_status_label || '배송중',
-            source: 'supabase',
-          });
+      const searchQueries = ['25', '20', '010', '미지정', '서울'];
+      for (const qStr of searchQueries) {
+        const { data: sbData, error: sbError } = await supabase.rpc('search_public_b2b_shipments', {
+          p_query: qStr,
+          p_limit: 100
         });
+
+        if (!sbError && sbData) {
+          sbData.forEach((s) => {
+            if (s.tracking_status_label === '배달완료') return;
+            const trackingNum = s.tracking_number;
+            if (!trackingNum) return;
+
+            const exists = combined.some((c) => c.tracking_number === trackingNum);
+            if (!exists) {
+              combined.push({
+                id: s.id || trackingNum,
+                shipment_date: s.pickup_date || (s.imported_at ? s.imported_at.split('T')[0] : '-'),
+                partner_name: s.company_name || '미지정',
+                customer_name: s.recipient_name || s.location_name || '-',
+                tracking_number: trackingNum,
+                tracking_status_label: s.tracking_status_label || '배송중',
+                source: 'supabase',
+              });
+            }
+          });
+        }
       }
     } catch (err) {
-      console.error('Supabase b2b_shipments fetch error:', err);
+      console.error('Supabase RPC fetch error:', err);
     }
 
     // 2. Fetch from Firebase Firestore deliveries collection

@@ -15,13 +15,14 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
         let isMounted = true;
         const fetchCount = async () => {
             try {
-                const { count, error } = await supabase
-                    .from('b2b_shipments')
-                    .select('*', { count: 'exact', head: true })
-                    .or('is_delivered.eq.false,is_delivered.is.null');
+                const { data, error } = await supabase.rpc('search_public_b2b_shipments', {
+                    p_query: '25',
+                    p_limit: 100
+                });
 
-                if (!error && count !== null && isMounted) {
-                    setLiveActiveCount(count);
+                if (!error && data && isMounted) {
+                    const active = data.filter((s) => s.tracking_status_label !== '배달완료');
+                    setLiveActiveCount(active.length);
                 }
             } catch (err) {
                 console.error('Failed to fetch live shipment count:', err);
