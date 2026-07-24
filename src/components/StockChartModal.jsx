@@ -1,13 +1,61 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { createChart, ColorType } from 'lightweight-charts';
+import React, { useState, useEffect, useRef, useMemo, Component } from 'react';
+import { createChart, ColorType, CandlestickSeries, AreaSeries, HistogramSeries } from 'lightweight-charts';
 
-export default function StockChartModal({ stock, isOpen, onClose }) {
+// React Error Boundary to safeguard against any unexpected chart render crashes
+class ChartErrorBoundary extends Component {
+    constructor(props) {
+        super(props);
+        this.state = { hasError: false, error: null };
+    }
+
+    static getDerivedStateFromError(error) {
+        return { hasError: true, error };
+    }
+
+    componentDidCatch(error, errorInfo) {
+        console.error("StockChartModal Error Catch:", error, errorInfo);
+    }
+
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full text-center shadow-2xl border border-gray-100 dark:border-gray-700">
+                        <p className="text-base font-bold text-red-500 mb-2">차트를 표시하는 중 오류가 발생했습니다.</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">{this.state.error?.message || "알 수 없는 오류"}</p>
+                        <button
+                            onClick={this.props.onClose}
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold text-sm transition"
+                        >
+                            닫기
+                        </button>
+                    </div>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
+
+// Helper to deduplicate and sort time series ascending for lightweight-charts
+function sanitizeTimeSeries(items) {
+    if (!Array.isArray(items) || items.length === 0) return [];
+    const map = new Map();
+    items.forEach(item => {
+        if (item && item.time) {
+            map.set(item.time, item);
+        }
+    });
+    return Array.from(map.values()).sort((a, b) => (a.time > b.time ? 1 : a.time < b.time ? -1 : 0));
+}
+
+function StockChartContent({ stock, isOpen, onClose }) {
     const chartContainerRef = useRef(null);
     const chartInstanceRef = useRef(null);
 
     const [chartType, setChartType] = useState('candlestick'); // 'candlestick' | 'area'
     const [timeframe, setTimeframe] = useState('6M'); // '1W', '1M', '3M', '6M', '1Y'
-    const [chartData, setChartData] = useState([]);
+    const [chartData, setChartData] = useState({ candles: [], volumes: [] });
     const [loading, setLoading] = useState(true);
     const [hoverData, setHoverData] = useState(null);
 
@@ -55,29 +103,31 @@ export default function StockChartModal({ stock, isOpen, onClose }) {
                     const res = await fetch(`https://api.upbit.com/v1/candles/days?market=KRW-${coin}&count=${Math.min(days, 200)}`);
                     const data = await res.json();
                     if (Array.isArray(data) && data.length > 0 && isMounted) {
-                        const candles = [];
-                        const volumes = [];
-                        const sorted = [...data].reverse();
+                        const rawCandles = [];
+                        const rawVolumes = [];
 
-                        sorted.forEach((c) => {
+                        data.forEach((c) => {
                             const dateStr = c.candle_date_time_kms ? c.candle_date_time_kms.split('T')[0] : c.candle_date_time_utc.split('T')[0];
                             const isUp = c.trade_price >= c.opening_price;
-                            candles.push({
+                            rawCandles.push({
                                 time: dateStr,
                                 open: c.opening_price,
                                 high: c.high_price,
                                 low: c.low_price,
                                 close: c.trade_price,
-                                value: c.trade_price, // for area series
+                                value: c.trade_price,
                             });
-                            volumes.push({
+                            rawVolumes.push({
                                 time: dateStr,
                                 value: c.candle_acc_trade_volume,
                                 color: isUp ? 'rgba(239, 68, 68, 0.4)' : 'rgba(59, 130, 246, 0.4)'
                             });
                         });
 
-                        setChartData({ candles, volumes });
+                        setChartData({
+                            candles: sanitizeTimeSeries(rawCandles),
+                            volumes: sanitizeTimeSeries(rawVolumes)
+                        });
                         setLoading(false);
                         return;
                     }
@@ -108,8 +158,8 @@ export default function StockChartModal({ stock, isOpen, onClose }) {
                         const lows = quotes.low || [];
                         const volList = quotes.volume || [];
 
-                        const candles = [];
-                        const volumes = [];
+                        const rawCandles = [];
+                        const rawVolumes = [];
 
                         for (let i = 0; i < timestamps.length; i++) {
                             if (closes[i] !== null && closes[i] !== undefined && opens[i] !== null && opens[i] !== undefined) {
@@ -126,15 +176,15 @@ export default function StockChartModal({ stock, isOpen, onClose }) {
                                 const v = volList[i] || 0;
                                 const isUp = c >= o;
 
-                                candles.push({
+                                rawCandles.push({
                                     time: dateStr,
                                     open: o,
                                     high: h,
                                     low: l,
                                     close: c,
-                                    value: c // for area chart
+                                    value: c
                                 });
-                                volumes.push({
+                                rawVolumes.push({
                                     time: dateStr,
                                     value: v,
                                     color: isUp ? 'rgba(239, 68, 68, 0.4)' : 'rgba(59, 130, 246, 0.4)'
@@ -142,8 +192,11 @@ export default function StockChartModal({ stock, isOpen, onClose }) {
                             }
                         }
 
-                        if (candles.length > 0) {
-                            setChartData({ candles, volumes });
+                        if (rawCandles.length > 0) {
+                            setChartData({
+                                candles: sanitizeTimeSeries(rawCandles),
+                                volumes: sanitizeTimeSeries(rawVolumes)
+                            });
                             setLoading(false);
                             return;
                         }
@@ -156,8 +209,8 @@ export default function StockChartModal({ stock, isOpen, onClose }) {
             // Fallback generated mock data if API unavailable
             if (isMounted) {
                 const basePrice = stock.price || 100000;
-                const candles = [];
-                const volumes = [];
+                const rawCandles = [];
+                const rawVolumes = [];
                 for (let i = days; i >= 0; i--) {
                     const d = new Date();
                     d.setDate(d.getDate() - i);
@@ -173,10 +226,13 @@ export default function StockChartModal({ stock, isOpen, onClose }) {
                     const l = Math.min(o, c) - Math.round(Math.random() * 500);
                     const isUp = c >= o;
 
-                    candles.push({ time: dateStr, open: o, high: h, low: l, close: c, value: c });
-                    volumes.push({ time: dateStr, value: Math.floor(Math.random() * 50000), color: isUp ? 'rgba(239, 68, 68, 0.4)' : 'rgba(59, 130, 246, 0.4)' });
+                    rawCandles.push({ time: dateStr, open: o, high: h, low: l, close: c, value: c });
+                    rawVolumes.push({ time: dateStr, value: Math.floor(Math.random() * 50000), color: isUp ? 'rgba(239, 68, 68, 0.4)' : 'rgba(59, 130, 246, 0.4)' });
                 }
-                setChartData({ candles, volumes });
+                setChartData({
+                    candles: sanitizeTimeSeries(rawCandles),
+                    volumes: sanitizeTimeSeries(rawVolumes)
+                });
                 setLoading(false);
             }
         };
@@ -200,107 +256,115 @@ export default function StockChartModal({ stock, isOpen, onClose }) {
         return { min, max, first, last, change, changePct };
     }, [chartData]);
 
-    // Initialize TradingView lightweight-charts
+    // Initialize TradingView lightweight-charts with v5 API: chart.addSeries(CandlestickSeries, ...)
     useEffect(() => {
         if (loading || !chartContainerRef.current || !chartData.candles || chartData.candles.length === 0) return;
 
-        chartContainerRef.current.innerHTML = '';
+        try {
+            chartContainerRef.current.innerHTML = '';
 
-        const chart = createChart(chartContainerRef.current, {
-            width: chartContainerRef.current.clientWidth,
-            height: chartContainerRef.current.clientHeight,
-            layout: {
-                background: { type: ColorType.Solid, color: 'transparent' },
-                textColor: '#9ca3af',
-                fontSize: 12,
-                fontFamily: 'Pretendard, sans-serif',
-            },
-            grid: {
-                vertLines: { color: 'rgba(229, 231, 235, 0.5)' },
-                horzLines: { color: 'rgba(229, 231, 235, 0.5)' },
-            },
-            crosshair: {
-                mode: 1, // CrosshairMode.Normal
-            },
-            rightPriceScale: {
-                borderColor: '#e5e7eb',
-            },
-            timeScale: {
-                borderColor: '#e5e7eb',
-                timeVisible: true,
-                secondsVisible: false,
-            },
-        });
-
-        chartInstanceRef.current = chart;
-
-        // Series setup
-        let mainSeries;
-        if (chartType === 'candlestick') {
-            mainSeries = chart.addCandlestickSeries({
-                upColor: '#ef4444',        // Red ▲ for Korean market up
-                downColor: '#3b82f6',      // Blue ▼ for Korean market down
-                borderUpColor: '#ef4444',
-                borderDownColor: '#3b82f6',
-                wickUpColor: '#ef4444',
-                wickDownColor: '#3b82f6',
+            const chart = createChart(chartContainerRef.current, {
+                width: chartContainerRef.current.clientWidth || 800,
+                height: chartContainerRef.current.clientHeight || 400,
+                layout: {
+                    background: { type: ColorType.Solid, color: 'transparent' },
+                    textColor: '#9ca3af',
+                    fontSize: 12,
+                    fontFamily: 'Pretendard, sans-serif',
+                },
+                grid: {
+                    vertLines: { color: 'rgba(229, 231, 235, 0.5)' },
+                    horzLines: { color: 'rgba(229, 231, 235, 0.5)' },
+                },
+                crosshair: {
+                    mode: 1, // CrosshairMode.Normal
+                },
+                rightPriceScale: {
+                    borderColor: '#e5e7eb',
+                },
+                timeScale: {
+                    borderColor: '#e5e7eb',
+                    timeVisible: true,
+                    secondsVisible: false,
+                },
             });
-            mainSeries.setData(chartData.candles);
-        } else {
-            const isOverallUp = stats.changePct >= 0;
-            const lineColor = isOverallUp ? '#ef4444' : '#3b82f6';
-            mainSeries = chart.addAreaSeries({
-                topColor: isOverallUp ? 'rgba(239, 68, 68, 0.4)' : 'rgba(59, 130, 246, 0.4)',
-                bottomColor: isOverallUp ? 'rgba(239, 68, 68, 0.0)' : 'rgba(59, 130, 246, 0.0)',
-                lineColor: lineColor,
-                lineWidth: 2,
-            });
-            mainSeries.setData(chartData.candles);
-        }
 
-        // Volume Series (Histogram at bottom)
-        const volumeSeries = chart.addHistogramSeries({
-            priceFormat: { type: 'volume' },
-            priceScaleId: '',
-        });
+            chartInstanceRef.current = chart;
 
-        volumeSeries.priceScale().applyOptions({
-            scaleMargins: {
-                top: 0.8, // volume occupies bottom 20%
-                bottom: 0,
-            },
-        });
-
-        volumeSeries.setData(chartData.volumes);
-
-        // Crosshair hover listener
-        chart.subscribeCrosshairMove((param) => {
-            if (param.time && param.seriesData.has(mainSeries)) {
-                const dataPoint = param.seriesData.get(mainSeries);
-                setHoverData(dataPoint);
-            } else {
-                setHoverData(null);
-            }
-        });
-
-        chart.timeScale().fitContent();
-
-        const handleResize = () => {
-            if (chartContainerRef.current && chartInstanceRef.current) {
-                chartInstanceRef.current.applyOptions({
-                    width: chartContainerRef.current.clientWidth,
-                    height: chartContainerRef.current.clientHeight,
+            // Lightweight-charts v5 API uses chart.addSeries(...)
+            let mainSeries;
+            if (chartType === 'candlestick') {
+                mainSeries = chart.addSeries(CandlestickSeries, {
+                    upColor: '#ef4444',        // Red ▲ for Korean market up
+                    downColor: '#3b82f6',      // Blue ▼ for Korean market down
+                    borderUpColor: '#ef4444',
+                    borderDownColor: '#3b82f6',
+                    wickUpColor: '#ef4444',
+                    wickDownColor: '#3b82f6',
                 });
+                mainSeries.setData(chartData.candles);
+            } else {
+                const isOverallUp = stats.changePct >= 0;
+                const lineColor = isOverallUp ? '#ef4444' : '#3b82f6';
+                mainSeries = chart.addSeries(AreaSeries, {
+                    topColor: isOverallUp ? 'rgba(239, 68, 68, 0.4)' : 'rgba(59, 130, 246, 0.4)',
+                    bottomColor: isOverallUp ? 'rgba(239, 68, 68, 0.0)' : 'rgba(59, 130, 246, 0.0)',
+                    lineColor: lineColor,
+                    lineWidth: 2,
+                });
+                mainSeries.setData(chartData.candles);
             }
-        };
 
-        window.addEventListener('resize', handleResize);
+            // Volume Series
+            if (chartData.volumes && chartData.volumes.length > 0) {
+                const volumeSeries = chart.addSeries(HistogramSeries, {
+                    priceFormat: { type: 'volume' },
+                    priceScaleId: '',
+                });
 
-        return () => {
-            window.removeEventListener('resize', handleResize);
-            chart.remove();
-            chartInstanceRef.current = null;
-        };
+                volumeSeries.priceScale().applyOptions({
+                    scaleMargins: {
+                        top: 0.8, // volume occupies bottom 20%
+                        bottom: 0,
+                    },
+                });
+
+                volumeSeries.setData(chartData.volumes);
+            }
+
+            // Crosshair hover listener
+            chart.subscribeCrosshairMove((param) => {
+                if (param.time && param.seriesData.has(mainSeries)) {
+                    const dataPoint = param.seriesData.get(mainSeries);
+                    setHoverData(dataPoint);
+                } else {
+                    setHoverData(null);
+                }
+            });
+
+            chart.timeScale().fitContent();
+
+            const handleResize = () => {
+                if (chartContainerRef.current && chartInstanceRef.current) {
+                    chartInstanceRef.current.applyOptions({
+                        width: chartContainerRef.current.clientWidth,
+                        height: chartContainerRef.current.clientHeight,
+                    });
+                }
+            };
+
+            window.addEventListener('resize', handleResize);
+
+            return () => {
+                window.removeEventListener('resize', handleResize);
+                if (chartInstanceRef.current) {
+                    chartInstanceRef.current.remove();
+                    chartInstanceRef.current = null;
+                }
+            };
+        } catch (err) {
+            console.error("Error building TradingView chart:", err);
+        }
     }, [chartData, chartType, loading, stats.changePct]);
 
     if (!isOpen || !stock) return null;
@@ -334,7 +398,7 @@ export default function StockChartModal({ stock, isOpen, onClose }) {
                 className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-5xl h-[88vh] flex flex-col overflow-hidden border border-gray-100 dark:border-gray-700 animate-in zoom-in-95 duration-200"
                 onClick={(e) => e.stopPropagation()}
             >
-                {/* Header Bar - Clean Style without 📈 icons */}
+                {/* Header Bar */}
                 <div className="flex items-center justify-between px-6 py-3.5 border-b border-gray-100 dark:border-gray-700 bg-gray-50/80 dark:bg-gray-900/50">
                     <div className="flex items-center gap-3">
                         <div>
@@ -471,11 +535,19 @@ export default function StockChartModal({ stock, isOpen, onClose }) {
                     </div>
 
                     <div className="flex justify-between items-center text-[11px] text-gray-400 dark:text-gray-500 mt-2 px-1">
-                        <span>TradingView Lightweight Charts™ 엔진 적용 (한국 주식 시장 거래가 기준)</span>
+                        <span>TradingView Lightweight Charts™ 엔진 (한국 시장 실시간 데이터)</span>
                         <span>Shift + 마우스 휠로 축소/확대, 드래그로 이동</span>
                     </div>
                 </div>
             </div>
         </div>
+    );
+}
+
+export default function StockChartModal(props) {
+    return (
+        <ChartErrorBoundary onClose={props.onClose}>
+            <StockChartContent {...props} />
+        </ChartErrorBoundary>
     );
 }
