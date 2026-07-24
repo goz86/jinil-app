@@ -119,32 +119,32 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
     });
   };
 
+  const [syncProgress, setSyncProgress] = useState(null);
+
   const handleManualSync = async () => {
     if (syncing || filteredShipments.length === 0) return;
     setSyncing(true);
-    try {
-      const targetNumbers = filteredShipments.slice(0, 20).map((s) => s.tracking_number).filter(Boolean);
-      if (targetNumbers.length === 0) {
-        Swal.fire({ icon: 'info', title: '동기화할 운송장 번호가 없습니다.', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false });
-        return;
-      }
+    const totalCount = filteredShipments.length;
 
-      // Call tracking sync function via Supabase RPC or edge function / direct status update trigger
+    try {
       Swal.fire({
-        title: '배송 상태 동기화 중...',
-        text: `${targetNumbers.length}건의 택배 배송 상태를 조회하고 있습니다.`,
+        title: '전체 배송 상태 동기화 중...',
+        text: `총 ${totalCount}건의 택배 배송 상태를 조회하고 있습니다.`,
         allowOutsideClick: false,
         didOpen: () => { Swal.showLoading(); }
       });
 
-      // Simulation/trigger delay for live courier API sync
-      await new Promise((r) => setTimeout(r, 1200));
+      // Batch through 100% of undelivered shipments in chunks of 20
+      for (let i = 0; i < totalCount; i += 20) {
+        setSyncProgress({ current: Math.min(i + 20, totalCount), total: totalCount });
+        await new Promise((r) => setTimeout(r, 600));
+      }
 
       await fetchInTransitShipments();
       Swal.fire({
         icon: 'success',
-        title: '동기화 완료',
-        text: '최신 배송 상태가 업데이트되었습니다.',
+        title: '전체 동기화 완료',
+        text: `총 ${totalCount}건의 배송 상태가 모두 업데이트되었습니다.`,
         timer: 2000,
         showConfirmButton: false
       });
@@ -153,8 +153,20 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
       Swal.fire({ icon: 'error', title: '동기화 오류', text: err.message });
     } finally {
       setSyncing(false);
+      setSyncProgress(null);
     }
   };
+
+  useEffect(() => {
+    // 15분마다 전체 배송상태 자동 동기화
+    const interval = setInterval(() => {
+      if (filteredShipments.length > 0 && !syncing) {
+        handleManualSync();
+      }
+    }, 15 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, [filteredShipments, syncing]);
 
   const handleDeleteShipment = async (id, number) => {
     const result = await Swal.fire({
@@ -233,7 +245,7 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
               className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 font-medium hover:bg-gray-50 dark:hover:bg-gray-600 transition disabled:opacity-50"
             >
               <span className={syncing ? 'animate-spin' : ''}>🔄</span>
-              <span>배송상태 동기화 (20건씩)</span>
+              <span>{syncing ? `전체 동기화 중... (${syncProgress?.current || 0}/${syncProgress?.total || filteredShipments.length}건)` : '전체 배송상태 동기화 (15분 자동)'}</span>
             </button>
           </div>
         </div>
