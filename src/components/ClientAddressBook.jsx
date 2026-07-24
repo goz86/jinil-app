@@ -73,31 +73,42 @@ export default function ClientAddressBook({ user }) {
             const supabasePartnerNames = new Set();
 
             try {
-                const { data, error } = await supabase.rpc('search_public_b2b_shipments', {
-                    p_query: '25',
-                    p_limit: 100
-                });
+                const searchQueries = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '서울', '경기', '미지정', 'Open', '공장', '스튜디오', '컴퍼니', '타워', '빌딩', '마포', '성북', '동대문', '중구'];
+                const locationMap = new Map();
 
-                if (!error && data) {
-                    data.forEach((p) => {
-                        const name = p.company_name;
-                        if (name && name !== '미지정' && !supabasePartnerNames.has(name.trim().toLowerCase())) {
-                            supabasePartnerNames.add(name.trim().toLowerCase());
-                            supabasePartners.push({
-                                id: p.partner_id || p.id,
-                                isSupabase: true,
-                                name: name,
-                                representative: '',
-                                contactName: p.recipient_name || '',
-                                phone: p.courier_phone || '',
-                                address: p.recipient_address || '',
-                                sortIndex: 9999,
-                            });
-                        }
+                for (const qStr of searchQueries) {
+                    const { data: sbData, error: sbError } = await supabase.rpc('search_public_b2b_shipments', {
+                        p_query: qStr,
+                        p_limit: 200
                     });
+
+                    if (!sbError && sbData) {
+                        sbData.forEach((s) => {
+                            const locName = (s.location_name || s.company_name || '').trim();
+                            if (!locName || locName === '미지정') return;
+
+                            const key = locName.toLowerCase();
+                            if (!locationMap.has(key)) {
+                                const compName = (s.company_name && s.company_name !== '미지정') ? s.company_name : '';
+                                locationMap.set(key, {
+                                    id: `sb-${s.id || locName}`,
+                                    isSupabase: true,
+                                    name: locName,
+                                    representative: compName || '',
+                                    contactName: s.recipient_name || '',
+                                    phone: s.courier_phone || '',
+                                    address: s.recipient_address || '',
+                                    sortIndex: 500,
+                                });
+                                supabasePartnerNames.add(key);
+                            }
+                        });
+                    }
                 }
+
+                supabasePartners = Array.from(locationMap.values());
             } catch (err) {
-                console.error("Supabase RPC search error:", err);
+                console.error("Supabase RPC location search error:", err);
             }
 
             const q = query(collection(db, 'clients'));
