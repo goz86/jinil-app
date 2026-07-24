@@ -74,7 +74,7 @@ function StockChartContent({ stock, isOpen, onClose }) {
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [isOpen, onClose]);
 
-    // Fetch candlestick & volume data based on interval
+    // Fetch deep historical candlestick & volume data based on interval
     useEffect(() => {
         if (!isOpen || !stock) return;
 
@@ -99,7 +99,7 @@ function StockChartContent({ stock, isOpen, onClose }) {
                         case '15M': upbitEndpoint = `candles/minutes/15?market=KRW-${coin}&count=200`; break;
                         case '1H': upbitEndpoint = `candles/minutes/60?market=KRW-${coin}&count=200`; break;
                         case '4H': upbitEndpoint = `candles/minutes/240?market=KRW-${coin}&count=200`; break;
-                        case '1W': upbitEndpoint = `candles/weeks?market=KRW-${coin}&count=100`; break;
+                        case '1W': upbitEndpoint = `candles/weeks?market=KRW-${coin}&count=200`; break;
                         default: upbitEndpoint = `candles/days?market=KRW-${coin}&count=200`; break;
                     }
 
@@ -151,26 +151,32 @@ function StockChartContent({ stock, isOpen, onClose }) {
                 }
 
                 let targetUrl = '';
-                if (interval === '1D') {
-                    const period1 = now - (180 * 24 * 3600);
+                if (interval === '5M') {
+                    targetUrl = import.meta.env.DEV
+                        ? `/api/yahoo/${yahooSymbol}?interval=5m&range=5d`
+                        : `https://query2.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=5m&range=5d`;
+                } else if (interval === '15M') {
+                    targetUrl = import.meta.env.DEV
+                        ? `/api/yahoo/${yahooSymbol}?interval=15m&range=1mo`
+                        : `https://query2.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=15m&range=1mo`;
+                } else if (interval === '1H') {
+                    targetUrl = import.meta.env.DEV
+                        ? `/api/yahoo/${yahooSymbol}?interval=60m&range=3mo`
+                        : `https://query2.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=60m&range=3mo`;
+                } else if (interval === '4H') {
+                    targetUrl = import.meta.env.DEV
+                        ? `/api/yahoo/${yahooSymbol}?interval=60m&range=1y`
+                        : `https://query2.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=60m&range=1y`;
+                } else if (interval === '1D') {
+                    const period1 = now - (5 * 365 * 24 * 3600); // 5 Full Years of daily candles!
                     targetUrl = import.meta.env.DEV
                         ? `/api/yahoo/${yahooSymbol}?period1=${period1}&period2=${now}&interval=1d`
                         : `https://query2.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?period1=${period1}&period2=${now}&interval=1d`;
                 } else if (interval === '1W') {
-                    const period1 = now - (365 * 24 * 3600);
+                    const period1 = now - (10 * 365 * 24 * 3600); // 10 Full Years of weekly candles!
                     targetUrl = import.meta.env.DEV
                         ? `/api/yahoo/${yahooSymbol}?period1=${period1}&period2=${now}&interval=1wk`
                         : `https://query2.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?period1=${period1}&period2=${now}&interval=1wk`;
-                } else {
-                    let yahooInterval = '5m';
-                    let yahooRange = '1d';
-                    if (interval === '15M') { yahooInterval = '15m'; yahooRange = '5d'; }
-                    else if (interval === '1H') { yahooInterval = '60m'; yahooRange = '1mo'; }
-                    else if (interval === '4H') { yahooInterval = '60m'; yahooRange = '3mo'; }
-
-                    targetUrl = import.meta.env.DEV
-                        ? `/api/yahoo/${yahooSymbol}?interval=${yahooInterval}&range=${yahooRange}`
-                        : `https://query2.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?interval=${yahooInterval}&range=${yahooRange}`;
                 }
 
                 const res = await fetch(targetUrl);
@@ -244,7 +250,7 @@ function StockChartContent({ stock, isOpen, onClose }) {
                 const basePrice = stock.price || 100000;
                 const rawCandles = [];
                 const rawVolumes = [];
-                const count = isIntraday ? 60 : 120;
+                const count = isIntraday ? 100 : 300;
                 for (let i = count; i >= 0; i--) {
                     const d = new Date();
                     d.setMinutes(d.getMinutes() - i * (interval === '5M' ? 5 : interval === '15M' ? 15 : 60));
@@ -373,7 +379,16 @@ function StockChartContent({ stock, isOpen, onClose }) {
                 }
             });
 
-            chart.timeScale().fitContent();
+            // Focus on the most recent ~80 candles by default for optimal view, allowing smooth back-scroll
+            const totalPoints = chartData.candles.length;
+            if (totalPoints > 0) {
+                chart.timeScale().setVisibleLogicalRange({
+                    from: Math.max(0, totalPoints - 80),
+                    to: totalPoints - 1,
+                });
+            } else {
+                chart.timeScale().fitContent();
+            }
 
             const handleResize = () => {
                 if (chartContainerRef.current && chartInstanceRef.current) {
@@ -500,7 +515,7 @@ function StockChartContent({ stock, isOpen, onClose }) {
                             </button>
                         </div>
 
-                        {/* Intraday & Daily Candle Interval Selector Pills (5m, 15m, 1h, 4h, 1D, 1W) */}
+                        {/* Intraday & Daily Candle Interval Selector Pills */}
                         <div className="flex items-center bg-gray-200 dark:bg-gray-700 p-1 rounded-xl gap-1">
                             {INTERVAL_LABELS.map((item) => (
                                 <button
@@ -577,15 +592,15 @@ function StockChartContent({ stock, isOpen, onClose }) {
                     <div className="flex-1 w-full relative min-h-[320px] rounded-2xl bg-gray-50/60 dark:bg-gray-900/40 p-2 border border-gray-100 dark:border-gray-700/60 overflow-hidden">
                         {loading && (
                             <div className="absolute inset-0 flex items-center justify-center bg-white/70 dark:bg-gray-800/70 z-10 font-bold text-sm text-gray-500 animate-pulse">
-                                TradingView {interval} 차트 데이터를 불러오는 중...
+                                TradingView {interval} 히스토리 데이터를 불러오는 중...
                             </div>
                         )}
                         <div ref={chartContainerRef} className="w-full h-full" />
                     </div>
 
                     <div className="flex justify-between items-center text-[11px] text-gray-400 dark:text-gray-500 mt-2 px-1">
-                        <span>TradingView Lightweight Charts™ (Khung nến: {interval})</span>
-                        <span>Shift + 마우스 휠로 축소/확대, 드래그로 이동</span>
+                        <span>TradingView Lightweight Charts™ (Dữ liệu lịch sử sâu - Khung nến: {interval})</span>
+                        <span>Shift + 마우스 휠로 축소/확대, 드래그로 과거/미래 이동</span>
                     </div>
                 </div>
             </div>
