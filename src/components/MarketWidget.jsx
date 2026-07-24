@@ -3,6 +3,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import { auth, db } from '../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
+import StockChartModal from './StockChartModal';
 
 // Component vẽ đường Sparkline siêu nhẹ bằng SVG
 const Sparkline = ({ data }) => {
@@ -72,8 +73,15 @@ export default function MarketWidget() {
     const [searchTerm, setSearchTerm] = useState('');
     const [savedStockSymbols, setSavedStockSymbols] = useState([]);
     const [showResults, setShowResults] = useState(false);
+    const [selectedStock, setSelectedStock] = useState(null);
+    const [isChartModalOpen, setIsChartModalOpen] = useState(false);
 
     const { t } = useLanguage();
+
+    const openChart = (stockItem) => {
+        setSelectedStock(stockItem);
+        setIsChartModalOpen(true);
+    };
 
     // Kho dữ liệu Top Korea Stocks (Mở rộng đa ngành nghề)
     const KOREAN_TOP_STOCKS = [
@@ -262,13 +270,11 @@ export default function MarketWidget() {
             }
 
             // 2. Fetch Crypto Prices (Upbit API)
-            // Lấy cả giá hiện tại (ticker) và lịch sử 7 ngày (candles/days)
             const cryptoSymbolsMap = savedStockSymbols.filter(s => s.includes('.KRW')).map(s => s.replace('.KRW', ''));
             const cryptoDataMap = {};
 
             if (cryptoSymbolsMap.length > 0) {
                 try {
-                    // Lấy Ticker hiện tại
                     const cryptoRes = await fetch(`https://api.upbit.com/v1/ticker?markets=${cryptoSymbolsMap.map(s => `KRW-${s}`).join(',')}`);
                     const cryptoData = await cryptoRes.json();
 
@@ -277,12 +283,10 @@ export default function MarketWidget() {
                             const rawSymbol = coin.market.replace('KRW-', '');
                             const originalSymbol = `${rawSymbol}.KRW`;
 
-                            // Lấy lịch sử 7 ngày cho Sparkline
                             let sparklinePrices = [];
                             try {
                                 const candleRes = await fetch(`https://api.upbit.com/v1/candles/days?market=${coin.market}&count=7`);
                                 const candleData = await candleRes.json();
-                                // Upbit trả về mưới nhất đầu tiên, cần đảo ngược lại
                                 sparklinePrices = candleData.map(c => c.trade_price).reverse();
                             } catch (e) {
                                 console.error(`Failed to fetch history for ${originalSymbol}`, e);
@@ -293,7 +297,7 @@ export default function MarketWidget() {
                                 change: coin.signed_change_rate * 100,
                                 sparklineData: sparklinePrices.length === 7 ? sparklinePrices : []
                             };
-                            await new Promise(r => setTimeout(r, 200)); // Delay nhẹ Upbit
+                            await new Promise(r => setTimeout(r, 200));
                         }
                     }
                 } catch (err) {
@@ -301,20 +305,17 @@ export default function MarketWidget() {
                 }
             }
 
-            // 3. Fetch Stocks and Gold (Yahoo Finance V8 API directly)
-            // Note: This relies on Electron with webSecurity: false or browser extensions for local dev testing.
+            // 3. Fetch Stocks and Gold
             const regularSymbols = savedStockSymbols.filter(s => !s.includes('.KRW'));
             let goldPrice = null;
             const stockDataMap = {};
             const delay = ms => new Promise(res => setTimeout(res, ms));
 
-            // Add Gold (GC=F) explicitly to fetch list if we have any stocks requested
             if (!regularSymbols.includes('GC=F')) {
                 regularSymbols.push('GC=F');
             }
 
             if (regularSymbols.length > 0) {
-                // Fetch tuần tự (Sequential) với độ trễ để chống bị Yahoo block IP do Request liên tục
                 for (const symbol of regularSymbols) {
                     try {
                         const targetUrl = import.meta.env.DEV
@@ -327,14 +328,12 @@ export default function MarketWidget() {
 
                         if (yahooData && yahooData.chart && yahooData.chart.result && yahooData.chart.result.length > 0) {
                             const meta = yahooData.chart.result[0].meta;
-                            // Lấy dải giá lịch sử để vẽ Sparkline
                             const indicators = yahooData.chart.result[0].indicators;
                             let sparklinePrices = [];
                             if (indicators && indicators.quote && indicators.quote[0].close) {
                                 sparklinePrices = indicators.quote[0].close.filter(p => p !== null);
                             }
 
-                            // Tính toán % thay đổi trong ngày (Daily Change)
                             let changePct = 0;
                             if (sparklinePrices.length >= 2) {
                                 const todayPrice = meta.regularMarketPrice;
@@ -358,7 +357,7 @@ export default function MarketWidget() {
                     } catch (err) {
                         console.error(`Yahoo API Error for ${symbol}:`, err);
                     }
-                    await delay(300); // Nghỉ 300ms sau mỗi request để an toàn
+                    await delay(300);
                 }
             }
 
@@ -370,13 +369,13 @@ export default function MarketWidget() {
                 let currentChange = null;
                 let sparklineData = [];
 
-                if (symbol.includes('.KRW')) { // It's Crypto
+                if (symbol.includes('.KRW')) {
                     if (cryptoDataMap[symbol]) {
                         currentPrice = cryptoDataMap[symbol].price;
                         currentChange = cryptoDataMap[symbol].change;
                         sparklineData = cryptoDataMap[symbol].sparklineData;
                     }
-                } else { // It's a regular stock
+                } else {
                     if (stockDataMap[symbol]) {
                         currentPrice = stockDataMap[symbol].price;
                         currentChange = stockDataMap[symbol].change;
@@ -393,7 +392,6 @@ export default function MarketWidget() {
                 };
             });
 
-            // Update State (Preserve old data if new API fails)
             setMarketData(prev => ({
                 krwUsd: usdToKrw || prev.krwUsd,
                 krwVnd: krwToVnd || prev.krwVnd,
@@ -407,7 +405,6 @@ export default function MarketWidget() {
         }
     };
 
-    // Khi danh sách mã thay đổi, fetch lại data
     useEffect(() => {
         let isMounted = true;
 
@@ -418,7 +415,7 @@ export default function MarketWidget() {
         };
 
         loadData();
-        const interval = setInterval(loadData, 180000); // 3 phút thay vì 1 phút (chống bị chặn)
+        const interval = setInterval(loadData, 180000);
 
         return () => {
             isMounted = false;
@@ -485,22 +482,34 @@ export default function MarketWidget() {
             </h2>
 
             <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-2xl border border-gray-100 dark:border-gray-600">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">USD/KRW</p>
+                <div 
+                    onClick={() => openChart({ name: 'USD/KRW', symbol: 'USD/KRW', price: marketData.krwUsd })}
+                    className="bg-gray-50 dark:bg-gray-700 p-3 rounded-2xl border border-gray-100 dark:border-gray-600 cursor-pointer hover:bg-blue-50/70 dark:hover:bg-gray-600 transition"
+                    title="USD/KRW 클릭하여 차트 보기"
+                >
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">USD/KRW 📈</p>
                     <p className="text-sm font-bold text-gray-800 dark:text-white">₩{formatCurrency(marketData.krwUsd)}</p>
                 </div>
-                <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-2xl border border-gray-100 dark:border-gray-600">
-                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">KRW/VND</p>
+                <div 
+                    onClick={() => openChart({ name: 'KRW/VND', symbol: 'KRW/VND', price: marketData.krwVnd })}
+                    className="bg-gray-50 dark:bg-gray-700 p-3 rounded-2xl border border-gray-100 dark:border-gray-600 cursor-pointer hover:bg-blue-50/70 dark:hover:bg-gray-600 transition"
+                    title="KRW/VND 클릭하여 차트 보기"
+                >
+                    <p className="text-xs text-gray-500 dark:text-gray-400 font-medium mb-1">KRW/VND 📈</p>
                     <p className="text-sm font-bold text-gray-800 dark:text-white">₫{formatCurrency(marketData.krwVnd)}</p>
                 </div>
             </div>
 
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-2xl border border-yellow-100 dark:border-yellow-800 mb-4 flex justify-between items-center">
+            <div 
+                onClick={() => openChart({ name: '금 (1g)', symbol: 'GOLD', price: marketData.gold })}
+                className="bg-yellow-50 dark:bg-yellow-900/20 p-3 rounded-2xl border border-yellow-100 dark:border-yellow-800 mb-4 flex justify-between items-center cursor-pointer hover:bg-yellow-100/70 transition"
+                title="금 시세 클릭하여 차트 보기"
+            >
                 <div className="flex items-center">
                     <div className="w-6 h-6 bg-yellow-400 rounded-full flex items-center justify-center mr-2 shadow-sm">
                         <span className="text-white text-xs font-bold">Au</span>
                     </div>
-                    <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">{t('goldPrice')}</p>
+                    <p className="text-sm font-medium text-yellow-800 dark:text-yellow-300">{t('goldPrice')} 📈</p>
                 </div>
                 <p className="text-sm font-bold text-yellow-900 dark:text-yellow-200">₩{formatCurrency(marketData.gold)}</p>
             </div>
@@ -556,14 +565,19 @@ export default function MarketWidget() {
                     <p className="text-sm text-gray-400 text-center py-4">{t('noResults')}</p>
                 ) : (
                     marketData.stocks.map(stock => (
-                        <div key={stock.symbol} className="group flex justify-between items-center border-b border-gray-50 dark:border-gray-700 pb-2 last:border-0 last:pb-0 relative">
+                        <div 
+                            key={stock.symbol} 
+                            onClick={() => openChart(stock)}
+                            className="group flex justify-between items-center border-b border-gray-50 dark:border-gray-700 pb-2 last:border-0 last:pb-0 relative cursor-pointer hover:bg-blue-50/40 dark:hover:bg-gray-700/40 p-1.5 rounded-xl transition"
+                            title={`${stock.name} 클릭하여 실시간 차트 보기`}
+                        >
                             <div>
-                                <p className="text-sm font-semibold text-gray-800 dark:text-white">{stock.name}</p>
+                                <p className="text-sm font-semibold text-gray-800 dark:text-white group-hover:text-blue-600 transition-colors">{stock.name}</p>
                                 <p className="text-xs text-gray-400 dark:text-gray-500">{stock.symbol}</p>
                             </div>
 
                             {/* Cột giữa: Biểu đồ mini */}
-                            <div className="flex-1 flex justify-center opacity-100 group-hover:opacity-10 transition-opacity px-2">
+                            <div className="flex-1 flex justify-center opacity-100 group-hover:opacity-20 transition-opacity px-2">
                                 <Sparkline data={stock.sparklineData} />
                             </div>
 
@@ -574,8 +588,11 @@ export default function MarketWidget() {
 
                             {/* Nút xóa (chỉ hiện khi hover) */}
                             <button
-                                onClick={() => handleRemoveStock(stock.symbol)}
-                                className="absolute right-0 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 bg-red-50 text-red-500 p-1.5 rounded-lg hover:bg-red-100 transition-all"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveStock(stock.symbol);
+                                }}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 bg-red-50 text-red-500 p-1.5 rounded-lg hover:bg-red-100 transition-all"
                                 title="Remove from widget"
                             >
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -587,13 +604,19 @@ export default function MarketWidget() {
                 )}
             </div>
 
-            {/* Click outside search handler (soft hack by using fixed clear search) */}
+            {/* Click outside search handler */}
             {showResults && searchTerm && (
                 <div
                     className="fixed inset-0 z-0 bg-black/0"
                     onClick={() => setShowResults(false)}
                 ></div>
             )}
+
+            <StockChartModal
+                stock={selectedStock}
+                isOpen={isChartModalOpen}
+                onClose={() => setIsChartModalOpen(false)}
+            />
 
             <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center mt-4">{t('updatedAt')} {new Date().toLocaleTimeString()} (Độ trễ ~1p)</p>
         </div>

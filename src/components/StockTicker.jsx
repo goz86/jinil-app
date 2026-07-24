@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import StockChartModal from './StockChartModal';
 
 const SYMBOLS = [
     // IT / 반도체 / 플랫폼
@@ -109,16 +110,22 @@ const SYMBOLS = [
     { symbol: 'DOGE.KRW', name: '도지코인' }
 ];
 
-
 export default function StockTicker() {
     const [stocks, setStocks] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedStock, setSelectedStock] = useState(null);
+    const [isChartModalOpen, setIsChartModalOpen] = useState(false);
 
     const formatCurrency = (val, symbol) => {
         if (!val) return '...';
         return new Intl.NumberFormat('en-US', {
             maximumFractionDigits: 0
         }).format(val);
+    };
+
+    const handleStockClick = (stock) => {
+        setSelectedStock(stock);
+        setIsChartModalOpen(true);
     };
 
     const fetchData = async () => {
@@ -178,7 +185,7 @@ export default function StockTicker() {
 
     useEffect(() => {
         fetchData();
-        const interval = setInterval(fetchData, 180000); // 3 phút thay vì 1 phút (đồng bộ độ an toàn)
+        const interval = setInterval(fetchData, 180000); // 3분마다 동기화
         return () => clearInterval(interval);
     }, []);
 
@@ -191,26 +198,37 @@ export default function StockTicker() {
     }
 
     return (
-        <div className="w-full bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 h-10 flex items-center overflow-hidden marquee-container z-50">
-            <div className="animate-marquee">
-                {/* 
-                  Double the items for seamless loop (0 to -50% translateX)
-                  The .animate-marquee class in index.css handles display: flex and white-space: nowrap
-                */}
-                {stocks.concat(stocks).map((stock, idx) => (
-                    <div key={`${stock.symbol}-${idx}`} className="flex items-center px-8 border-r border-gray-100 dark:border-gray-700 h-10 shrink-0">
-                        <span className="text-[13px] font-extrabold text-gray-700 dark:text-gray-200 mr-2.5 tracking-tight whitespace-nowrap">{stock.name}</span>
-                        <span className="text-[14px] font-black text-gray-900 dark:text-white mr-2.5 whitespace-nowrap">
-                            {formatCurrency(stock.price, stock.symbol)} 
-                            <span className="text-[10px] text-gray-400 ml-1 font-semibold">KRW</span>
-                        </span>
-                        <span className={`text-[13px] font-extrabold ${stock.change >= 0 ? 'text-red-500' : 'text-blue-500'} whitespace-nowrap`}>
-                            {stock.change >= 0 ? '▲' : '▼'} {Math.abs(stock.change).toFixed(2)}%
-                        </span>
-                    </div>
-                ))}
+        <>
+            <div className="w-full bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 h-10 flex items-center overflow-hidden marquee-container z-50">
+                <div className="animate-marquee">
+                    {stocks.concat(stocks).map((stock, idx) => (
+                        <div 
+                            key={`${stock.symbol}-${idx}`} 
+                            onClick={() => handleStockClick(stock)}
+                            className="flex items-center px-8 border-r border-gray-100 dark:border-gray-700 h-10 shrink-0 cursor-pointer hover:bg-blue-50/70 dark:hover:bg-gray-700/60 transition-colors group"
+                            title={`${stock.name} 클릭하여 실시간 차트 보기`}
+                        >
+                            <span className="text-[13px] font-extrabold text-gray-700 dark:text-gray-200 mr-2.5 tracking-tight whitespace-nowrap group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                {stock.name}
+                            </span>
+                            <span className="text-[14px] font-black text-gray-900 dark:text-white mr-2.5 whitespace-nowrap">
+                                {formatCurrency(stock.price, stock.symbol)} 
+                                <span className="text-[10px] text-gray-400 ml-1 font-semibold">KRW</span>
+                            </span>
+                            <span className={`text-[13px] font-extrabold ${stock.change >= 0 ? 'text-red-500' : 'text-blue-500'} whitespace-nowrap`}>
+                                {stock.change >= 0 ? '▲' : '▼'} {Math.abs(stock.change).toFixed(2)}%
+                            </span>
+                        </div>
+                    ))}
+                </div>
             </div>
-        </div>
+
+            <StockChartModal
+                stock={selectedStock}
+                isOpen={isChartModalOpen}
+                onClose={() => setIsChartModalOpen(false)}
+            />
+        </>
     );
 }
 
