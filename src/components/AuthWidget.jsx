@@ -5,6 +5,8 @@ export default function AuthWidget({ user, onLogin, onLogout, email, setEmail, p
     const { t } = useLanguage();
     const isExtension = !!(window.chrome && chrome.identity);
     const [savedAccounts, setSavedAccounts] = React.useState([]);
+    const [editingEmail, setEditingEmail] = React.useState(null);
+    const [editAlias, setEditAlias] = React.useState('');
 
     React.useEffect(() => {
         try {
@@ -20,6 +22,31 @@ export default function AuthWidget({ user, onLogin, onLogout, email, setEmail, p
         setSavedAccounts(accs);
     };
 
+    const handleStartEdit = (e, targetEmail, currentAlias) => {
+        e.stopPropagation();
+        setEditingEmail(targetEmail);
+        setEditAlias(currentAlias || targetEmail.split('@')[0]);
+    };
+
+    const handleSaveAlias = (targetEmail) => {
+        const trimmed = editAlias.trim() || targetEmail.split('@')[0];
+        let accs = savedAccounts;
+        const exists = accs.some(a => a.email === targetEmail);
+
+        if (exists) {
+            accs = accs.map(a => a.email === targetEmail ? { ...a, alias: trimmed } : a);
+        } else {
+            accs = [...accs, { email: targetEmail, alias: trimmed, p: '' }];
+        }
+
+        localStorage.setItem('jinil_saved_accounts', JSON.stringify(accs));
+        setSavedAccounts(accs);
+        setEditingEmail(null);
+    };
+
+    const activeAcc = user ? savedAccounts.find(a => a.email === user.email) : null;
+    const activeName = activeAcc?.alias || (user?.email || 'User').split('@')[0];
+
     return (
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 mb-4 flex flex-col gap-3">
             {user ? (
@@ -34,39 +61,88 @@ export default function AuthWidget({ user, onLogin, onLogout, email, setEmail, p
                                     {(user.email || '?')[0].toUpperCase()}
                                 </div>
                             )}
-                            <div className="flex flex-col max-w-[90px]">
-                                <span className="text-sm font-bold text-gray-800 dark:text-gray-100 truncate">
-                                    {(user.email || 'User').split('@')[0]}
-                                </span>
+                            <div className="flex flex-col max-w-[110px]">
+                                {editingEmail === user.email ? (
+                                    <div className="flex items-center gap-1">
+                                        <input
+                                            type="text"
+                                            value={editAlias}
+                                            onChange={(e) => setEditAlias(e.target.value)}
+                                            onKeyDown={(e) => e.key === 'Enter' && handleSaveAlias(user.email)}
+                                            onBlur={() => handleSaveAlias(user.email)}
+                                            autoFocus
+                                            className="w-20 px-1.5 py-0.5 text-xs font-bold border border-blue-400 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none"
+                                        />
+                                    </div>
+                                ) : (
+                                    <div 
+                                        className="group/name flex items-center gap-1 cursor-pointer"
+                                        onClick={(e) => handleStartEdit(e, user.email, activeName)}
+                                        title="클릭하여 계정 이름 수정"
+                                    >
+                                        <span className="text-sm font-bold text-gray-800 dark:text-gray-100 truncate">
+                                            {activeName}
+                                        </span>
+                                        <span className="text-[10px] text-gray-400 opacity-0 group-hover/name:opacity-100 transition-opacity">✏️</span>
+                                    </div>
+                                )}
                                 <span className="text-[10px] text-green-500 font-medium">사용 중</span>
                             </div>
                         </div>
 
-                        {/* Quick Switch Accounts - Directly visible inline */}
+                        {/* Quick Switch Accounts */}
                         {savedAccounts.filter(a => a.email !== user.email).length > 0 && (
                             <div className="flex items-center justify-end flex-wrap gap-1.5 flex-1 pl-2">
-                                {savedAccounts.filter(a => a.email !== user.email).map(acc => (
-                                    <div 
-                                        key={acc.email} 
-                                        className="relative group flex items-center gap-1.5 px-2 py-1.5 bg-gray-50 hover:bg-gray-100 dark:bg-gray-700/50 dark:hover:bg-gray-600 rounded-lg cursor-pointer border border-transparent hover:border-gray-200 dark:hover:border-gray-500 transition-all shadow-sm"
-                                        onClick={() => onSwitchAccount(acc.email, atob(acc.p))}
-                                        title={`계정 전환: ${acc.email}`}
-                                    >
-                                        <div className="w-5 h-5 rounded-full bg-blue-100 dark:bg-gray-800 flex items-center justify-center text-[10px] font-bold text-blue-600 dark:text-blue-400">
-                                            {acc.email[0].toUpperCase()}
-                                        </div>
-                                        <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-300 max-w-[60px] truncate">
-                                            {acc.email.split('@')[0]}
-                                        </span>
-                                        <button 
-                                            className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-400 hover:bg-red-500 text-white rounded-full flex items-center justify-center text-[8px] opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-                                            onClick={(e) => handleRemoveAccount(e, acc.email)}
-                                            title="계정 삭제"
+                                {savedAccounts.filter(a => a.email !== user.email).map(acc => {
+                                    const accName = acc.alias || acc.email.split('@')[0];
+                                    const isEditingThis = editingEmail === acc.email;
+
+                                    return (
+                                        <div 
+                                            key={acc.email} 
+                                            className="relative group flex items-center gap-1.5 px-2 py-1.5 bg-gray-50 hover:bg-gray-100 dark:bg-gray-700/50 dark:hover:bg-gray-600 rounded-lg cursor-pointer border border-transparent hover:border-gray-200 dark:hover:border-gray-500 transition-all shadow-sm"
+                                            onClick={() => !isEditingThis && onSwitchAccount(acc.email, atob(acc.p || ''))}
+                                            title={`계정 전환: ${acc.email} (클릭하여 전환, ✏️ 버튼으로 이름 수정)`}
                                         >
-                                            ✕
-                                        </button>
-                                    </div>
-                                ))}
+                                            <div className="w-5 h-5 rounded-full bg-blue-100 dark:bg-gray-800 flex items-center justify-center text-[10px] font-bold text-blue-600 dark:text-blue-400 shrink-0">
+                                                {acc.email[0].toUpperCase()}
+                                            </div>
+
+                                            {isEditingThis ? (
+                                                <input
+                                                    type="text"
+                                                    value={editAlias}
+                                                    onChange={(e) => setEditAlias(e.target.value)}
+                                                    onKeyDown={(e) => e.key === 'Enter' && handleSaveAlias(acc.email)}
+                                                    onBlur={() => handleSaveAlias(acc.email)}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    autoFocus
+                                                    className="w-16 px-1 py-0.5 text-[11px] font-bold border border-blue-400 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none"
+                                                />
+                                            ) : (
+                                                <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-300 max-w-[70px] truncate">
+                                                    {accName}
+                                                </span>
+                                            )}
+
+                                            <button 
+                                                className="w-3.5 h-3.5 text-gray-400 hover:text-blue-500 text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"
+                                                onClick={(e) => handleStartEdit(e, acc.email, accName)}
+                                                title="이름 수정"
+                                            >
+                                                ✏️
+                                            </button>
+
+                                            <button 
+                                                className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-400 hover:bg-red-500 text-white rounded-full flex items-center justify-center text-[8px] opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                                                onClick={(e) => handleRemoveAccount(e, acc.email)}
+                                                title="계정 삭제"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         )}
                     </div>

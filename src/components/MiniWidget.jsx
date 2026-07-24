@@ -119,14 +119,12 @@ export default function MiniWidget() {
         const newTasks = tasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t));
         setTasks(newTasks);
         if (user) {
-            // Use setDoc reliably
             await setDoc(doc(db, "users", user.uid), { tasks: newTasks }, { merge: true });
         } else {
             localStorage.setItem('todos', JSON.stringify(newTasks));
         }
     };
 
-    // Filter today's active tasks
     const activeTasks = tasks.filter(t => t.date === today && !t.completed);
 
     const handleClose = () => {
@@ -137,11 +135,48 @@ export default function MiniWidget() {
         }
     };
 
+    // Drag resize handlers
+    const handleMouseDown = (e, direction) => {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const startWidth = window.innerWidth;
+        const startHeight = window.innerHeight;
+
+        const handleMouseMove = (moveEvent) => {
+            let newWidth = startWidth;
+            let newHeight = startHeight;
+
+            if (direction === 'bottom' || direction === 'corner') {
+                const deltaY = moveEvent.clientY - startY;
+                newHeight = Math.max(250, Math.min(1200, startHeight + deltaY));
+            }
+            if (direction === 'corner') {
+                const deltaX = moveEvent.clientX - startX;
+                newWidth = Math.max(200, Math.min(800, startWidth + deltaX));
+            }
+
+            if (window.resizeTo) {
+                window.resizeTo(newWidth, newHeight);
+            }
+        };
+
+        const handleMouseUp = () => {
+            window.removeEventListener('mousemove', handleMouseMove);
+            window.removeEventListener('mouseup', handleMouseUp);
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        window.addEventListener('mouseup', handleMouseUp);
+    };
+
     return (
-        <div className="h-screen w-screen bg-slate-950/80 text-white rounded-3xl overflow-hidden flex flex-col border border-white/10 shadow-3xl backdrop-blur-2xl">
+        <div className="h-screen w-screen bg-slate-950/80 text-white rounded-3xl overflow-hidden flex flex-col border border-white/10 shadow-3xl backdrop-blur-2xl relative">
             {/* Draggable Header */}
             <div
-                className="h-10 bg-white/5 flex justify-between items-center px-4 select-none"
+                className="h-10 bg-white/5 flex justify-between items-center px-4 select-none shrink-0"
                 style={{ WebkitAppRegion: 'drag' }}
             >
                 <div className="flex items-center gap-2">
@@ -192,7 +227,7 @@ export default function MiniWidget() {
             </div>
 
             {/* Footer */}
-            <div className="h-10 bg-black/40 border-t border-white/5 flex justify-between items-center px-4">
+            <div className="h-10 bg-black/40 border-t border-white/5 flex justify-between items-center px-4 shrink-0 relative">
                 <span className="text-[10px] font-black text-gray-500 tracking-tighter">{today}</span>
                 <div className="flex items-center gap-1.5 bg-green-500/10 px-2 py-1 rounded-lg border border-green-500/20">
                     <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
@@ -200,12 +235,24 @@ export default function MiniWidget() {
                 </div>
             </div>
 
-            {/* Resize Handle for Discoverability */}
+            {/* Bottom Edge Drag Resize Handle (Vertical height expand) */}
             <div 
-                className="absolute bottom-1 right-1 w-4 h-4 cursor-nwse-resize opacity-20 hover:opacity-100 transition-opacity flex items-end justify-end p-0.5 z-50"
+                onMouseDown={(e) => handleMouseDown(e, 'bottom')}
+                className="absolute bottom-0 left-0 right-6 h-2 cursor-ns-resize hover:bg-blue-500/40 transition-colors z-40 flex items-center justify-center"
                 style={{ WebkitAppRegion: 'no-drag' }}
+                title="길이 조절 (위아래 드래그)"
             >
-                <svg className="w-2.5 h-2.5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
+                <div className="w-10 h-1 bg-white/20 rounded-full"></div>
+            </div>
+
+            {/* Bottom Right Corner Resize Handle (Diagonal resize) */}
+            <div 
+                onMouseDown={(e) => handleMouseDown(e, 'corner')}
+                className="absolute bottom-1 right-1 w-5 h-5 cursor-nwse-resize opacity-40 hover:opacity-100 transition-opacity flex items-end justify-end p-0.5 z-50 hover:bg-blue-500/30 rounded-lg"
+                style={{ WebkitAppRegion: 'no-drag' }}
+                title="크기 조절 (드래그)"
+            >
+                <svg className="w-3 h-3 text-white/70 hover:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
                     <line x1="22" y1="6" x2="6" y2="22" />
                     <line x1="22" y1="14" x2="14" y2="22" />
                 </svg>
