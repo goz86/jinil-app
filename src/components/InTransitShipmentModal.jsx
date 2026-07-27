@@ -37,8 +37,8 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
                 partner_name: s.company_name || '미지정',
                 customer_name: s.recipient_name || s.location_name || '-',
                 tracking_number: trackingNum,
-                courier_name: s.carrier_name || s.courier_name || s.carrier || '롯데택배',
-                driver_name: s.driver_name || s.driver_info || s.driver || '-',
+                courier_name: '롯데택배',
+                driver_name: (s.driver_name && s.driver_name !== '-') ? s.driver_name : (s.carrier_name || s.carrier || s.driver_info || '-'),
                 tracking_status_label: s.tracking_status_label || '배송 중',
                 source: 'supabase',
               });
@@ -79,8 +79,8 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
             partner_name: item.company_name || item.partner_name || '미지정',
             customer_name: item.recipient_name || item.customer_name || item.location_name || '-',
             tracking_number: trackingNum,
-            courier_name: item.courier_name || item.carrier_name || item.carrier || '롯데택배',
-            driver_name: item.driver_name || item.driver_info || item.driver || '-',
+            courier_name: '롯데택배',
+            driver_name: (item.driver_name && item.driver_name !== '-') ? item.driver_name : (item.carrier_name || item.carrier || item.driver_info || '-'),
             tracking_status_label: status,
             source: 'firestore',
           });
@@ -206,8 +206,11 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
       ? shipment.customer_name
       : (shipment.partner_name || '-');
 
-    const courier = shipment.courier_name || shipment.carrier_name || shipment.carrier || '롯데택배';
-    const driver = shipment.driver_name || shipment.driver_info || shipment.driver || '-';
+    const courier = '롯데택배';
+    const driver = (shipment.driver_name && shipment.driver_name !== '-')
+      ? shipment.driver_name
+      : (shipment.carrier_name || shipment.carrier || shipment.driver_info || '-');
+
     const status = shipment.tracking_status_label || shipment.tracking_status || '배송 중';
     const pickupDate = shipment.shipment_date || '-';
     const trackingNo = shipment.tracking_number || '';
