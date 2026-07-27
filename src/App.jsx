@@ -442,10 +442,9 @@ function App() {
       <div className="flex-1 bg-gray-50 dark:bg-gray-900 flex justify-center py-6 px-4 transition-colors duration-300">
         <AnalyticsModal 
           isOpen={isAnalyticsOpen} 
-        onClose={() => setIsAnalyticsOpen(false)} 
-        tasks={tasks} 
-        deliveryData={deliveryData} 
-      />
+          onClose={() => setIsAnalyticsOpen(false)} 
+          tasks={tasks} 
+        />
       <div className="w-full max-w-[1400px] flex flex-col lg:flex-row gap-6 justify-center">
         {/* Left Column: Calendar & News */}
         <div className="w-full lg:w-80 flex-shrink-0 flex flex-col gap-6">
