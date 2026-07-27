@@ -4,6 +4,20 @@ import { db } from '../firebase';
 import { collection, getDocs, query as fsQuery, orderBy as fsOrderBy, limit as fsLimit } from 'firebase/firestore';
 import Swal from 'sweetalert2';
 
+const getDriverInfo = (item) => {
+  if (!item) return '-';
+  const name = item.driver_name || item.driver || item.delivery_driver || item.delivery_person || item.courier_driver || item.carrier_name || item.carrier || item.transporter || item.transporter_name || item.driver_info || item.courier_person || item.deliverer || '';
+  const phone = item.driver_phone || item.carrier_phone || item.driver_tel || item.phone_number || item.tel || item.contact || item.driver_contact || '';
+
+  let cleanName = (name && name !== '-' && name !== '미지정') ? String(name).trim() : '';
+  let cleanPhone = (phone && phone !== '-' && phone !== '미지정') ? String(phone).trim() : '';
+
+  if (cleanName && cleanPhone && !cleanName.includes(cleanPhone)) {
+    return `${cleanName} ${cleanPhone}`;
+  }
+  return cleanName || cleanPhone || '-';
+};
+
 export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount }) {
   const [shipments, setShipments] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -32,13 +46,14 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
             const exists = combined.some((c) => c.tracking_number === trackingNum);
             if (!exists) {
               combined.push({
+                ...s,
                 id: s.id || trackingNum,
                 shipment_date: s.pickup_date || (s.imported_at ? s.imported_at.split('T')[0] : '-'),
                 partner_name: s.company_name || '미지정',
                 customer_name: s.recipient_name || s.location_name || '-',
                 tracking_number: trackingNum,
                 courier_name: '롯데택배',
-                driver_name: (s.driver_name && s.driver_name !== '-') ? s.driver_name : (s.carrier_name || s.carrier || s.driver_info || '-'),
+                driver_name: getDriverInfo(s),
                 tracking_status_label: s.tracking_status_label || '배송 중',
                 source: 'supabase',
               });
@@ -74,13 +89,14 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
           }
 
           combined.push({
+            ...item,
             id: docSnap.id,
             shipment_date: dateStr,
             partner_name: item.company_name || item.partner_name || '미지정',
             customer_name: item.recipient_name || item.customer_name || item.location_name || '-',
             tracking_number: trackingNum,
             courier_name: '롯데택배',
-            driver_name: (item.driver_name && item.driver_name !== '-') ? item.driver_name : (item.carrier_name || item.carrier || item.driver_info || '-'),
+            driver_name: getDriverInfo(item),
             tracking_status_label: status,
             source: 'firestore',
           });
@@ -207,10 +223,7 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
       : (shipment.partner_name || '-');
 
     const courier = '롯데택배';
-    const driver = (shipment.driver_name && shipment.driver_name !== '-')
-      ? shipment.driver_name
-      : (shipment.carrier_name || shipment.carrier || shipment.driver_info || '-');
-
+    const driver = getDriverInfo(shipment);
     const status = shipment.tracking_status_label || shipment.tracking_status || '배송 중';
     const pickupDate = shipment.shipment_date || '-';
     const trackingNo = shipment.tracking_number || '';
