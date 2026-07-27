@@ -52,20 +52,44 @@ const MiniTaskItem = ({ task, toggleTask }) => {
     }, [task]);
 
     return (
-        <div className="group p-3 bg-white/5 hover:bg-white/10 rounded-2xl border border-white/5 hover:border-white/10 transition-all duration-300 animate-in fade-in slide-in-from-bottom-2">
+        <div className={`group p-3 rounded-2xl border transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 ${
+            task.completed
+                ? 'bg-white/[0.03] border-white/5 opacity-60 hover:opacity-90'
+                : 'bg-white/5 hover:bg-white/10 border-white/5 hover:border-white/10'
+        }`}>
             <div className="flex flex-col gap-1.5">
                 <div className="flex items-start gap-3">
                     <button
                         onClick={() => toggleTask(task.id)}
-                        className="mt-0.5 w-5 h-5 rounded-lg border-2 border-white/20 flex-shrink-0 hover:border-blue-500 transition-all flex items-center justify-center group-active:scale-90"
+                        className={`mt-0.5 w-5 h-5 rounded-lg border-2 flex-shrink-0 transition-all flex items-center justify-center group-active:scale-90 ${
+                            task.completed
+                                ? 'bg-blue-500 border-blue-500 text-white shadow-sm shadow-blue-500/30'
+                                : 'border-white/20 hover:border-blue-500'
+                        }`}
                     >
-                        <div className="w-2 h-2 bg-blue-500 rounded-sm opacity-0 group-hover:opacity-30 transition-opacity"></div>
+                        {task.completed ? (
+                            <svg className="w-3.5 h-3.5 stroke-[3]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                        ) : (
+                            <div className="w-2 h-2 bg-blue-500 rounded-sm opacity-0 group-hover:opacity-30 transition-opacity"></div>
+                        )}
                     </button>
-                    <span className="text-[13px] leading-snug cursor-default flex-1 font-semibold text-gray-200 group-hover:text-white transition-colors" title={task.title}>
+                    <span
+                        className={`text-[13px] leading-snug cursor-default flex-1 font-semibold transition-all ${
+                            task.completed
+                                ? 'line-through text-gray-400/70 select-none'
+                                : 'text-gray-200 group-hover:text-white'
+                        }`}
+                        title={task.title}
+                    >
                         {task.title}
                     </span>
+                    {task.priority === 'urgent' && <span className={`w-2 h-2 rounded-full bg-red-500 mt-1.5 shrink-0 ${task.completed ? 'opacity-40' : ''}`} title="급급급" />}
+                    {task.priority === 'high' && <span className={`w-2 h-2 rounded-full bg-orange-400 mt-1.5 shrink-0 ${task.completed ? 'opacity-40' : ''}`} title="급" />}
+                    {task.priority === 'normal' && <span className={`w-2 h-2 rounded-full bg-yellow-400 mt-1.5 shrink-0 ${task.completed ? 'opacity-30' : 'opacity-60'}`} title="보통" />}
                 </div>
-                {timeLeft && (
+                {timeLeft && !task.completed && (
                     <div className="pl-8">
                         <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wide ${timeLeft === '시간 지남' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400 animate-pulse'}`}>
                             {timeLeft}
@@ -81,6 +105,14 @@ export default function MiniWidget() {
     const { t } = useLanguage();
     const [tasks, setTasks] = useState([]);
     const [user, setUser] = useState(null);
+
+    // Form inputs state
+    const [title, setTitle] = useState('');
+    const [priority, setPriority] = useState('normal');
+    const [time, setTime] = useState('');
+    const [showTimePicker, setShowTimePicker] = useState(false);
+    const [tempHour, setTempHour] = useState('');
+    const [tempMinute, setTempMinute] = useState('');
 
     // Get today's date in YYYY-MM-DD
     const getLocalDateString = () => {
@@ -115,17 +147,54 @@ export default function MiniWidget() {
         };
     }, []);
 
-    const toggleTask = async (id) => {
-        const newTasks = tasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t));
+    const saveTasks = async (newTasks) => {
         setTasks(newTasks);
         if (user) {
+            const userTodoKey = `todos_${user.uid}`;
+            localStorage.setItem(userTodoKey, JSON.stringify(newTasks));
             await setDoc(doc(db, "users", user.uid), { tasks: newTasks }, { merge: true });
         } else {
             localStorage.setItem('todos', JSON.stringify(newTasks));
         }
     };
 
-    const activeTasks = tasks.filter(t => t.date === today && !t.completed);
+    const toggleTask = async (id) => {
+        const newTasks = tasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t));
+        await saveTasks(newTasks);
+    };
+
+    const handleAddTask = async (e) => {
+        if (e) e.preventDefault();
+        if (!title.trim()) return;
+
+        const newTask = {
+            id: Date.now().toString(),
+            title: title.trim(),
+            priority: priority || 'normal',
+            time: time || '',
+            date: today,
+            completed: false,
+            reminded: false,
+        };
+
+        const newTasks = [newTask, ...tasks];
+        await saveTasks(newTasks);
+
+        setTitle('');
+        setPriority('normal');
+        setTime('');
+        setShowTimePicker(false);
+    };
+
+    const todayTasks = tasks.filter(t => t.date === today);
+
+    // Sort tasks: active (uncompleted) tasks first, completed tasks moved to the bottom
+    const sortedTasks = [...todayTasks].sort((a, b) => {
+        if (a.completed === b.completed) return 0;
+        return a.completed ? 1 : -1;
+    });
+
+    const activeTasksCount = todayTasks.filter(t => !t.completed).length;
 
     const handleClose = () => {
         if (window.electronAPI && window.electronAPI.hideMiniWidget) {
@@ -205,12 +274,12 @@ export default function MiniWidget() {
 
                     <div className="flex items-center gap-2">
                         <span className="bg-blue-500/20 text-blue-300 text-[10px] font-black px-2 py-0.5 rounded-full border border-blue-500/30">
-                            {activeTasks.length}
+                            {activeTasksCount}
                         </span>
                     </div>
                 </div>
 
-                {activeTasks.length === 0 ? (
+                {sortedTasks.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-10 opacity-30">
                         <div className="w-12 h-12 mb-3 bg-white/5 rounded-full flex items-center justify-center">
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" /></svg>
@@ -219,11 +288,174 @@ export default function MiniWidget() {
                     </div>
                 ) : (
                     <div className="space-y-2.5">
-                        {activeTasks.map(task => (
+                        {sortedTasks.map(task => (
                             <MiniTaskItem key={task.id} task={task} toggleTask={toggleTask} />
                         ))}
                     </div>
                 )}
+            </div>
+
+            {/* Task Input Section at the Bottom */}
+            <div className="p-3 bg-black/30 border-t border-white/10 shrink-0 space-y-2 relative z-30" style={{ WebkitAppRegion: 'no-drag' }}>
+                <form onSubmit={handleAddTask} className="flex items-center gap-2">
+                    <div className="relative flex-1">
+                        <input
+                            type="text"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                            placeholder={t('addTaskPlaceholder') || '새 작업 추가...'}
+                            className="w-full pl-3 pr-3 py-2 bg-white/10 border border-white/15 rounded-xl text-[12px] text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all"
+                        />
+                    </div>
+                    <button
+                        type="submit"
+                        disabled={!title.trim()}
+                        className="w-8 h-8 bg-blue-600 hover:bg-blue-500 disabled:opacity-40 disabled:hover:bg-blue-600 text-white rounded-xl flex items-center justify-center transition-all active:scale-95 shrink-0 shadow-lg shadow-blue-500/20"
+                    >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
+                        </svg>
+                    </button>
+                </form>
+
+                {/* Priorities & Time picker row */}
+                <div className="flex items-center justify-between gap-1 text-[11px] select-none">
+                    <div className="flex items-center gap-1">
+                        <button
+                            type="button"
+                            onClick={() => setPriority('normal')}
+                            className={`px-2 py-0.5 rounded-lg border text-[10px] font-bold transition-all flex items-center gap-1 ${
+                                priority === 'normal'
+                                    ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-300'
+                                    : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80'
+                            }`}
+                        >
+                            <span className="w-1.5 h-1.5 rounded-full bg-yellow-400"></span>
+                            보통
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setPriority('high')}
+                            className={`px-2 py-0.5 rounded-lg border text-[10px] font-bold transition-all flex items-center gap-1 ${
+                                priority === 'high'
+                                    ? 'bg-orange-500/20 border-orange-500/50 text-orange-300'
+                                    : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80'
+                            }`}
+                        >
+                            <span className="w-1.5 h-1.5 rounded-full bg-orange-400"></span>
+                            급
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={() => setPriority('urgent')}
+                            className={`px-2 py-0.5 rounded-lg border text-[10px] font-bold transition-all flex items-center gap-1 ${
+                                priority === 'urgent'
+                                    ? 'bg-red-500/20 border-red-500/50 text-red-300'
+                                    : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80'
+                            }`}
+                        >
+                            <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+                            급급급
+                        </button>
+                    </div>
+
+                    {/* Time picker button / Quick time input */}
+                    <div className="relative">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                if (!showTimePicker) {
+                                    const now = new Date();
+                                    const h = String(now.getHours()).padStart(2, '0');
+                                    const m = String(Math.round(now.getMinutes() / 5) * 5 % 60).padStart(2, '0');
+                                    setTempHour(h);
+                                    setTempMinute(m);
+                                }
+                                setShowTimePicker(!showTimePicker);
+                            }}
+                            className={`px-2 py-0.5 rounded-lg border text-[10px] font-bold transition-all flex items-center gap-1 ${
+                                time
+                                    ? 'bg-blue-500/20 border-blue-500/50 text-blue-300'
+                                    : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80'
+                            }`}
+                        >
+                            <svg className="w-3 h-3 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            {time || '--:--'}
+                            {time && (
+                                <span
+                                    onClick={(e) => { e.stopPropagation(); setTime(''); }}
+                                    className="ml-0.5 text-blue-400 hover:text-red-400"
+                                >
+                                    ×
+                                </span>
+                            )}
+                        </button>
+
+                        {/* Compact Time Picker Dropdown */}
+                        {showTimePicker && (
+                            <div className="absolute bottom-full right-0 mb-2 bg-slate-900 border border-white/15 rounded-xl shadow-2xl p-2.5 z-50 w-44 animate-in fade-in slide-in-from-bottom-2">
+                                <div className="flex gap-1.5 text-center">
+                                    <div className="flex-1">
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">시</p>
+                                        <div className="h-28 overflow-y-auto custom-scrollbar bg-black/30 rounded-lg p-1 space-y-0.5">
+                                            {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')).map(h => (
+                                                <button
+                                                    key={h}
+                                                    type="button"
+                                                    onClick={() => setTempHour(h)}
+                                                    className={`w-full py-0.5 text-[11px] font-bold rounded ${tempHour === h ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-white/10'}`}
+                                                >
+                                                    {h}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center text-gray-500 font-bold pt-3">:</div>
+                                    <div className="flex-1">
+                                        <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">분</p>
+                                        <div className="h-28 overflow-y-auto custom-scrollbar bg-black/30 rounded-lg p-1 space-y-0.5">
+                                            {Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0')).map(m => (
+                                                <button
+                                                    key={m}
+                                                    type="button"
+                                                    onClick={() => setTempMinute(m)}
+                                                    className={`w-full py-0.5 text-[11px] font-bold rounded ${tempMinute === m ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-white/10'}`}
+                                                >
+                                                    {m}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                </div>
+                                <div className="flex items-center justify-between pt-2 mt-2 border-t border-white/10">
+                                    <button
+                                        type="button"
+                                        onClick={() => { setTime(''); setShowTimePicker(false); }}
+                                        className="text-[10px] text-gray-400 hover:text-red-400"
+                                    >
+                                        취소
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (tempHour && tempMinute) {
+                                                setTime(`${tempHour}:${tempMinute}`);
+                                            }
+                                            setShowTimePicker(false);
+                                        }}
+                                        className="px-2 py-0.5 text-[10px] font-bold text-white bg-blue-600 hover:bg-blue-500 rounded-md"
+                                    >
+                                        확인
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
 
             {/* Footer */}
@@ -260,3 +492,4 @@ export default function MiniWidget() {
         </div>
     );
 }
+

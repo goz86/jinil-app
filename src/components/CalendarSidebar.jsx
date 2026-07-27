@@ -112,10 +112,17 @@ export default function CalendarSidebar({ tasks, selectedDate, setSelectedDate }
                             key={day}
                             onClick={() => handleDateClick(day)}
                             className={`
-                group aspect-square flex flex-col items-center justify-center rounded-full relative transition-all duration-200
-                ${isSelected ? 'bg-blue-600 text-white shadow-md shadow-blue-200 dark:shadow-blue-900' : 'hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300'}
-                ${isToday && !isSelected ? 'font-bold border-2 border-blue-100 dark:border-blue-800' : ''}
-              `}
+                                group aspect-square flex flex-col items-center justify-center rounded-full relative transition-all duration-200
+                                ${isSelected
+                                    ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-500/30 scale-105'
+                                    : hasActiveTasks
+                                        ? 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-300 font-bold border border-red-200 dark:border-red-800/60'
+                                        : hasOnlyCompleted
+                                            ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800/60'
+                                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                                }
+                                ${isToday && !isSelected ? 'ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-gray-800' : ''}
+                            `}
                         >
                             {holidayName && (
                                 <div className="absolute bottom-full mb-2 hidden group-hover:block z-50 whitespace-nowrap bg-red-500 text-white text-xs font-medium px-2.5 py-1.5 rounded-lg shadow-xl translate-y-2 group-hover:translate-y-0 transition-all duration-200 pointer-events-none">
@@ -124,16 +131,7 @@ export default function CalendarSidebar({ tasks, selectedDate, setSelectedDate }
                                 </div>
                             )}
 
-                            <span className={`text-sm mb-1 ${isSelected ? 'font-semibold' : ''} ${holidayName && !isSelected ? 'text-red-500 font-bold' : ''}`}>{day}</span>
-
-                            <div className="flex space-x-1 absolute bottom-1.5">
-                                {hasActiveTasks && (
-                                    <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-red-400'}`}></div>
-                                )}
-                                {hasOnlyCompleted && (
-                                    <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-blue-200' : 'bg-green-400'}`}></div>
-                                )}
-                            </div>
+                            <span className={`text-sm ${holidayName && !isSelected && !hasActiveTasks && !hasOnlyCompleted ? 'text-red-500 font-bold' : ''}`}>{day}</span>
                         </button>
                     );
                 })}
@@ -142,15 +140,19 @@ export default function CalendarSidebar({ tasks, selectedDate, setSelectedDate }
             <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700 space-y-3">
                 <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">{t('calendarLegend')}</h3>
                 <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
-                    <div className="w-2 h-2 rounded-full bg-red-400 mr-2"></div>
+                    <div className="w-3.5 h-3.5 rounded-full bg-red-100 dark:bg-red-900/40 border border-red-300 dark:border-red-700 mr-2 flex items-center justify-center">
+                        <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+                    </div>
                     {t('hasActiveTasks')}
                 </div>
                 <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
-                    <div className="w-2 h-2 rounded-full bg-green-400 mr-2"></div>
+                    <div className="w-3.5 h-3.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 border border-emerald-300 dark:border-emerald-700 mr-2 flex items-center justify-center">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                    </div>
                     {t('hasCompletedTasks')}
                 </div>
                 <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
-                    <div className="w-4 h-4 rounded-md bg-blue-600 mr-2 opacity-80"></div>
+                    <div className="w-3.5 h-3.5 rounded-full bg-blue-600 mr-2"></div>
                     {t('selectedDate')}
                 </div>
             </div>
