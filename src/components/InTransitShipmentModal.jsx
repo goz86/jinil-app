@@ -37,7 +37,9 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
                 partner_name: s.company_name || '미지정',
                 customer_name: s.recipient_name || s.location_name || '-',
                 tracking_number: trackingNum,
-                tracking_status_label: s.tracking_status_label || '배송중',
+                courier_name: s.carrier_name || s.courier_name || s.carrier || '롯데택배',
+                driver_name: s.driver_name || s.driver_info || s.driver || '-',
+                tracking_status_label: s.tracking_status_label || '배송 중',
                 source: 'supabase',
               });
             }
@@ -60,7 +62,7 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
         // Avoid duplicate tracking numbers if already in Supabase
         const exists = combined.some((c) => c.tracking_number === trackingNum);
         if (!exists) {
-          const status = item.tracking_status_label || (item.is_delivered ? '배달완료' : '배송중');
+          const status = item.tracking_status_label || (item.is_delivered ? '배달완료' : '배송 중');
           if (status === '배달완료') return;
 
           let dateStr = '-';
@@ -77,6 +79,8 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
             partner_name: item.company_name || item.partner_name || '미지정',
             customer_name: item.recipient_name || item.customer_name || item.location_name || '-',
             tracking_number: trackingNum,
+            courier_name: item.courier_name || item.carrier_name || item.carrier || '롯데택배',
+            driver_name: item.driver_name || item.driver_info || item.driver || '-',
             tracking_status_label: status,
             source: 'firestore',
           });
@@ -194,12 +198,38 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
   };
 
   const handleSendKakaoNotice = (shipment) => {
-    const message = `[진일라벨 배송안내]\n거래처: ${shipment.partner_name || shipment.customer_name || '고객'}\n운송장번호: ${shipment.tracking_number}\n현재배송상태: ${shipment.tracking_status_label || '배송중'}\n조회링크: https://trace.cjlogistics.com/next/tracking.html?wblNo=${shipment.tracking_number}`;
+    const recipient = (shipment.customer_name && shipment.customer_name !== '-')
+      ? shipment.customer_name
+      : ((shipment.partner_name && shipment.partner_name !== '미지정') ? shipment.partner_name : '고객');
+
+    const locationOrRecipient = (shipment.customer_name && shipment.customer_name !== '-')
+      ? shipment.customer_name
+      : (shipment.partner_name || '-');
+
+    const courier = shipment.courier_name || shipment.carrier_name || shipment.carrier || '롯데택배';
+    const driver = shipment.driver_name || shipment.driver_info || shipment.driver || '-';
+    const status = shipment.tracking_status_label || shipment.tracking_status || '배송 중';
+    const pickupDate = shipment.shipment_date || '-';
+    const trackingNo = shipment.tracking_number || '';
+
+    const message = `[진일라벨 배송 안내]
+안녕하세요, ${recipient}님.
+고객님의 운송장 정보 및 배송 현황을 안내해 드립니다.
+
+■ 수하인/출고처: ${locationOrRecipient}
+■ 운송장번호: ${trackingNo}
+■ 택배사: ${courier}
+■ 배송기사: ${driver}
+■ 배송상태: ${status}
+■ 집하일자: ${pickupDate}
+
+▶ 실시간 배송조회: https://www.jinil.top/track?q=${trackingNo}`;
+
     navigator.clipboard.writeText(message);
     Swal.fire({
       icon: 'info',
       title: '카톡 안내 메시지가 복사되었습니다!',
-      text: '카카오톡 채팅창에 Ctrl+V로 붙여넣어 발송하세요.',
+      html: `<pre style="text-align: left; background: #f3f4f6; padding: 12px; border-radius: 8px; font-size: 11px; white-space: pre-wrap; font-family: monospace;">${message}</pre><p style="margin-top: 10px; font-size: 12px; color: #666;">카카오톡 채팅창에 Ctrl+V로 붙여넣어 발송하세요.</p>`,
       confirmButtonText: '확인'
     });
   };
@@ -268,9 +298,9 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
               <table className="w-full text-left text-xs">
                 <thead className="bg-gray-50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 font-semibold border-b border-gray-100 dark:border-gray-700">
                   <tr>
-                    <th className="py-3 px-4">출고일자</th>
-                    <th className="py-3 px-4">거래처명</th>
-                    <th className="py-3 px-4">수령인 / 고객명</th>
+                    <th className="py-3 px-4">집하일자</th>
+                    <th className="py-3 px-4">거래처</th>
+                    <th className="py-3 px-4">수하인/출고처</th>
                     <th className="py-3 px-4">운송장번호</th>
                     <th className="py-3 px-4">배송상태</th>
                     <th className="py-3 px-4 text-center">카톡 안내</th>
@@ -299,7 +329,7 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
                       </td>
                       <td className="py-3 px-4">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-                          {s.tracking_status_label || s.tracking_status || '배송중'}
+                          {s.tracking_status_label || s.tracking_status || '배송 중'}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-center">
