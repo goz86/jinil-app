@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-export default function AnalyticsModal({ isOpen, onClose, tasks }) {
+export default function AnalyticsModal({ isOpen, onClose, tasks = [] }) {
     const { t } = useLanguage();
 
     const chartData = useMemo(() => {
@@ -11,10 +11,13 @@ export default function AnalyticsModal({ isOpen, onClose, tasks }) {
         for (let i = 6; i >= 0; i--) {
             const d = new Date(today);
             d.setDate(d.getDate() - i);
-            const dateStr = d.toISOString().split('T')[0]; // YYYY-MM-DD
+            const year = d.getFullYear();
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const dateStr = `${year}-${month}-${day}`;
             const displayDate = `${d.getDate()}/${d.getMonth() + 1}`;
 
-            // Tasks
+            // Tasks matching local date
             const dayTasks = tasks.filter(t => t.date === dateStr);
             const completed = dayTasks.filter(t => t.completed).length;
             const total = dayTasks.length;
@@ -67,9 +70,9 @@ export default function AnalyticsModal({ isOpen, onClose, tasks }) {
                     {/* Tasks Chart */}
                     <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm flex flex-col">
                         <h3 className="text-lg font-semibold text-gray-700 dark:text-gray-200 mb-6 text-center">최근 7일 작업 진행률</h3>
-                        <div className="w-full flex-1 min-h-[300px]">
+                        <div className="w-full h-[320px]">
                             <ResponsiveContainer width="100%" height="100%">
-                                <LineChart data={chartData} margin={{ top: 5, right: 20, left: -20, bottom: 5 }}>
+                                <LineChart data={chartData} margin={{ top: 10, right: 30, left: 0, bottom: 10 }}>
                                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
                                     <XAxis dataKey="name" axisLine={false} tickLine={false} stroke="#9CA3AF" />
                                     <YAxis axisLine={false} tickLine={false} stroke="#9CA3AF" allowDecimals={false} />
@@ -77,7 +80,7 @@ export default function AnalyticsModal({ isOpen, onClose, tasks }) {
                                         contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                                         itemStyle={{ fontWeight: 500 }}
                                     />
-                                    <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
+                                    <Legend iconType="circle" wrapperStyle={{ paddingTop: '15px' }} />
                                     <Line type="monotone" name="전체 작업" dataKey="전체 작업" stroke="#3B82F6" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
                                     <Line type="monotone" name="완료된 작업" dataKey="완료된 작업" stroke="#10B981" strokeWidth={3} dot={{ r: 4, strokeWidth: 2 }} activeDot={{ r: 6 }} />
                                 </LineChart>
