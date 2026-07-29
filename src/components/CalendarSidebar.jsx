@@ -107,21 +107,24 @@ export default function CalendarSidebar({ tasks, selectedDate, setSelectedDate }
                     const hasOnlyCompleted = stats && stats.active === 0 && stats.total > 0;
                     const holidayName = holidays[dateStr];
 
+                    let dayStyle = 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700';
+                    if (hasActiveTasks) {
+                        dayStyle = 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-300 font-bold border border-red-200 dark:border-red-800/60';
+                    } else if (hasOnlyCompleted) {
+                        dayStyle = 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800/60';
+                    } else if (isSelected) {
+                        dayStyle = 'bg-blue-600 text-white font-bold shadow-md shadow-blue-500/30';
+                    }
+
                     return (
                         <button
                             key={day}
                             onClick={() => handleDateClick(day)}
                             className={`
                                 group aspect-square flex flex-col items-center justify-center rounded-full relative transition-all duration-200
-                                ${isSelected
-                                    ? 'bg-blue-600 text-white font-bold shadow-md shadow-blue-500/30 scale-105'
-                                    : hasActiveTasks
-                                        ? 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-300 font-bold border border-red-200 dark:border-red-800/60'
-                                        : hasOnlyCompleted
-                                            ? 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800/60'
-                                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                                }
-                                ${isToday && !isSelected ? 'ring-2 ring-blue-500 ring-offset-1 dark:ring-offset-gray-800' : ''}
+                                ${dayStyle}
+                                ${isSelected && (hasActiveTasks || hasOnlyCompleted) ? 'ring-2 ring-blue-600 ring-offset-2 dark:ring-offset-gray-800 scale-105 shadow-sm' : isSelected ? 'scale-105' : ''}
+                                ${isToday && !isSelected ? 'ring-2 ring-blue-400/60 ring-offset-1 dark:ring-offset-gray-800' : ''}
                             `}
                         >
                             {holidayName && (
