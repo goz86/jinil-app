@@ -304,11 +304,58 @@ if (process.platform === 'win32') {
     app.setAppUserModelId("com.jinil.todos");
 }
 
+function positionMiniNextToMain() {
+    if (!mainWindow || !miniWindow || miniWindow.isDestroyed() || mainWindow.isDestroyed()) return;
+    try {
+        if (!mainWindow.isVisible() || mainWindow.isMinimized()) return;
+
+        const primaryDisplay = screen.getPrimaryDisplay();
+        const workArea = primaryDisplay.workArea;
+        const miniBounds = miniWindow.getBounds();
+        const miniWidth = miniBounds.width || 300;
+
+        if (mainWindow.isMaximized()) {
+            const miniHeight = Math.min(650, workArea.height - 60);
+            miniWindow.setBounds({
+                x: Math.round(workArea.x + workArea.width - miniWidth - 20),
+                y: Math.round(workArea.y + 20),
+                width: Math.round(miniWidth),
+                height: Math.round(miniHeight)
+            });
+        } else {
+            const [mainX, mainY] = mainWindow.getPosition();
+            const [mainWidth, mainHeight] = mainWindow.getSize();
+            const miniHeight = Math.min(mainHeight, workArea.height - 40);
+
+            let nextX = mainX + mainWidth + 12;
+            if (nextX + miniWidth > workArea.x + workArea.width) {
+                nextX = mainX - miniWidth - 12;
+            }
+            if (nextX < workArea.x) {
+                nextX = workArea.x + workArea.width - miniWidth - 20;
+            }
+
+            miniWindow.setBounds({
+                x: Math.round(nextX),
+                y: Math.round(Math.max(workArea.y + 10, mainY)),
+                width: Math.round(miniWidth),
+                height: Math.round(miniHeight)
+            });
+        }
+
+        miniWindow.setAlwaysOnTop(true, 'screen-saver');
+    } catch (err) {
+        console.error("Positioning mini window error:", err);
+    }
+}
+
 function createMiniWindow() {
-    if (miniWindow) {
+    if (miniWindow && !miniWindow.isDestroyed()) {
         if (miniWindow.isMinimized()) miniWindow.restore();
         miniWindow.show();
+        miniWindow.setAlwaysOnTop(true, 'screen-saver');
         miniWindow.focus();
+        positionMiniNextToMain();
         return;
     }
     const isDev = !app.isPackaged;
@@ -316,17 +363,27 @@ function createMiniWindow() {
     miniWindow = new BrowserWindow({
         width: 300, height: 480, title: "Jinil Mini",
         icon: nativeImage.createFromPath(iconPath),
-        frame: false, transparent: true, alwaysOnTop: true, resizable: true, skipTaskbar: true,
+        frame: false, transparent: true, alwaysOnTop: true, resizable: true, skipTaskbar: false,
         minWidth: 200, minHeight: 300,
         maxWidth: 800, maxHeight: 1200,
         hasShadow: true,
         webPreferences: { nodeIntegration: false, contextIsolation: true, webSecurity: false, preload: path.join(__dirname, 'preload.js') }
     });
+
+    miniWindow.setAlwaysOnTop(true, 'screen-saver');
+
     if (isDev) {
         miniWindow.loadURL('http://localhost:5173/#/mini');
     } else {
         miniWindow.loadURL(`file://${path.join(__dirname, '../dist/index.html')}#/mini`);
     }
+
+    miniWindow.once('ready-to-show', () => {
+        miniWindow.show();
+        miniWindow.setAlwaysOnTop(true, 'screen-saver');
+        positionMiniNextToMain();
+    });
+
     miniWindow.on('closed', () => { miniWindow = null; });
 }
 
@@ -393,10 +450,19 @@ function createWindow() {
 
     ipcMain.on('toggle-mini-widget', () => {
         console.log('[Main] IPC: toggle-mini-widget');
-        if (miniWindow) {
-            if (miniWindow.isVisible()) { miniWindow.hide(); }
-            else { if (miniWindow.isMinimized()) miniWindow.restore(); miniWindow.show(); miniWindow.focus(); }
-        } else { createMiniWindow(); }
+        if (miniWindow && !miniWindow.isDestroyed()) {
+            if (miniWindow.isVisible()) { 
+                miniWindow.hide(); 
+            } else { 
+                if (miniWindow.isMinimized()) miniWindow.restore(); 
+                miniWindow.show(); 
+                miniWindow.setAlwaysOnTop(true, 'screen-saver');
+                miniWindow.focus(); 
+                positionMiniNextToMain();
+            }
+        } else { 
+            createMiniWindow(); 
+        }
     });
     ipcMain.on('close-mini-widget', () => { if (miniWindow) { miniWindow.close(); miniWindow = null; } });
     ipcMain.on('hide-mini-widget', () => { if (miniWindow) miniWindow.hide(); });
@@ -570,7 +636,13 @@ function createTray() {
     tray.setToolTip('진일 라벨');
     const contextMenu = Menu.buildFromTemplate([
         { label: '메인 창 열기', click: () => { if (mainWindow) { mainWindow.show(); mainWindow.focus(); } } },
-        { label: '미니 창 (항상 위에)', click: () => { if (miniWindow) { miniWindow.close(); } else { createMiniWindow(); } } },
+        { label: '미니 창 (항상 위에)', click: () => { 
+            if (miniWindow && !miniWindow.isDestroyed() && miniWindow.isVisible()) { 
+                miniWindow.hide(); 
+            } else { 
+                createMiniWindow(); 
+            } 
+        } },
         { type: 'separator' },
         { label: '종료', click: () => { isQuitting = true; if (miniWindow) miniWindow.close(); app.quit(); } }
     ]);
