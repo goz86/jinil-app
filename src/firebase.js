@@ -25,3 +25,9 @@ export const db = initializeFirestore(app, {
 });
 
 export const storage = getStorage(app);
+
+// Secondary Firebase app for cross-user task assignment
+// This allows signing in as another user without disrupting the main auth session
+const secondaryApp = initializeApp(firebaseConfig, 'taskAssignment');
+export const secondaryAuth = getAuth(secondaryApp);
+export const secondaryDb = getFirestore(secondaryApp);

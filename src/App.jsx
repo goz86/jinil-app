@@ -15,7 +15,7 @@ import ClientAddressBook from './components/ClientAddressBook';
 import InventoryManagement from './components/InventoryManagement';
 import LabelPrinter from './components/LabelPrinter';
 import StockTicker from './components/StockTicker';
-import { auth, db } from './firebase';
+import { auth, db, secondaryAuth, secondaryDb } from './firebase';
 import { signInWithCredential, signInWithEmailAndPassword, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
 import { collection, doc, onSnapshot, setDoc, query, orderBy, limit, where, getDocs, deleteDoc, getDoc } from 'firebase/firestore';
 import { ref, deleteObject } from 'firebase/storage';
@@ -379,13 +379,22 @@ function App() {
 
   const assignTaskToUser = async (targetUid, task) => {
     try {
-      const userDocRef = doc(db, "users", targetUid);
+      const targetAcc = savedAccounts.find(a => a.uid === targetUid);
+      if (!targetAcc?.p) throw new Error('No credentials for target user');
+
+      // Sign in as target user on secondary Firebase app (doesn't affect main session)
+      await signInWithEmailAndPassword(secondaryAuth, targetAcc.email, atob(targetAcc.p));
+
+      // Read & write using secondary Firestore (authenticated as target user)
+      const userDocRef = doc(secondaryDb, "users", targetUid);
       const userDocSnap = await getDoc(userDocRef);
       const existingTasks = userDocSnap.exists() ? (userDocSnap.data().tasks || []) : [];
       const newTasks = [task, ...existingTasks];
       await setDoc(userDocRef, { tasks: newTasks });
 
-      const targetAcc = savedAccounts.find(a => a.uid === targetUid);
+      // Clean up secondary auth
+      await signOut(secondaryAuth);
+
       const targetName = targetAcc?.alias || targetAcc?.email?.split('@')[0] || '직원';
 
       Swal.fire({
