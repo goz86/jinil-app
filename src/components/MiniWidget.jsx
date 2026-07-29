@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
-import { auth, db } from '../firebase';
-import { onAuthStateChanged } from 'firebase/auth';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import React, { useState, useEffect, useRef } from 'react';
+import { auth, db, secondaryAuth, secondaryDb } from '../firebase';
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
 import { useLanguage } from '../contexts/LanguageContext';
+import Swal from 'sweetalert2';
 
 const MiniTaskItem = ({ task, toggleTask }) => {
     const [timeLeft, setTimeLeft] = useState('');
@@ -113,6 +114,10 @@ export default function MiniWidget() {
     const [showTimePicker, setShowTimePicker] = useState(false);
     const [tempHour, setTempHour] = useState('');
     const [tempMinute, setTempMinute] = useState('');
+    const [savedAccounts, setSavedAccounts] = useState([]);
+    const [assigneeUid, setAssigneeUid] = useState(null);
+    const [showAssignee, setShowAssignee] = useState(false);
+    const assigneeRef = useRef(null);
 
     // Get today's date in YYYY-MM-DD
     const getLocalDateString = () => {
@@ -123,6 +128,23 @@ export default function MiniWidget() {
         return `${year}-${month}-${day}`;
     };
     const today = getLocalDateString();
+
+    useEffect(() => {
+        try {
+            const accs = JSON.parse(localStorage.getItem('jinil_saved_accounts') || '[]');
+            setSavedAccounts(accs);
+        } catch (e) {
+            setSavedAccounts([]);
+        }
+
+        const handleClickOutside = (e) => {
+            if (assigneeRef.current && !assigneeRef.current.contains(e.target)) {
+                setShowAssignee(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -177,13 +199,60 @@ export default function MiniWidget() {
             reminded: false,
         };
 
-        const newTasks = [newTask, ...tasks];
-        await saveTasks(newTasks);
+        if (assigneeUid && user && assigneeUid !== user.uid) {
+            const targetAcc = savedAccounts.find(a => a.uid === assigneeUid);
+            const targetName = targetAcc?.alias || targetAcc?.email?.split('@')[0] || '직원';
+
+            Swal.fire({
+                title: `${targetName}에게 배정 중...`,
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            try {
+                if (!targetAcc?.p) throw new Error('No credentials for target user');
+                
+                // Secondary auth
+                await signInWithEmailAndPassword(secondaryAuth, targetAcc.email, atob(targetAcc.p));
+                const userDocRef = doc(secondaryDb, "users", assigneeUid);
+                const userDocSnap = await getDoc(userDocRef);
+                const existingTasks = userDocSnap.exists() ? (userDocSnap.data().tasks || []) : [];
+                await setDoc(userDocRef, { tasks: [newTask, ...existingTasks] });
+                await signOut(secondaryAuth);
+
+                Swal.fire({
+                    icon: 'success',
+                    title: '작업 배정 완료',
+                    text: `"${newTask.title}" \u2192 ${targetName}`,
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000
+                });
+            } catch (error) {
+                console.error("Error assigning task:", error);
+                Swal.fire({
+                    icon: 'error',
+                    title: '오류',
+                    text: '작업 배정에 실패했습니다.',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 3000
+                });
+            }
+        } else {
+            const newTasks = [newTask, ...tasks];
+            await saveTasks(newTasks);
+        }
 
         setTitle('');
         setPriority('normal');
         setTime('');
         setShowTimePicker(false);
+        setAssigneeUid(null);
     };
 
     const todayTasks = tasks.filter(t => t.date === today);
@@ -455,6 +524,75 @@ export default function MiniWidget() {
                             </div>
                         )}
                     </div>
+
+                    {/* Assignee selector - only show if there are other team members */}
+                    {savedAccounts.filter(a => a.email !== user?.email && a.uid).length > 0 && (
+                        <div className="relative" ref={assigneeRef}>
+                            <button
+                                type="button"
+                                onClick={() => setShowAssignee(!showAssignee)}
+                                className={`px-2 py-0.5 rounded-lg border text-[10px] font-bold transition-all flex items-center gap-1 ${
+                                    assigneeUid
+                                        ? 'bg-purple-500/20 border-purple-500/50 text-purple-300'
+                                        : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80'
+                                }`}
+                            >
+                                <svg className="w-3 h-3 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                {assigneeUid
+                                    ? (savedAccounts.find(a => a.uid === assigneeUid)?.alias || savedAccounts.find(a => a.uid === assigneeUid)?.email?.split('@')[0] || '?')
+                                    : '나'}
+                                <svg className="w-2.5 h-2.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+
+                            {/* Assignee Dropdown */}
+                            {showAssignee && (
+                                <div className="absolute bottom-full right-0 mb-2 bg-slate-900 border border-white/15 rounded-xl shadow-2xl py-1 z-50 w-32 animate-in fade-in slide-in-from-bottom-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => { setAssigneeUid(null); setShowAssignee(false); }}
+                                        className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-[10px] transition-colors
+                                            ${!assigneeUid ? 'text-blue-400 font-bold bg-white/5' : 'text-gray-300 hover:bg-white/10'}`}
+                                    >
+                                        <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center text-white text-[8px] font-bold shrink-0">
+                                            {(user?.email || '?')[0].toUpperCase()}
+                                        </div>
+                                        <span className="flex-1 text-left">나</span>
+                                        {!assigneeUid && (
+                                            <svg className="w-3 h-3 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        )}
+                                    </button>
+                                    
+                                    <div className="h-px bg-white/10 mx-2 my-0.5"></div>
+                                    
+                                    {savedAccounts.filter(a => a.email !== user?.email && a.uid).map(acc => (
+                                        <button
+                                            key={acc.email}
+                                            type="button"
+                                            onClick={() => { setAssigneeUid(acc.uid); setShowAssignee(false); }}
+                                            className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-[10px] transition-colors
+                                                ${assigneeUid === acc.uid ? 'text-purple-400 font-bold bg-white/5' : 'text-gray-300 hover:bg-white/10'}`}
+                                        >
+                                            <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold shrink-0 ${assigneeUid === acc.uid ? 'bg-purple-500 text-white' : 'bg-white/10 text-gray-300'}`}>
+                                                {acc.email[0].toUpperCase()}
+                                            </div>
+                                            <span className="flex-1 text-left truncate">{acc.alias || acc.email.split('@')[0]}</span>
+                                            {assigneeUid === acc.uid && (
+                                                <svg className="w-3 h-3 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 
