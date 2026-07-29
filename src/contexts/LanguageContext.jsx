@@ -254,6 +254,133 @@ const translations = {
         labelTip: "팁",
         labelTipText: "프린터에 맞는 용지 크기를 선택하세요. 인쇄 전 프린터 설정에서 사용자 정의 용지 크기를 설정하세요.",
         labelShowBarcodeText: "바코드 텍스트 표시"
+    },
+    en: {
+        appTitle: "Jinil Label",
+        pro: "Pro",
+        searchPlaceholder: "Search...",
+        logout: "Logout",
+        login: "Login",
+        loginGoogle: "Google",
+        progressTitle: "Task Progress",
+        tasksCompleted: "tasks completed",
+        addTaskPlaceholder: "Add a new task...",
+        priorityHigh: "High",
+        priorityNormal: "Normal",
+        priorityLow: "Low",
+        filterAll: "All",
+        filterActive: "Active",
+        filterCompleted: "Completed",
+        noTasks: "No tasks found!",
+        noMatchingTasks: "No matching tasks found.",
+        today: "Today",
+        jan: "Jan", feb: "Feb", mar: "Mar", apr: "Apr", may: "May", jun: "Jun",
+        jul: "Jul", aug: "Aug", sep: "Sep", oct: "Oct", nov: "Nov", dec: "Dec",
+        sun: "Sun", mon: "Mon", tue: "Tue", wed: "Wed", thu: "Thu", fri: "Fri", sat: "Sat",
+        calendarLegend: "Calendar Guide",
+        hasActiveTasks: "Has active tasks",
+        hasCompletedTasks: "All completed",
+        selectedDate: "Selected Date",
+        loading: "Loading data...",
+        tasksForDate: "Tasks for",
+        allTasksTitle: "All Tasks",
+        viewAllDates: "View all dates",
+        autoSave: "Auto Save",
+        koreanNews: "Korean News",
+        loadingNews: "Loading news...",
+        holidayRed: "Holiday",
+        waybillNumber: "Tracking No.",
+        delivery: "Delivery",
+        newUpload: "New photo uploaded",
+        newUploadText: "A new package photo was registered.",
+        loginFailPerm: "Login failed: Check extension permissions.",
+        loginFailGeneric: "Login failed: ",
+        emailPassRequired: "Please enter email and password.",
+        invalidEmailPass: "Invalid email or password.",
+        marketWidgetTitle: "Korean Market",
+        goldPrice: "Gold (1g)",
+        searchStocks: "Search stocks...",
+        noResults: "No results",
+        updatedAt: "Updated at:",
+        deliveryWidgetTitle: "Delivery",
+        noDeliveries: "No registered packages",
+        addDelivery: "Add",
+        cancel: "Cancel",
+        orderCodePlaceholder: "Enter order code",
+        takePhoto: "Take Photo",
+        upload: "Upload",
+        uploading: "Uploading...",
+        successUpload: "Upload successful!",
+        successUploadText: "Image saved successfully.",
+        exportExcel: "Export Excel",
+        delete: "Delete",
+        time: "Time",
+        barcode: "Barcode",
+        uploadedBy: "Uploaded by",
+        timeSuffix: "left",
+        timePassed: "Overdue",
+        timeHours: "h",
+        timeMinutes: "m",
+        timeSeconds: "s",
+        copy: "Copy",
+        save: "Save",
+        print: "Print",
+        printA4: "Print A4",
+        copiedToast: "Copied",
+        closeEsc: "Close (Esc)",
+        saveCtrlS: "Save (Ctrl+S)",
+        noImage: "No image",
+        invoice: "Invoice",
+        loadingShort: "Loading...",
+        clientAddressBook: "Clients Address Book",
+        inventoryManagement: "Inventory",
+        category: "Category",
+        productName: "Product Name",
+        productCode: "Product Code",
+        initialStock: "Initial Stock",
+        stockIn: "Stock In",
+        stockOut: "Stock Out",
+        currentStock: "Current Stock",
+        client: "Client",
+        inPrice: "In Price",
+        outPrice: "Out Price",
+        companyName: "Company",
+        representative: "Representative",
+        businessNo: "Tax ID",
+        address: "Address",
+        homepage: "Website",
+        phone: "Phone",
+        fax: "Fax",
+        mobile: "Mobile",
+        contactName: "Contact Name",
+        noData: "No data",
+        search: "Search",
+        addNew: "Add New",
+        confirmDeleteTitle: "Are you sure?",
+        confirmDeleteText: "This action cannot be undone!",
+        yes: "Yes",
+        no: "No",
+        number: "No.",
+        success: "Success",
+        error: "Error",
+        labelPrinting: "Print Barcode",
+        labelPaperSize: "Paper Size",
+        labelWidth: "Width",
+        labelHeight: "Height",
+        labelFontSize: "Font Size",
+        labelCopies: "Copies",
+        labelOption: "Option",
+        labelPrice: "Price",
+        labelPrint: "Print",
+        labelAddRow: "Add Row",
+        labelPreview: "Preview",
+        labelPreviewEmpty: "Enter data...",
+        labelMoreItems: "more",
+        labelImportInventory: "From Inventory",
+        labelSelectProduct: "Select Product",
+        labelTip: "Tip",
+        labelTipText: "Select matching paper size. Set custom paper size in printer settings before printing.",
+        labelShowBarcodeText: "Show Barcode Text"
     }
 };
 
@@ -263,16 +390,25 @@ const LanguageContext = createContext();
 export const useLanguage = () => useContext(LanguageContext);
 
 export const LanguageProvider = ({ children }) => {
-    const [lang, setLang] = useState('ko');
+    const [lang, setLangState] = useState(() => localStorage.getItem('app_language') || 'ko');
 
-    const toggleLanguage = () => {
-        setLang(prev => (prev === 'vi' ? 'ko' : 'vi'));
+    const setLang = (newLang) => {
+        setLangState(newLang);
+        localStorage.setItem('app_language', newLang);
     };
 
-    const t = (key) => translations[lang][key] || key;
+    const toggleLanguage = () => {
+        const nextLang = lang === 'vi' ? 'ko' : lang === 'ko' ? 'en' : 'vi';
+        setLang(nextLang);
+    };
+
+    const t = (key) => {
+        const dict = translations[lang] || translations.ko;
+        return dict[key] || translations.ko[key] || key;
+    };
 
     return (
-        <LanguageContext.Provider value={{ lang, toggleLanguage, t }}>
+        <LanguageContext.Provider value={{ lang, setLang, toggleLanguage, t }}>
             {children}
         </LanguageContext.Provider>
     );
