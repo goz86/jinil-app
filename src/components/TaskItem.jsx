@@ -82,13 +82,21 @@ export default function TaskItem({ task, onToggle, onDelete }) {
                     >
                         {task.title}
                     </p>
-                    <div className="flex items-center mt-1 space-x-3 text-xs text-gray-500 dark:text-gray-400 font-medium">
+                    <div className="flex flex-wrap items-center mt-1.5 gap-x-3 gap-y-2 text-xs text-gray-500 dark:text-gray-400 font-medium">
                         <span className="flex items-center">
                             <span className={`w-2 h-2 rounded-full mr-1.5 ${task.priority === 'urgent' ? 'bg-red-600' : task.priority === 'high' || task.priority === 'Quan trọng' || task.priority === 'CAO' ? 'bg-orange-400' : task.priority === 'low' || task.priority === 'Không quan trọng' ? 'bg-green-400' : 'bg-yellow-400'}`}></span>
                             {getPriorityText(task.priority)}
                         </span>
-                        <span>•</span>
-                        <span>
+                        
+                        {task.assigneeName && task.assignedByName && (
+                            <span className={`flex items-center gap-1 px-2 py-0.5 rounded-md font-bold text-[10px] ${task.completed ? 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500' : 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-100 dark:border-purple-800/30'}`}>
+                                <span>{task.assignedByName}</span>
+                                <svg className="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                                <span>{task.assigneeName}</span>
+                            </span>
+                        )}
+
+                        <span className="flex items-center">
                             {task.date && task.date.includes('-')
                                 ? task.date.split('-').reverse().join('/')
                                 : t('today')}

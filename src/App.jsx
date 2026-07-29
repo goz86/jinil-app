@@ -15,9 +15,10 @@ import ClientAddressBook from './components/ClientAddressBook';
 import InventoryManagement from './components/InventoryManagement';
 import LabelPrinter from './components/LabelPrinter';
 import StockTicker from './components/StockTicker';
-import { auth, db, secondaryAuth, secondaryDb } from './firebase';
-import { signInWithCredential, signInWithEmailAndPassword, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
-import { collection, doc, onSnapshot, setDoc, query, orderBy, limit, where, getDocs, deleteDoc, getDoc } from 'firebase/firestore';
+import { initializeApp } from 'firebase/app';
+import { auth, db, secondaryAuth, secondaryDb, firebaseConfig } from './firebase';
+import { signInWithCredential, signInWithEmailAndPassword, GoogleAuthProvider, signOut, onAuthStateChanged, getAuth } from 'firebase/auth';
+import { collection, doc, onSnapshot, setDoc, query, orderBy, limit, where, getDocs, deleteDoc, getDoc, getFirestore } from 'firebase/firestore';
 import { ref, deleteObject } from 'firebase/storage';
 import { useLanguage } from './contexts/LanguageContext';
 import Swal from 'sweetalert2';
@@ -25,6 +26,7 @@ import Swal from 'sweetalert2';
 function App() {
   const { t } = useLanguage();
   const [tasks, setTasks] = useState([]);
+  const [patrolledTasks, setPatrolledTasks] = useState({}); // { [uid]: Task[] }
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortByPriority, setSortByPriority] = useState(false);
@@ -284,6 +286,52 @@ function App() {
     return () => unsubStore();
   }, [user?.uid]);
 
+  // Effect 3: Handle Automatic Patrol (Listening to assigned tasks from other accounts)
+  useEffect(() => {
+    if (!user || !savedAccounts.length) return;
+
+    const unsubscribers = {};
+    const dynamicApps = {};
+
+    savedAccounts.forEach(acc => {
+      // Don't listen to our own account
+      if (acc.uid && acc.p && acc.uid !== user.uid) {
+        const appName = `patrol_${acc.uid}`;
+        try {
+          let patrolApp;
+          try {
+            patrolApp = initializeApp(firebaseConfig, appName);
+          } catch (e) {
+            // App might already exist if we re-render
+            patrolApp = initializeApp(firebaseConfig, `${appName}_${Date.now()}`);
+          }
+          const patrolAuth = getAuth(patrolApp);
+          const patrolDb = getFirestore(patrolApp);
+
+          signInWithEmailAndPassword(patrolAuth, acc.email, atob(acc.p)).then(() => {
+            const unsub = onSnapshot(doc(patrolDb, "users", acc.uid), (docSnap) => {
+              if (docSnap.exists()) {
+                const accTasks = docSnap.data().tasks || [];
+                // Only keep tasks assigned by the current user
+                const assignedTasks = accTasks.filter(t => t.assignedByUid === user.uid);
+                setPatrolledTasks(prev => ({ ...prev, [acc.uid]: assignedTasks }));
+              }
+            });
+            unsubscribers[appName] = unsub;
+          }).catch(err => console.error(`Patrol auth failed for ${acc.email}`, err));
+          
+          dynamicApps[appName] = patrolApp;
+        } catch (e) {
+          console.error(`Failed to initialize patrol app for ${acc.email}`, e);
+        }
+      }
+    });
+
+    return () => {
+      Object.values(unsubscribers).forEach(unsub => unsub && unsub());
+    };
+  }, [user?.uid, savedAccounts]);
+
   const updateTasks = async (newTasks) => {
     setTasks(newTasks);
     if (user) {
@@ -380,6 +428,16 @@ function App() {
   const assignTaskToUser = async (targetUid, task) => {
     const targetAcc = savedAccounts.find(a => a.uid === targetUid);
     const targetName = targetAcc?.alias || targetAcc?.email?.split('@')[0] || '직원';
+    const myName = user?.email?.split('@')[0] || '나';
+
+    // Enhance task with assignment metadata
+    const enhancedTask = {
+      ...task,
+      assignedByUid: user?.uid,
+      assignedByName: myName,
+      assigneeUid: targetUid,
+      assigneeName: targetName
+    };
 
     // Show loading toast immediately so user gets instant feedback
     Swal.fire({
@@ -400,7 +458,7 @@ function App() {
       const userDocRef = doc(secondaryDb, "users", targetUid);
       const userDocSnap = await getDoc(userDocRef);
       const existingTasks = userDocSnap.exists() ? (userDocSnap.data().tasks || []) : [];
-      const newTasks = [task, ...existingTasks];
+      const newTasks = [enhancedTask, ...existingTasks];
       await setDoc(userDocRef, { tasks: newTasks });
 
       // Clean up secondary auth
@@ -409,7 +467,7 @@ function App() {
       Swal.fire({
         icon: 'success',
         title: '작업 배정 완료',
-        text: `"${task.title}" → ${targetName}`,
+        text: `"${enhancedTask.title}" → ${targetName}`,
         toast: true,
         position: 'top-end',
         showConfirmButton: false,
@@ -446,29 +504,84 @@ function App() {
     }
   };
 
-  const toggleTask = (id) => {
-    updateTasks(tasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t)));
+  // Helper for cross-user updates (toggle/delete patrolled tasks)
+  const modifyCrossUserTask = async (taskId, modifierFunc) => {
+    // Find which patrolled array has it
+    let targetUid = null;
+    for (const [uid, pTasks] of Object.entries(patrolledTasks)) {
+      const found = pTasks.find(t => t.id === taskId);
+      if (found) {
+        targetUid = uid;
+        break;
+      }
+    }
+    
+    if (!targetUid) return false; // Not a patrolled task
+    
+    const targetAcc = savedAccounts.find(a => a.uid === targetUid);
+    if (!targetAcc?.p) return true; // Handled but failed to auth
+
+    try {
+      await signInWithEmailAndPassword(secondaryAuth, targetAcc.email, atob(targetAcc.p));
+      const userDocRef = doc(secondaryDb, "users", targetUid);
+      const userDocSnap = await getDoc(userDocRef);
+      
+      if (userDocSnap.exists()) {
+        const existingTasks = userDocSnap.data().tasks || [];
+        const newTasks = modifierFunc(existingTasks);
+        await setDoc(userDocRef, { tasks: newTasks });
+      }
+      await signOut(secondaryAuth);
+    } catch (err) {
+      console.error("Cross-user modification failed:", err);
+    }
+    return true; // Handled as patrolled task
   };
 
-  const deleteTask = (id) => {
-    updateTasks(tasks.filter((t) => t.id !== id));
+  const toggleTask = async (id) => {
+    const isPatrolled = await modifyCrossUserTask(id, (existingTasks) => 
+      existingTasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
+    );
+    if (!isPatrolled) {
+      const newTasks = tasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t));
+      updateTasks(newTasks);
+    }
+  };
+
+  const deleteTask = async (id) => {
+    const isPatrolled = await modifyCrossUserTask(id, (existingTasks) => 
+      existingTasks.filter((t) => t.id !== id)
+    );
+    if (!isPatrolled) {
+      const newTasks = tasks.filter((t) => t.id !== id);
+      updateTasks(newTasks);
+    }
   };
 
   const priorityOrder = { urgent: 0, high: 1, 'Quan trọng': 1, 'CAO': 1, normal: 2, low: 3, 'Không quan trọng': 3 };
 
-  const filteredTasks = tasks.filter((t) => {
-    const matchesFilter = filter === 'active' ? !t.completed : filter === 'completed' ? t.completed : true;
-    const matchesSearch = t.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDate = (selectedDate && !searchTerm) ? t.date === selectedDate : true;
-    return matchesFilter && matchesSearch && matchesDate;
-  });
+  // Aggregate current user's tasks with patrolled tasks assigned by them
+  const allMergedTasks = useMemo(() => {
+    const pTasksArray = Object.values(patrolledTasks).flat();
+    return [...tasks, ...pTasksArray];
+  }, [tasks, patrolledTasks]);
+
+  const filteredTasks = allMergedTasks
+    .filter((task) => {
+      const matchesFilter = filter === 'active' ? !task.completed : filter === 'completed' ? task.completed : true;
+      const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesDate = (selectedDate && !searchTerm) ? task.date === selectedDate : true;
+      return matchesFilter && matchesSearch && matchesDate;
+    });
 
   if (sortByPriority) {
     filteredTasks.sort((a, b) => (priorityOrder[a.priority] ?? 2) - (priorityOrder[b.priority] ?? 2));
   }
 
-  const totalTasks = selectedDate ? tasks.filter(t => t.date === selectedDate).length : tasks.length;
-  const completedTasks = selectedDate ? tasks.filter(t => t.date === selectedDate && t.completed).length : tasks.filter((t) => t.completed).length;
+  // Stats calculation based on allMergedTasks for the selected date
+  const todayMergedTasks = selectedDate ? allMergedTasks.filter(t => t.date === selectedDate) : allMergedTasks;
+  const totalTasks = todayMergedTasks.length;
+  const completedTasks = todayMergedTasks.filter(t => t.completed).length;
 
   const lastFiredAlarm = React.useRef(null);
   const DAILY_ALARMS = [

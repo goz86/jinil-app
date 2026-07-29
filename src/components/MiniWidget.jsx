@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { auth, db, secondaryAuth, secondaryDb } from '../firebase';
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
+import { initializeApp } from 'firebase/app';
+import { auth, db, secondaryAuth, secondaryDb, firebaseConfig } from '../firebase';
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut, getAuth } from 'firebase/auth';
+import { doc, onSnapshot, setDoc, getDoc, getFirestore } from 'firebase/firestore';
 import { useLanguage } from '../contexts/LanguageContext';
 import Swal from 'sweetalert2';
 
@@ -90,6 +91,15 @@ const MiniTaskItem = ({ task, toggleTask }) => {
                     {task.priority === 'high' && <span className={`w-2 h-2 rounded-full bg-orange-400 mt-1.5 shrink-0 ${task.completed ? 'opacity-40' : ''}`} title="급" />}
                     {task.priority === 'normal' && <span className={`w-2 h-2 rounded-full bg-yellow-400 mt-1.5 shrink-0 ${task.completed ? 'opacity-30' : 'opacity-60'}`} title="보통" />}
                 </div>
+                {task.assigneeName && task.assignedByName && (
+                    <div className="pl-8 -mt-0.5">
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold ${task.completed ? 'bg-white/5 text-white/30' : 'bg-purple-500/20 text-purple-300'}`}>
+                            {task.assignedByName}
+                            <svg className="w-2.5 h-2.5 mx-0.5 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                            {task.assigneeName}
+                        </span>
+                    </div>
+                )}
                 {timeLeft && !task.completed && (
                     <div className="pl-8">
                         <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold tracking-wide ${timeLeft === '시간 지남' ? 'bg-red-500/20 text-red-400' : 'bg-blue-500/20 text-blue-400 animate-pulse'}`}>
@@ -105,6 +115,7 @@ const MiniTaskItem = ({ task, toggleTask }) => {
 export default function MiniWidget() {
     const { t } = useLanguage();
     const [tasks, setTasks] = useState([]);
+    const [patrolledTasks, setPatrolledTasks] = useState({}); // { [uid]: Task[] }
     const [user, setUser] = useState(null);
 
     // Form inputs state
@@ -169,6 +180,49 @@ export default function MiniWidget() {
         };
     }, []);
 
+    // Effect for Automatic Patrol
+    useEffect(() => {
+        if (!user || !savedAccounts.length) return;
+
+        const unsubscribers = {};
+        const dynamicApps = {};
+
+        savedAccounts.forEach(acc => {
+            if (acc.uid && acc.p && acc.uid !== user.uid) {
+                const appName = `mini_patrol_${acc.uid}`;
+                try {
+                    let patrolApp;
+                    try {
+                        patrolApp = initializeApp(firebaseConfig, appName);
+                    } catch (e) {
+                        patrolApp = initializeApp(firebaseConfig, `${appName}_${Date.now()}`);
+                    }
+                    const patrolAuth = getAuth(patrolApp);
+                    const patrolDb = getFirestore(patrolApp);
+
+                    signInWithEmailAndPassword(patrolAuth, acc.email, atob(acc.p)).then(() => {
+                        const unsub = onSnapshot(doc(patrolDb, "users", acc.uid), (docSnap) => {
+                            if (docSnap.exists()) {
+                                const accTasks = docSnap.data().tasks || [];
+                                const assignedTasks = accTasks.filter(t => t.assignedByUid === user.uid);
+                                setPatrolledTasks(prev => ({ ...prev, [acc.uid]: assignedTasks }));
+                            }
+                        });
+                        unsubscribers[appName] = unsub;
+                    }).catch(err => console.error(`Mini patrol auth failed for ${acc.email}`, err));
+                    
+                    dynamicApps[appName] = patrolApp;
+                } catch (e) {
+                    console.error(`Failed to initialize mini patrol app for ${acc.email}`, e);
+                }
+            }
+        });
+
+        return () => {
+            Object.values(unsubscribers).forEach(unsub => unsub && unsub());
+        };
+    }, [user?.uid, savedAccounts]);
+
     const saveTasks = async (newTasks) => {
         setTasks(newTasks);
         if (user) {
@@ -180,9 +234,45 @@ export default function MiniWidget() {
         }
     };
 
+    const modifyCrossUserTask = async (taskId, modifierFunc) => {
+        let targetUid = null;
+        for (const [uid, pTasks] of Object.entries(patrolledTasks)) {
+            const found = pTasks.find(t => t.id === taskId);
+            if (found) {
+                targetUid = uid;
+                break;
+            }
+        }
+        if (!targetUid) return false;
+        
+        const targetAcc = savedAccounts.find(a => a.uid === targetUid);
+        if (!targetAcc?.p) return true;
+
+        try {
+            await signInWithEmailAndPassword(secondaryAuth, targetAcc.email, atob(targetAcc.p));
+            const userDocRef = doc(secondaryDb, "users", targetUid);
+            const userDocSnap = await getDoc(userDocRef);
+            
+            if (userDocSnap.exists()) {
+                const existingTasks = userDocSnap.data().tasks || [];
+                const newTasks = modifierFunc(existingTasks);
+                await setDoc(userDocRef, { tasks: newTasks });
+            }
+            await signOut(secondaryAuth);
+        } catch (err) {
+            console.error("Mini cross-user modification failed:", err);
+        }
+        return true;
+    };
+
     const toggleTask = async (id) => {
-        const newTasks = tasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t));
-        await saveTasks(newTasks);
+        const isPatrolled = await modifyCrossUserTask(id, (existingTasks) => 
+            existingTasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
+        );
+        if (!isPatrolled) {
+            const newTasks = tasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t));
+            await saveTasks(newTasks);
+        }
     };
 
     const handleAddTask = async (e) => {
@@ -202,6 +292,15 @@ export default function MiniWidget() {
         if (assigneeUid && user && assigneeUid !== user.uid) {
             const targetAcc = savedAccounts.find(a => a.uid === assigneeUid);
             const targetName = targetAcc?.alias || targetAcc?.email?.split('@')[0] || '직원';
+            const myName = user?.email?.split('@')[0] || '나';
+
+            const enhancedTask = {
+                ...newTask,
+                assignedByUid: user.uid,
+                assignedByName: myName,
+                assigneeUid: assigneeUid,
+                assigneeName: targetName
+            };
 
             Swal.fire({
                 title: `${targetName}에게 배정 중...`,
@@ -219,13 +318,13 @@ export default function MiniWidget() {
                 const userDocRef = doc(secondaryDb, "users", assigneeUid);
                 const userDocSnap = await getDoc(userDocRef);
                 const existingTasks = userDocSnap.exists() ? (userDocSnap.data().tasks || []) : [];
-                await setDoc(userDocRef, { tasks: [newTask, ...existingTasks] });
+                await setDoc(userDocRef, { tasks: [enhancedTask, ...existingTasks] });
                 await signOut(secondaryAuth);
 
                 Swal.fire({
                     icon: 'success',
                     title: '작업 배정 완료',
-                    text: `"${newTask.title}" \u2192 ${targetName}`,
+                    text: `"${enhancedTask.title}" \u2192 ${targetName}`,
                     toast: true,
                     position: 'top-end',
                     showConfirmButton: false,
@@ -255,7 +354,8 @@ export default function MiniWidget() {
         setAssigneeUid(null);
     };
 
-    const todayTasks = tasks.filter(t => t.date === today);
+    const allMergedTasks = [...tasks, ...Object.values(patrolledTasks).flat()];
+    const todayTasks = allMergedTasks.filter(t => t.date === today);
 
     // Sort tasks: active (uncompleted) tasks first, completed tasks moved to the bottom
     const sortedTasks = [...todayTasks].sort((a, b) => {
