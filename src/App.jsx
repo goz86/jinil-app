@@ -17,7 +17,7 @@ import LabelPrinter from './components/LabelPrinter';
 import StockTicker from './components/StockTicker';
 import { auth, db } from './firebase';
 import { signInWithCredential, signInWithEmailAndPassword, GoogleAuthProvider, signOut, onAuthStateChanged } from 'firebase/auth';
-import { collection, doc, onSnapshot, setDoc, query, orderBy, limit, where, getDocs, deleteDoc } from 'firebase/firestore';
+import { collection, doc, onSnapshot, setDoc, query, orderBy, limit, where, getDocs, deleteDoc, getDoc } from 'firebase/firestore';
 import { ref, deleteObject } from 'firebase/storage';
 import { useLanguage } from './contexts/LanguageContext';
 import Swal from 'sweetalert2';
@@ -64,6 +64,7 @@ function App() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [loginError, setLoginError] = useState('');
   const [deliveryData, setDeliveryData] = useState([]);
+  const [savedAccounts, setSavedAccounts] = useState([]);
 
   useEffect(() => {
     if (!user) {
@@ -206,6 +207,36 @@ function App() {
     };
   }, []);
 
+  // Sync UID to saved accounts when user changes
+  useEffect(() => {
+    if (user) {
+      try {
+        const accs = JSON.parse(localStorage.getItem('jinil_saved_accounts') || '[]');
+        let updated = false;
+        const newAccs = accs.map(a => {
+          if (a.email === user.email && a.uid !== user.uid) {
+            updated = true;
+            return { ...a, uid: user.uid };
+          }
+          return a;
+        });
+        if (updated) {
+          localStorage.setItem('jinil_saved_accounts', JSON.stringify(newAccs));
+        }
+        setSavedAccounts(newAccs);
+      } catch (e) {
+        setSavedAccounts([]);
+      }
+    } else {
+      try {
+        const accs = JSON.parse(localStorage.getItem('jinil_saved_accounts') || '[]');
+        setSavedAccounts(accs);
+      } catch (e) {
+        setSavedAccounts([]);
+      }
+    }
+  }, [user?.uid]);
+
   // Effect 2: Handle Task Synchronization (User-specific)
   useEffect(() => {
     if (!user) return;
@@ -292,14 +323,17 @@ function App() {
     setLoginLoading(true);
     setLoginError('');
     try {
-      await signInWithEmailAndPassword(auth, email.trim(), password.trim());
+      const userCredential = await signInWithEmailAndPassword(auth, email.trim(), password.trim());
       
       // Save for Multi-Account Switcher (Base64 encoded for basic obfuscation)
       const savedAccs = JSON.parse(localStorage.getItem('jinil_saved_accounts') || '[]');
-      const newAcc = { email: email.trim(), p: btoa(password.trim()) };
+      const existingAcc = savedAccs.find(a => a.email === email.trim());
+      const newAcc = { email: email.trim(), p: btoa(password.trim()), uid: userCredential.user.uid };
+      if (existingAcc?.alias) newAcc.alias = existingAcc.alias;
       const filtered = savedAccs.filter(a => a.email !== newAcc.email);
       filtered.push(newAcc);
       localStorage.setItem('jinil_saved_accounts', JSON.stringify(filtered));
+      setSavedAccounts(filtered);
 
       setEmail('');
       setPassword('');
@@ -316,7 +350,12 @@ function App() {
     setLoginError('');
     try {
       if (user) await signOut(auth); // Sign out current active user
-      await signInWithEmailAndPassword(auth, switchEmail, switchPassword);
+      const userCredential = await signInWithEmailAndPassword(auth, switchEmail, switchPassword);
+      // Update uid for switched account
+      const savedAccs = JSON.parse(localStorage.getItem('jinil_saved_accounts') || '[]');
+      const updatedAccs = savedAccs.map(a => a.email === switchEmail ? { ...a, uid: userCredential.user.uid } : a);
+      localStorage.setItem('jinil_saved_accounts', JSON.stringify(updatedAccs));
+      setSavedAccounts(updatedAccs);
     } catch (e) {
       console.error("Switch failed", e);
       setLoginError("Lỗi đăng nhập: " + e.message);
@@ -338,7 +377,41 @@ function App() {
     }
   };
 
-  const addTask = (title, priority, time) => {
+  const assignTaskToUser = async (targetUid, task) => {
+    try {
+      const userDocRef = doc(db, "users", targetUid);
+      const userDocSnap = await getDoc(userDocRef);
+      const existingTasks = userDocSnap.exists() ? (userDocSnap.data().tasks || []) : [];
+      const newTasks = [task, ...existingTasks];
+      await setDoc(userDocRef, { tasks: newTasks });
+
+      const targetAcc = savedAccounts.find(a => a.uid === targetUid);
+      const targetName = targetAcc?.alias || targetAcc?.email?.split('@')[0] || '직원';
+
+      Swal.fire({
+        icon: 'success',
+        title: '작업 배정 완료',
+        text: `"${task.title}" → ${targetName}`,
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000
+      });
+    } catch (error) {
+      console.error("Error assigning task:", error);
+      Swal.fire({
+        icon: 'error',
+        title: '오류',
+        text: '작업 배정에 실패했습니다.',
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 3000
+      });
+    }
+  };
+
+  const addTask = (title, priority, time, targetUid) => {
     const newTask = {
       id: Date.now().toString(),
       title,
@@ -348,7 +421,11 @@ function App() {
       completed: false,
       reminded: false,
     };
-    updateTasks([newTask, ...tasks]);
+    if (targetUid && user && targetUid !== user.uid) {
+      assignTaskToUser(targetUid, newTask);
+    } else {
+      updateTasks([newTask, ...tasks]);
+    }
   };
 
   const toggleTask = (id) => {
@@ -479,7 +556,7 @@ function App() {
           </div>
 
           <ProgressBar total={totalTasks} completed={completedTasks} />
-          <TaskInput onAdd={addTask} />
+          <TaskInput onAdd={addTask} savedAccounts={savedAccounts} currentUserEmail={user?.email} currentUserUid={user?.uid} />
           <div className="flex items-center gap-2 mb-6">
             <div className="flex-1">
               <TaskFilter filter={filter} setFilter={setFilter} />

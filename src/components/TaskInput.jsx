@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 
-export default function TaskInput({ onAdd }) {
+export default function TaskInput({ onAdd, savedAccounts = [], currentUserEmail, currentUserUid }) {
     const { t } = useLanguage();
     const [title, setTitle] = useState('');
     const [priority, setPriority] = useState('normal');
@@ -13,6 +13,9 @@ export default function TaskInput({ onAdd }) {
     const timePickerRef = useRef(null);
     const hourScrollRef = useRef(null);
     const minuteScrollRef = useRef(null);
+    const assigneeRef = useRef(null);
+    const [assigneeUid, setAssigneeUid] = useState(null);
+    const [showAssignee, setShowAssignee] = useState(false);
 
     useEffect(() => {
         if (!time) {
@@ -57,6 +60,17 @@ export default function TaskInput({ onAdd }) {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // Close assignee dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (e) => {
+            if (assigneeRef.current && !assigneeRef.current.contains(e.target)) {
+                setShowAssignee(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
     // Auto-scroll to selected time when picker opens
     useEffect(() => {
         if (showTimePicker) {
@@ -81,12 +95,13 @@ export default function TaskInput({ onAdd }) {
     const handleSubmit = (e) => {
         e.preventDefault();
         if (title.trim()) {
-            onAdd(title, priority, time);
+            onAdd(title, priority, time, assigneeUid);
             setTitle('');
             setPriority('normal');
             setTime('');
             setTempHour('');
             setTempMinute('');
+            setAssigneeUid(null);
         }
     };
 
@@ -273,6 +288,79 @@ export default function TaskInput({ onAdd }) {
                     <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${timeLeft === t('timePassed') ? 'bg-red-50 dark:bg-red-900/30 text-red-500' : 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 animate-pulse'}`}>
                         {timeLeft}
                     </span>
+                )}
+
+                {/* Assignee selector - only show if there are other team members */}
+                {savedAccounts.filter(a => a.email !== currentUserEmail && a.uid).length > 0 && (
+                    <>
+                        <div className="w-px h-6 bg-gray-200 dark:bg-gray-600 mx-1"></div>
+                        <div className="relative" ref={assigneeRef}>
+                            <button
+                                type="button"
+                                onClick={() => setShowAssignee(!showAssignee)}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-all duration-200 cursor-pointer
+                                    ${assigneeUid
+                                        ? 'bg-purple-50 dark:bg-purple-900/20 border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 ring-2 ring-purple-200 dark:ring-purple-800 shadow-sm'
+                                        : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500'
+                                    }`}
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                {assigneeUid
+                                    ? (savedAccounts.find(a => a.uid === assigneeUid)?.alias || savedAccounts.find(a => a.uid === assigneeUid)?.email?.split('@')[0] || '?')
+                                    : '나'}
+                                <svg className="w-3 h-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+
+                            {showAssignee && (
+                                <div className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-2xl shadow-xl py-2 z-50 min-w-[180px] animate-in fade-in slide-in-from-top-2 duration-200">
+                                    {/* Me option */}
+                                    <button
+                                        type="button"
+                                        onClick={() => { setAssigneeUid(null); setShowAssignee(false); }}
+                                        className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors
+                                            ${!assigneeUid ? 'text-blue-600 dark:text-blue-400 font-semibold bg-blue-50 dark:bg-blue-900/20' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                                    >
+                                        <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                                            {(currentUserEmail || '?')[0].toUpperCase()}
+                                        </div>
+                                        <span className="flex-1 text-left">나</span>
+                                        {!assigneeUid && (
+                                            <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                            </svg>
+                                        )}
+                                    </button>
+                                    
+                                    <div className="h-px bg-gray-100 dark:bg-gray-700 mx-3 my-1"></div>
+                                    
+                                    {/* Other team members */}
+                                    {savedAccounts.filter(a => a.email !== currentUserEmail && a.uid).map(acc => (
+                                        <button
+                                            key={acc.email}
+                                            type="button"
+                                            onClick={() => { setAssigneeUid(acc.uid); setShowAssignee(false); }}
+                                            className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors
+                                                ${assigneeUid === acc.uid ? 'text-purple-600 dark:text-purple-400 font-semibold bg-purple-50 dark:bg-purple-900/20' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                                        >
+                                            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${assigneeUid === acc.uid ? 'bg-purple-500 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300'}`}>
+                                                {acc.email[0].toUpperCase()}
+                                            </div>
+                                            <span className="flex-1 text-left">{acc.alias || acc.email.split('@')[0]}</span>
+                                            {assigneeUid === acc.uid && (
+                                                <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                                </svg>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </>
                 )}
             </div>
         </form>
