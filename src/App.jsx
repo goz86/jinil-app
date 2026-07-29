@@ -46,6 +46,35 @@ function App() {
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
   const [isLabelPrintOpen, setIsLabelPrintOpen] = useState(false);
   const [isTasksHidden, setIsTasksHidden] = useState(true);
+  const [wallpaper, setWallpaperState] = useState(() => localStorage.getItem('app_wallpaper') || 'default');
+
+  const setWallpaper = (newWp) => {
+    setWallpaperState(newWp);
+    localStorage.setItem('app_wallpaper', newWp);
+  };
+
+  const getWallpaperStyle = () => {
+    switch (wallpaper) {
+      case 'blue':
+        return { background: 'linear-gradient(135deg, #e0f2fe 0%, #38bdf8 100%)' };
+      case 'yellow':
+        return { background: 'linear-gradient(135deg, #fef3c7 0%, #f59e0b 100%)' };
+      case 'green':
+        return { background: 'linear-gradient(135deg, #dcfce7 0%, #22c55e 100%)' };
+      case 'purple':
+        return { background: 'linear-gradient(135deg, #f3e8ff 0%, #a855f7 100%)' };
+      case 'pink':
+        return { background: 'linear-gradient(135deg, #ffe4e6 0%, #fb7185 100%)' };
+      case 'vietnam':
+        return { background: 'linear-gradient(135deg, #dc2626 0%, #ef4444 34%, #fef3c7 64%, #22c55e 100%)' };
+      case 'korea':
+        return { background: 'linear-gradient(135deg, #f8fafc 0%, #dbeafe 52%, #93c5fd 100%)' };
+      case 'futureCat':
+        return { background: 'linear-gradient(135deg, #38bdf8 0%, #2563eb 70%, #facc15 100%)' };
+      default:
+        return {};
+    }
+  };
 
   // Auto-update selectedDate when the calendar day changes (at midnight)
   useEffect(() => {
@@ -738,7 +767,10 @@ function App() {
   return (
     <div className="flex flex-col min-h-screen">
       <StockTicker />
-      <div className="flex-1 bg-gray-50 dark:bg-gray-900 flex justify-center py-6 px-4 transition-colors duration-300">
+      <div 
+        className="flex-1 bg-gray-50 dark:bg-gray-900 flex justify-center py-6 px-4 transition-all duration-300"
+        style={getWallpaperStyle()}
+      >
         <AnalyticsModal 
           isOpen={isAnalyticsOpen} 
           onClose={() => setIsAnalyticsOpen(false)} 
@@ -761,6 +793,8 @@ function App() {
             searchTerm={searchTerm}
             setSearchTerm={setSearchTerm}
             onOpenAnalytics={() => setIsAnalyticsOpen(true)}
+            wallpaper={wallpaper}
+            setWallpaper={setWallpaper}
           />
 
           <div className="mb-4 flex items-center justify-between">

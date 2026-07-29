@@ -2,7 +2,19 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
 
-export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics }) {
+export const WALLPAPERS = [
+    { id: 'default', name: '기본', previewBg: 'bg-gray-100 dark:bg-gray-800' },
+    { id: 'blue', name: '스카이 블루', previewBg: 'bg-gradient-to-br from-sky-200 to-blue-400' },
+    { id: 'yellow', name: '웜 옐로우', previewBg: 'bg-gradient-to-br from-amber-100 to-amber-400' },
+    { id: 'green', name: '파스텔 그린', previewBg: 'bg-gradient-to-br from-emerald-100 to-green-400' },
+    { id: 'purple', name: '라벤더 퍼플', previewBg: 'bg-gradient-to-br from-purple-100 to-indigo-400' },
+    { id: 'pink', name: '로즈 핑크', previewBg: 'bg-gradient-to-br from-rose-100 to-pink-400' },
+    { id: 'vietnam', name: '베트남 테마', previewBg: 'bg-gradient-to-br from-red-600 via-yellow-300 to-green-500' },
+    { id: 'korea', name: '태극 테마', previewBg: 'bg-gradient-to-br from-slate-100 via-blue-200 to-red-400' },
+    { id: 'futureCat', name: '푸른 도라에몽', previewBg: 'bg-gradient-to-br from-sky-400 via-blue-600 to-amber-300' }
+];
+
+export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics, wallpaper = 'default', setWallpaper = () => {} }) {
     const { t, lang, setLang } = useLanguage();
     const { theme, toggleTheme } = useTheme();
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -111,7 +123,7 @@ export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics }) {
                                 ? 'bg-blue-50 dark:bg-blue-900/40 border-blue-400 text-blue-600 dark:text-blue-400 shadow-sm' 
                                 : 'bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300'
                         }`}
-                        title={lang === 'vi' ? "Cài đặt" : "설정"}
+                        title="시스템 설정"
                     >
                         <svg className={`w-5 h-5 transition-transform duration-300 ${isSettingsOpen ? 'rotate-90 text-blue-600 dark:text-blue-400' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -122,26 +134,26 @@ export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics }) {
                         {window.electronAPI && (
                             <div 
                                 className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-gray-800 shadow-sm ${isAutoStart ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}
-                                title={isAutoStart ? "Khởi động cùng Windows: BẬT" : "Khởi động cùng Windows: TẮT"}
+                                title={isAutoStart ? "Windows 시작 시 자동 실행: 켜짐" : "Windows 시작 시 자동 실행: 꺼짐"}
                             />
                         )}
                     </button>
 
                     {/* Settings Popover Dropdown Menu */}
                     {isSettingsOpen && (
-                        <div className="absolute right-0 top-full mt-2.5 w-72 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-2xl p-3.5 shadow-2xl border border-gray-100 dark:border-gray-700/80 z-50 animate-in fade-in zoom-in-95 duration-150 text-gray-800 dark:text-gray-100">
+                        <div className="absolute right-0 top-full mt-2.5 w-80 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-2xl p-3.5 shadow-2xl border border-gray-100 dark:border-gray-700/80 z-50 animate-in fade-in zoom-in-95 duration-150 text-gray-800 dark:text-gray-100 max-h-[85vh] overflow-y-auto custom-scrollbar">
                             
                             {/* Header */}
                             <div className="flex items-center justify-between px-2 pb-2.5 mb-2 border-b border-gray-100 dark:border-gray-700/60">
                                 <span className="text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-400">
-                                    {lang === 'vi' ? 'Cài đặt hệ thống' : lang === 'ko' ? '시스템 설정' : 'System Settings'}
+                                    시스템 설정
                                 </span>
                             </div>
 
-                            {/* Section 1: Appearance / Giao diện */}
-                            <div className="mb-3 px-1">
+                            {/* Section 1: Appearance / 테마 설정 */}
+                            <div className="mb-3.5 px-1">
                                 <label className="text-[11px] font-bold text-gray-400 dark:text-gray-400 block mb-1.5 uppercase tracking-wide">
-                                    {lang === 'vi' ? 'Giao diện' : lang === 'ko' ? '테마 설정' : 'Theme'}
+                                    테마 설정
                                 </label>
                                 <div className="grid grid-cols-2 gap-1.5 p-1 bg-gray-100 dark:bg-gray-700/50 rounded-xl border border-gray-200/50 dark:border-gray-600/40">
                                     <button
@@ -155,7 +167,7 @@ export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics }) {
                                         <svg className="w-3.5 h-3.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
                                             <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
                                         </svg>
-                                        <span>{lang === 'vi' ? 'Sáng' : lang === 'ko' ? '라이트' : 'Light'}</span>
+                                        <span>라이트 모드</span>
                                     </button>
                                     <button
                                         onClick={() => { if (theme !== 'dark') toggleTheme(); }}
@@ -168,14 +180,64 @@ export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics }) {
                                         <svg className="w-3.5 h-3.5 text-indigo-400" fill="currentColor" viewBox="0 0 20 20">
                                             <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
                                         </svg>
-                                        <span>{lang === 'vi' ? 'Tối' : lang === 'ko' ? '다크' : 'Dark'}</span>
+                                        <span>다크 모드</span>
                                     </button>
                                 </div>
                             </div>
 
-                            {/* Section 2: Windows Auto-start */}
+                            {/* Section 2: Wallpaper Selection (3x3 Grid matching Screenshot 2!) */}
+                            <div className="mb-3.5 px-1 pt-2 border-t border-gray-100 dark:border-gray-700/60">
+                                <label className="text-[11px] font-bold text-gray-400 dark:text-gray-400 block mb-2 uppercase tracking-wide flex items-center gap-1.5">
+                                    <svg className="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    배경화면 선택
+                                </label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {WALLPAPERS.map((wp) => {
+                                        const isActive = wallpaper === wp.id;
+                                        return (
+                                            <button
+                                                key={wp.id}
+                                                onClick={() => setWallpaper(wp.id)}
+                                                className={`flex flex-col items-center gap-1 p-1.5 rounded-xl border transition-all cursor-pointer ${
+                                                    isActive
+                                                        ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-900/40 shadow-xs'
+                                                        : 'border-gray-200/80 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-transparent'
+                                                }`}
+                                            >
+                                                <div className={`w-full aspect-[4/3] rounded-lg ${wp.previewBg} relative shadow-xs overflow-hidden flex items-center justify-center border border-white/20`}>
+                                                    {wp.id === 'vietnam' && (
+                                                        <span className="text-yellow-300 text-xs font-black drop-shadow">★</span>
+                                                    )}
+                                                    {wp.id === 'korea' && (
+                                                        <div className="w-4 h-4 rounded-full bg-gradient-to-r from-red-500 to-blue-600 flex items-center justify-center text-[7px] text-white font-bold shadow-xs">
+                                                            ☯
+                                                        </div>
+                                                    )}
+                                                    {wp.id === 'futureCat' && (
+                                                        <span className="text-xs drop-shadow">😸</span>
+                                                    )}
+                                                    {isActive && (
+                                                        <div className="absolute top-1 right-1 w-3.5 h-3.5 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-md">
+                                                            <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <span className="text-[10px] font-bold text-gray-700 dark:text-gray-200 truncate max-w-[72px]">
+                                                    {wp.name}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+
+                            {/* Section 3: Windows Auto-start */}
                             {window.electronAPI && (
-                                <div className="mb-3 px-1 pt-2 border-t border-gray-100 dark:border-gray-700/60">
+                                <div className="mb-3.5 px-1 pt-2 border-t border-gray-100 dark:border-gray-700/60">
                                     <div 
                                         onClick={toggleAutoStartSetting}
                                         className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
@@ -188,10 +250,10 @@ export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics }) {
                                             </div>
                                             <div>
                                                 <span className="text-xs font-bold block text-gray-800 dark:text-gray-100">
-                                                    {lang === 'vi' ? 'Khởi động cùng Windows' : lang === 'ko' ? 'Windows 시작 시 자동 실행' : 'Start with Windows'}
+                                                    Windows 시작 시 자동 실행
                                                 </span>
                                                 <span className="text-[10px] text-gray-400 block">
-                                                    {isAutoStart ? (lang === 'vi' ? 'Đã bật tự động mở' : '자동 실행 활성화됨') : (lang === 'vi' ? 'Đang tắt' : '비활성화됨')}
+                                                    {isAutoStart ? '자동 실행 활성화됨' : '비활성화됨'}
                                                 </span>
                                             </div>
                                         </div>
@@ -204,15 +266,15 @@ export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics }) {
                                 </div>
                             )}
 
-                            {/* Section 3: Ngôn ngữ / Language (Matching Screenshot 2 style!) */}
+                            {/* Section 4: 언어 선택 (Matching Screenshot 2 style!) */}
                             <div className="px-1 pt-2 border-t border-gray-100 dark:border-gray-700/60">
                                 <label className="text-[11px] font-bold text-gray-400 dark:text-gray-400 block mb-1.5 uppercase tracking-wide">
-                                    {lang === 'vi' ? 'Ngôn ngữ' : lang === 'ko' ? '언어 선택' : 'Language'}
+                                    언어 선택
                                 </label>
                                 <div className="space-y-1">
                                     {[
-                                        { code: 'vi', label: 'Tiếng Việt', flag: '🌐' },
                                         { code: 'ko', label: '한국어', flag: '🌐' },
+                                        { code: 'vi', label: 'Tiếng Việt', flag: '🌐' },
                                         { code: 'en', label: 'English', flag: '🌐' }
                                     ].map((item) => (
                                         <button
