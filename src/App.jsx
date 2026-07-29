@@ -539,20 +539,20 @@ function App() {
   };
 
   const toggleTask = async (id) => {
-    const isPatrolled = await modifyCrossUserTask(id, (existingTasks) => 
+    await modifyCrossUserTask(id, (existingTasks) => 
       existingTasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
     );
-    if (!isPatrolled) {
+    if (tasks.some(t => t.id === id)) {
       const newTasks = tasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t));
       updateTasks(newTasks);
     }
   };
 
   const deleteTask = async (id) => {
-    const isPatrolled = await modifyCrossUserTask(id, (existingTasks) => 
+    await modifyCrossUserTask(id, (existingTasks) => 
       existingTasks.filter((t) => t.id !== id)
     );
-    if (!isPatrolled) {
+    if (tasks.some(t => t.id === id)) {
       const newTasks = tasks.filter((t) => t.id !== id);
       updateTasks(newTasks);
     }
@@ -560,10 +560,20 @@ function App() {
 
   const priorityOrder = { urgent: 0, high: 1, 'Quan trọng': 1, 'CAO': 1, normal: 2, low: 3, 'Không quan trọng': 3 };
 
-  // Aggregate current user's tasks with patrolled tasks assigned by them
+  // Aggregate current user's tasks with patrolled tasks assigned by them, deduplicated by ID
   const allMergedTasks = useMemo(() => {
-    const pTasksArray = Object.values(patrolledTasks).flat();
-    return [...tasks, ...pTasksArray];
+    const taskMap = new Map();
+    // 1. Patrolled tasks first (fresh from assigned employees' docs)
+    Object.values(patrolledTasks).flat().forEach(t => {
+      if (t && t.id) taskMap.set(t.id, t);
+    });
+    // 2. Local user tasks (only if not already present from patrol)
+    tasks.forEach(t => {
+      if (t && t.id && !taskMap.has(t.id)) {
+        taskMap.set(t.id, t);
+      }
+    });
+    return Array.from(taskMap.values());
   }, [tasks, patrolledTasks]);
 
   const filteredTasks = allMergedTasks

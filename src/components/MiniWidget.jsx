@@ -266,10 +266,10 @@ export default function MiniWidget() {
     };
 
     const toggleTask = async (id) => {
-        const isPatrolled = await modifyCrossUserTask(id, (existingTasks) => 
+        await modifyCrossUserTask(id, (existingTasks) => 
             existingTasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t))
         );
-        if (!isPatrolled) {
+        if (tasks.some(t => t.id === id)) {
             const newTasks = tasks.map((t) => (t.id === id ? { ...t, completed: !t.completed } : t));
             await saveTasks(newTasks);
         }
@@ -354,7 +354,19 @@ export default function MiniWidget() {
         setAssigneeUid(null);
     };
 
-    const allMergedTasks = [...tasks, ...Object.values(patrolledTasks).flat()];
+    const allMergedTasks = useMemo(() => {
+        const taskMap = new Map();
+        Object.values(patrolledTasks).flat().forEach(t => {
+            if (t && t.id) taskMap.set(t.id, t);
+        });
+        tasks.forEach(t => {
+            if (t && t.id && !taskMap.has(t.id)) {
+                taskMap.set(t.id, t);
+            }
+        });
+        return Array.from(taskMap.values());
+    }, [tasks, patrolledTasks]);
+
     const todayTasks = allMergedTasks.filter(t => t.date === today);
 
     // Sort tasks: active (uncompleted) tasks first, completed tasks moved to the bottom
