@@ -425,19 +425,14 @@ function App() {
     }
   };
 
-  const assignTaskToUser = async (targetUid, task) => {
-    const targetAcc = savedAccounts.find(a => a.uid === targetUid);
+  const assignTaskToUser = async (targetIdOrEmail, task) => {
+    const targetAcc = savedAccounts.find(a => (a.uid && a.uid === targetIdOrEmail) || a.email === targetIdOrEmail);
+    if (!targetAcc) {
+      console.error("Target account not found");
+      return;
+    }
     const targetName = targetAcc?.alias || targetAcc?.email?.split('@')[0] || '직원';
     const myName = user?.email?.split('@')[0] || '나';
-
-    // Enhance task with assignment metadata
-    const enhancedTask = {
-      ...task,
-      assignedByUid: user?.uid,
-      assignedByName: myName,
-      assigneeUid: targetUid,
-      assigneeName: targetName
-    };
 
     // Show loading toast immediately so user gets instant feedback
     Swal.fire({
@@ -451,11 +446,33 @@ function App() {
     try {
       if (!targetAcc?.p) throw new Error('No credentials for target user');
 
-      // Sign in as target user on secondary Firebase app (doesn't affect main session)
-      await signInWithEmailAndPassword(secondaryAuth, targetAcc.email, atob(targetAcc.p));
+      // Sign in as target user on secondary Firebase app to get their real UID & write access
+      const userCred = await signInWithEmailAndPassword(secondaryAuth, targetAcc.email, atob(targetAcc.p));
+      const realTargetUid = userCred.user.uid;
+
+      // Update cached UID in savedAccounts if missing
+      if (!targetAcc.uid) {
+        targetAcc.uid = realTargetUid;
+        try {
+          const accs = JSON.parse(localStorage.getItem('jinil_saved_accounts') || '[]');
+          const updatedAccs = accs.map(a => a.email === targetAcc.email ? { ...a, uid: realTargetUid } : a);
+          localStorage.setItem('jinil_saved_accounts', JSON.stringify(updatedAccs));
+          setSavedAccounts(updatedAccs);
+        } catch (e) {}
+      }
+
+      // Enhance task with assignment metadata
+      const enhancedTask = {
+        ...task,
+        assignedByUid: user?.uid,
+        assignedByName: myName,
+        assigneeUid: realTargetUid,
+        assigneeName: targetName,
+        assigneeEmail: targetAcc.email
+      };
 
       // Read & write using secondary Firestore (authenticated as target user)
-      const userDocRef = doc(secondaryDb, "users", targetUid);
+      const userDocRef = doc(secondaryDb, "users", realTargetUid);
       const userDocSnap = await getDoc(userDocRef);
       const existingTasks = userDocSnap.exists() ? (userDocSnap.data().tasks || []) : [];
       const newTasks = [enhancedTask, ...existingTasks];
@@ -506,24 +523,28 @@ function App() {
 
   // Helper for cross-user updates (toggle/delete patrolled tasks)
   const modifyCrossUserTask = async (taskId, modifierFunc) => {
-    // Find which patrolled array has it
     let targetUid = null;
+    let targetEmail = null;
+
     for (const [uid, pTasks] of Object.entries(patrolledTasks)) {
       const found = pTasks.find(t => t.id === taskId);
       if (found) {
         targetUid = uid;
+        targetEmail = found.assigneeEmail || savedAccounts.find(a => a.uid === uid)?.email;
         break;
       }
     }
     
-    if (!targetUid) return false; // Not a patrolled task
+    if (!targetUid && !targetEmail) return false; // Not a patrolled task
     
-    const targetAcc = savedAccounts.find(a => a.uid === targetUid);
+    const targetAcc = savedAccounts.find(a => (a.uid && a.uid === targetUid) || (a.email && a.email === targetEmail));
     if (!targetAcc?.p) return true; // Handled but failed to auth
 
     try {
-      await signInWithEmailAndPassword(secondaryAuth, targetAcc.email, atob(targetAcc.p));
-      const userDocRef = doc(secondaryDb, "users", targetUid);
+      const userCred = await signInWithEmailAndPassword(secondaryAuth, targetAcc.email, atob(targetAcc.p));
+      const realTargetUid = userCred.user.uid;
+
+      const userDocRef = doc(secondaryDb, "users", realTargetUid);
       const userDocSnap = await getDoc(userDocRef);
       
       if (userDocSnap.exists()) {

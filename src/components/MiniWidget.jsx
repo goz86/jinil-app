@@ -236,21 +236,26 @@ export default function MiniWidget() {
 
     const modifyCrossUserTask = async (taskId, modifierFunc) => {
         let targetUid = null;
+        let targetEmail = null;
+
         for (const [uid, pTasks] of Object.entries(patrolledTasks)) {
             const found = pTasks.find(t => t.id === taskId);
             if (found) {
                 targetUid = uid;
+                targetEmail = found.assigneeEmail || savedAccounts.find(a => a.uid === uid)?.email;
                 break;
             }
         }
-        if (!targetUid) return false;
+        if (!targetUid && !targetEmail) return false;
         
-        const targetAcc = savedAccounts.find(a => a.uid === targetUid);
+        const targetAcc = savedAccounts.find(a => (a.uid && a.uid === targetUid) || (a.email && a.email === targetEmail));
         if (!targetAcc?.p) return true;
 
         try {
-            await signInWithEmailAndPassword(secondaryAuth, targetAcc.email, atob(targetAcc.p));
-            const userDocRef = doc(secondaryDb, "users", targetUid);
+            const userCred = await signInWithEmailAndPassword(secondaryAuth, targetAcc.email, atob(targetAcc.p));
+            const realTargetUid = userCred.user.uid;
+
+            const userDocRef = doc(secondaryDb, "users", realTargetUid);
             const userDocSnap = await getDoc(userDocRef);
             
             if (userDocSnap.exists()) {
@@ -289,18 +294,10 @@ export default function MiniWidget() {
             reminded: false,
         };
 
-        if (assigneeUid && user && assigneeUid !== user.uid) {
-            const targetAcc = savedAccounts.find(a => a.uid === assigneeUid);
+        if (assigneeUid && user) {
+            const targetAcc = savedAccounts.find(a => (a.uid && a.uid === assigneeUid) || a.email === assigneeUid);
             const targetName = targetAcc?.alias || targetAcc?.email?.split('@')[0] || '직원';
             const myName = user?.email?.split('@')[0] || '나';
-
-            const enhancedTask = {
-                ...newTask,
-                assignedByUid: user.uid,
-                assignedByName: myName,
-                assigneeUid: assigneeUid,
-                assigneeName: targetName
-            };
 
             Swal.fire({
                 title: `${targetName}에게 배정 중...`,
@@ -313,9 +310,29 @@ export default function MiniWidget() {
             try {
                 if (!targetAcc?.p) throw new Error('No credentials for target user');
                 
-                // Secondary auth
-                await signInWithEmailAndPassword(secondaryAuth, targetAcc.email, atob(targetAcc.p));
-                const userDocRef = doc(secondaryDb, "users", assigneeUid);
+                const userCred = await signInWithEmailAndPassword(secondaryAuth, targetAcc.email, atob(targetAcc.p));
+                const realTargetUid = userCred.user.uid;
+
+                if (!targetAcc.uid) {
+                    targetAcc.uid = realTargetUid;
+                    try {
+                        const accs = JSON.parse(localStorage.getItem('jinil_saved_accounts') || '[]');
+                        const updatedAccs = accs.map(a => a.email === targetAcc.email ? { ...a, uid: realTargetUid } : a);
+                        localStorage.setItem('jinil_saved_accounts', JSON.stringify(updatedAccs));
+                        setSavedAccounts(updatedAccs);
+                    } catch (e) {}
+                }
+
+                const enhancedTask = {
+                    ...newTask,
+                    assignedByUid: user.uid,
+                    assignedByName: myName,
+                    assigneeUid: realTargetUid,
+                    assigneeName: targetName,
+                    assigneeEmail: targetAcc.email
+                };
+
+                const userDocRef = doc(secondaryDb, "users", realTargetUid);
                 const userDocSnap = await getDoc(userDocRef);
                 const existingTasks = userDocSnap.exists() ? (userDocSnap.data().tasks || []) : [];
                 await setDoc(userDocRef, { tasks: [enhancedTask, ...existingTasks] });
@@ -626,7 +643,7 @@ export default function MiniWidget() {
                     </div>
 
                     {/* Assignee selector - only show if there are other team members */}
-                    {savedAccounts.filter(a => a.email !== user?.email && a.uid).length > 0 && (
+                    {savedAccounts.filter(a => a.email !== user?.email && (a.uid || a.email)).length > 0 && (
                         <div className="relative" ref={assigneeRef}>
                             <button
                                 type="button"
@@ -641,7 +658,7 @@ export default function MiniWidget() {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
                                 {assigneeUid
-                                    ? (savedAccounts.find(a => a.uid === assigneeUid)?.alias || savedAccounts.find(a => a.uid === assigneeUid)?.email?.split('@')[0] || '?')
+                                    ? (savedAccounts.find(a => (a.uid && a.uid === assigneeUid) || a.email === assigneeUid)?.alias || savedAccounts.find(a => (a.uid && a.uid === assigneeUid) || a.email === assigneeUid)?.email?.split('@')[0] || '?')
                                     : '나'}
                                 <svg className="w-2.5 h-2.5 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -670,25 +687,28 @@ export default function MiniWidget() {
                                     
                                     <div className="h-px bg-white/10 mx-2 my-0.5"></div>
                                     
-                                    {savedAccounts.filter(a => a.email !== user?.email && a.uid).map(acc => (
-                                        <button
-                                            key={acc.email}
-                                            type="button"
-                                            onClick={() => { setAssigneeUid(acc.uid); setShowAssignee(false); }}
-                                            className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-[10px] transition-colors
-                                                ${assigneeUid === acc.uid ? 'text-purple-400 font-bold bg-white/5' : 'text-gray-300 hover:bg-white/10'}`}
-                                        >
-                                            <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold shrink-0 ${assigneeUid === acc.uid ? 'bg-purple-500 text-white' : 'bg-white/10 text-gray-300'}`}>
-                                                {acc.email[0].toUpperCase()}
-                                            </div>
-                                            <span className="flex-1 text-left truncate">{acc.alias || acc.email.split('@')[0]}</span>
-                                            {assigneeUid === acc.uid && (
-                                                <svg className="w-3 h-3 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                                                </svg>
-                                            )}
-                                        </button>
-                                    ))}
+                                    {savedAccounts.filter(a => a.email !== user?.email && (a.uid || a.email)).map(acc => {
+                                        const key = acc.uid || acc.email;
+                                        return (
+                                            <button
+                                                key={acc.email}
+                                                type="button"
+                                                onClick={() => { setAssigneeUid(key); setShowAssignee(false); }}
+                                                className={`w-full flex items-center gap-2 px-2.5 py-1.5 text-[10px] transition-colors
+                                                    ${assigneeUid === key ? 'text-purple-400 font-bold bg-white/5' : 'text-gray-300 hover:bg-white/10'}`}
+                                            >
+                                                <div className={`w-4 h-4 rounded-full flex items-center justify-center text-[8px] font-bold shrink-0 ${assigneeUid === key ? 'bg-purple-500 text-white' : 'bg-white/10 text-gray-300'}`}>
+                                                    {acc.email[0].toUpperCase()}
+                                                </div>
+                                                <span className="flex-1 text-left truncate">{acc.alias || acc.email.split('@')[0]}</span>
+                                                {assigneeUid === key && (
+                                                    <svg className="w-3 h-3 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>

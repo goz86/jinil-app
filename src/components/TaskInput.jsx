@@ -291,7 +291,7 @@ export default function TaskInput({ onAdd, savedAccounts = [], currentUserEmail,
                 )}
 
                 {/* Assignee selector - only show if there are other team members */}
-                {savedAccounts.filter(a => a.email !== currentUserEmail && a.uid).length > 0 && (
+                {savedAccounts.filter(a => a.email !== currentUserEmail && (a.uid || a.email)).length > 0 && (
                     <>
                         <div className="w-px h-6 bg-gray-200 dark:bg-gray-600 mx-1"></div>
                         <div className="relative" ref={assigneeRef}>
@@ -308,7 +308,7 @@ export default function TaskInput({ onAdd, savedAccounts = [], currentUserEmail,
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
                                 {assigneeUid
-                                    ? (savedAccounts.find(a => a.uid === assigneeUid)?.alias || savedAccounts.find(a => a.uid === assigneeUid)?.email?.split('@')[0] || '?')
+                                    ? (savedAccounts.find(a => (a.uid && a.uid === assigneeUid) || a.email === assigneeUid)?.alias || savedAccounts.find(a => (a.uid && a.uid === assigneeUid) || a.email === assigneeUid)?.email?.split('@')[0] || '?')
                                     : '나'}
                                 <svg className="w-3 h-3 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -338,25 +338,28 @@ export default function TaskInput({ onAdd, savedAccounts = [], currentUserEmail,
                                     <div className="h-px bg-gray-100 dark:bg-gray-700 mx-3 my-1"></div>
                                     
                                     {/* Other team members */}
-                                    {savedAccounts.filter(a => a.email !== currentUserEmail && a.uid).map(acc => (
-                                        <button
-                                            key={acc.email}
-                                            type="button"
-                                            onClick={() => { setAssigneeUid(acc.uid); setShowAssignee(false); }}
-                                            className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors
-                                                ${assigneeUid === acc.uid ? 'text-purple-600 dark:text-purple-400 font-semibold bg-purple-50 dark:bg-purple-900/20' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
-                                        >
-                                            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${assigneeUid === acc.uid ? 'bg-purple-500 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300'}`}>
-                                                {acc.email[0].toUpperCase()}
-                                            </div>
-                                            <span className="flex-1 text-left">{acc.alias || acc.email.split('@')[0]}</span>
-                                            {assigneeUid === acc.uid && (
-                                                <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                                                </svg>
-                                            )}
-                                        </button>
-                                    ))}
+                                    {savedAccounts.filter(a => a.email !== currentUserEmail && (a.uid || a.email)).map(acc => {
+                                        const key = acc.uid || acc.email;
+                                        return (
+                                            <button
+                                                key={acc.email}
+                                                type="button"
+                                                onClick={() => { setAssigneeUid(key); setShowAssignee(false); }}
+                                                className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors
+                                                    ${assigneeUid === key ? 'text-purple-600 dark:text-purple-400 font-semibold bg-purple-50 dark:bg-purple-900/20' : 'text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700'}`}
+                                            >
+                                                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${assigneeUid === key ? 'bg-purple-500 text-white' : 'bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300'}`}>
+                                                    {acc.email[0].toUpperCase()}
+                                                </div>
+                                                <span className="flex-1 text-left">{acc.alias || acc.email.split('@')[0]}</span>
+                                                {assigneeUid === key && (
+                                                    <svg className="w-4 h-4 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                )}
+                                            </button>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
