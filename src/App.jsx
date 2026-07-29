@@ -378,8 +378,19 @@ function App() {
   };
 
   const assignTaskToUser = async (targetUid, task) => {
+    const targetAcc = savedAccounts.find(a => a.uid === targetUid);
+    const targetName = targetAcc?.alias || targetAcc?.email?.split('@')[0] || '직원';
+
+    // Show loading toast immediately so user gets instant feedback
+    Swal.fire({
+      title: `${targetName}에게 배정 중...`,
+      toast: true,
+      position: 'top-end',
+      showConfirmButton: false,
+      didOpen: () => { Swal.showLoading(); }
+    });
+
     try {
-      const targetAcc = savedAccounts.find(a => a.uid === targetUid);
       if (!targetAcc?.p) throw new Error('No credentials for target user');
 
       // Sign in as target user on secondary Firebase app (doesn't affect main session)
@@ -394,8 +405,6 @@ function App() {
 
       // Clean up secondary auth
       await signOut(secondaryAuth);
-
-      const targetName = targetAcc?.alias || targetAcc?.email?.split('@')[0] || '직원';
 
       Swal.fire({
         icon: 'success',
