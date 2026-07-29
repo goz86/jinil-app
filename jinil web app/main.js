@@ -376,7 +376,7 @@ function createMiniWindow() {
     if (isDev) {
         miniWindow.loadURL('http://localhost:5173/#/mini');
     } else {
-        miniWindow.loadURL(`file://${path.join(__dirname, '../dist/index.html')}#/mini`);
+        miniWindow.loadFile(path.join(__dirname, '../dist/index.html'), { hash: 'mini' });
     }
 
     miniWindow.once('ready-to-show', () => {
