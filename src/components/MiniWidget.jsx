@@ -223,6 +223,24 @@ export default function MiniWidget() {
         };
     }, [user?.uid, savedAccounts]);
 
+    // BroadcastChannel listener for instant zero-latency sync between Main App & Jinil Mini window
+    useEffect(() => {
+        let channel;
+        try {
+            channel = new BroadcastChannel('jinil_task_sync');
+            channel.onmessage = (event) => {
+                if (event.data && event.data.type === 'TASKS_UPDATED') {
+                    if (event.data.uid === user?.uid && Array.isArray(event.data.tasks)) {
+                        setTasks(event.data.tasks);
+                    }
+                }
+            };
+        } catch (e) {}
+        return () => {
+            if (channel) channel.close();
+        };
+    }, [user?.uid]);
+
     const saveTasks = async (newTasks) => {
         setTasks(newTasks);
         if (user) {
@@ -232,6 +250,11 @@ export default function MiniWidget() {
         } else {
             localStorage.setItem('todos', JSON.stringify(newTasks));
         }
+        try {
+            const channel = new BroadcastChannel('jinil_task_sync');
+            channel.postMessage({ type: 'TASKS_UPDATED', tasks: newTasks, uid: user?.uid });
+            channel.close();
+        } catch (e) {}
     };
 
     const modifyCrossUserTask = async (taskId, modifierFunc) => {
@@ -376,12 +399,24 @@ export default function MiniWidget() {
 
     const allMergedTasks = useMemo(() => {
         const taskMap = new Map();
-        tasks.forEach(t => {
-            if (t && t.id) taskMap.set(t.id, t);
-        });
-        Object.values(patrolledTasks).flat().forEach(t => {
-            if (t && t.id) taskMap.set(t.id, t);
-        });
+        const addOrMergeTask = (t) => {
+            if (!t || !t.id) return;
+            if (taskMap.has(t.id)) {
+                const existing = taskMap.get(t.id);
+                // Smart merge: if either version has completed true, reflect completion immediately
+                taskMap.set(t.id, {
+                    ...existing,
+                    ...t,
+                    completed: existing.completed || t.completed
+                });
+            } else {
+                taskMap.set(t.id, t);
+            }
+        };
+
+        tasks.forEach(addOrMergeTask);
+        Object.values(patrolledTasks).flat().forEach(addOrMergeTask);
+
         return Array.from(taskMap.values());
     }, [tasks, patrolledTasks]);
     const todayTasks = allMergedTasks.filter(t => t.date === today);

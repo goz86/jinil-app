@@ -314,6 +314,24 @@ function App() {
     };
   }, [user?.uid, savedAccounts]);
 
+  // BroadcastChannel listener for instant zero-latency sync between Main App & Jinil Mini window
+  useEffect(() => {
+    let channel;
+    try {
+      channel = new BroadcastChannel('jinil_task_sync');
+      channel.onmessage = (event) => {
+        if (event.data && event.data.type === 'TASKS_UPDATED') {
+          if (event.data.uid === user?.uid && Array.isArray(event.data.tasks)) {
+            setTasks(event.data.tasks);
+          }
+        }
+      };
+    } catch (e) {}
+    return () => {
+      if (channel) channel.close();
+    };
+  }, [user?.uid]);
+
   const updateTasks = async (newTasks) => {
     setTasks(newTasks);
     if (user) {
@@ -321,6 +339,11 @@ function App() {
       localStorage.setItem(userTodoKey, JSON.stringify(newTasks));
       await setDoc(doc(db, "users", user.uid), { tasks: newTasks });
     }
+    try {
+      const channel = new BroadcastChannel('jinil_task_sync');
+      channel.postMessage({ type: 'TASKS_UPDATED', tasks: newTasks, uid: user?.uid });
+      channel.close();
+    } catch (e) {}
   };
 
   const handleLogin = async () => {
@@ -580,14 +603,24 @@ function App() {
   // Aggregate current user's tasks with patrolled tasks assigned by them, deduplicated by ID
   const allMergedTasks = useMemo(() => {
     const taskMap = new Map();
-    // 1. Local tasks first
-    tasks.forEach(t => {
-      if (t && t.id) taskMap.set(t.id, t);
-    });
-    // 2. Patrolled tasks (live status from assigned employee docs takes priority)
-    Object.values(patrolledTasks).flat().forEach(t => {
-      if (t && t.id) taskMap.set(t.id, t);
-    });
+    const addOrMergeTask = (t) => {
+      if (!t || !t.id) return;
+      if (taskMap.has(t.id)) {
+        const existing = taskMap.get(t.id);
+        // Smart merge: if either version has completed true, reflect completion immediately
+        taskMap.set(t.id, {
+          ...existing,
+          ...t,
+          completed: existing.completed || t.completed
+        });
+      } else {
+        taskMap.set(t.id, t);
+      }
+    };
+
+    tasks.forEach(addOrMergeTask);
+    Object.values(patrolledTasks).flat().forEach(addOrMergeTask);
+
     return Array.from(taskMap.values());
   }, [tasks, patrolledTasks]);
 
