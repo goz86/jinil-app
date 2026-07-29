@@ -134,6 +134,7 @@ export default function MiniWidget() {
     const [savedAccounts, setSavedAccounts] = useState([]);
     const [assigneeUid, setAssigneeUid] = useState(null);
     const [showAssignee, setShowAssignee] = useState(false);
+    const [isTasksHidden, setIsTasksHidden] = useState(true);
     const assigneeRef = useRef(null);
 
     // Get today's date in YYYY-MM-DD
@@ -256,6 +257,32 @@ export default function MiniWidget() {
             if (channel) channel.close();
         };
     }, [user?.uid]);
+
+    // Sync privacy hidden state across Main App and Jinil Mini window
+    useEffect(() => {
+        let channel;
+        try {
+            channel = new BroadcastChannel('jinil_privacy_sync');
+            channel.onmessage = (event) => {
+                if (event.data && typeof event.data.isHidden === 'boolean') {
+                    setIsTasksHidden(event.data.isHidden);
+                }
+            };
+        } catch (e) {}
+        return () => {
+            if (channel) channel.close();
+        };
+    }, []);
+
+    const togglePrivacyHidden = (targetState) => {
+        const newState = typeof targetState === 'boolean' ? targetState : !isTasksHidden;
+        setIsTasksHidden(newState);
+        try {
+            const channel = new BroadcastChannel('jinil_privacy_sync');
+            channel.postMessage({ isHidden: newState });
+            channel.close();
+        } catch (e) {}
+    };
 
     const saveTasks = async (newTasks) => {
         setTasks(newTasks);
@@ -522,13 +549,64 @@ export default function MiniWidget() {
                     </h3>
 
                     <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => togglePrivacyHidden()}
+                            title={isTasksHidden ? "작업 목록 보기" : "작업 목록 숨기기"}
+                            className="px-2 py-0.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 text-white/70 hover:text-white text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer"
+                        >
+                            <svg className="w-3 h-3 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                {isTasksHidden ? (
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                ) : (
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                                )}
+                            </svg>
+                            <span>{isTasksHidden ? "숨김 해제" : "숨기기"}</span>
+                        </button>
                         <span className="bg-blue-500/20 text-blue-300 text-[10px] font-black px-2 py-0.5 rounded-full border border-blue-500/30">
                             {activeTasksCount}
                         </span>
                     </div>
                 </div>
 
-                {sortedTasks.length === 0 ? (
+                {isTasksHidden ? (
+                    <div 
+                        onClick={() => togglePrivacyHidden(false)}
+                        className="group bg-white/5 backdrop-blur-xl rounded-2xl p-6 border border-white/10 flex flex-col items-center justify-center text-center min-h-[220px] animate-in fade-in duration-300 cursor-pointer hover:border-blue-500/40 hover:bg-white/10 transition-all my-2 relative overflow-hidden"
+                    >
+                        {/* 3D Glowing Security Shield Icon */}
+                        <div className="relative mb-4">
+                            <div className="absolute -inset-2 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 opacity-30 blur-lg group-hover:opacity-60 transition-opacity duration-500"></div>
+                            <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-[0_8px_20px_-4px_rgba(59,130,246,0.5)] border border-white/30 group-hover:scale-110 transition-transform duration-300">
+                                <svg className="w-6 h-6 drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                            </div>
+                        </div>
+
+                        <h3 className="text-xs font-bold text-white mb-1 tracking-tight">
+                            작업 목록이 가려져 있습니다
+                        </h3>
+                        <p className="text-[10px] text-gray-400 max-w-[180px] mb-4 leading-relaxed">
+                            보안을 위해 가려졌습니다. 클릭하여 내용을 확인하세요.
+                        </p>
+
+                        {/* 3D Modern Button */}
+                        <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); togglePrivacyHidden(false); }}
+                            className="relative group/btn overflow-hidden rounded-xl px-4 py-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white font-bold text-[10px] shadow-[0_6px_15px_-3px_rgba(59,130,246,0.5)] hover:shadow-[0_8px_20px_-3px_rgba(59,130,246,0.7)] active:scale-95 transition-all duration-200 cursor-pointer flex items-center gap-2 border border-white/20"
+                        >
+                            <div className="w-4 h-4 rounded-md bg-white/20 flex items-center justify-center shrink-0 border border-white/30 shadow-inner">
+                                <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                                </svg>
+                            </div>
+                            <span className="tracking-wide">작업 목록 보기</span>
+                        </button>
+                    </div>
+                ) : sortedTasks.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-10 opacity-30">
                         <div className="w-12 h-12 mb-3 bg-white/5 rounded-full flex items-center justify-center">
                             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 13l4 4L19 7" /></svg>

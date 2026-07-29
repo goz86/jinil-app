@@ -339,6 +339,32 @@ function App() {
     };
   }, [user?.uid]);
 
+  // Sync privacy hidden state across Main App and Jinil Mini window
+  useEffect(() => {
+    let channel;
+    try {
+      channel = new BroadcastChannel('jinil_privacy_sync');
+      channel.onmessage = (event) => {
+        if (event.data && typeof event.data.isHidden === 'boolean') {
+          setIsTasksHidden(event.data.isHidden);
+        }
+      };
+    } catch (e) {}
+    return () => {
+      if (channel) channel.close();
+    };
+  }, []);
+
+  const togglePrivacyHidden = (targetState) => {
+    const newState = typeof targetState === 'boolean' ? targetState : !isTasksHidden;
+    setIsTasksHidden(newState);
+    try {
+      const channel = new BroadcastChannel('jinil_privacy_sync');
+      channel.postMessage({ isHidden: newState });
+      channel.close();
+    } catch (e) {}
+  };
+
   const updateTasks = async (newTasks) => {
     setTasks(newTasks);
     if (user) {
@@ -758,7 +784,7 @@ function App() {
               <TaskFilter filter={filter} setFilter={setFilter} />
             </div>
             <button
-              onClick={() => setIsTasksHidden(prev => !prev)}
+              onClick={() => togglePrivacyHidden()}
               title={isTasksHidden ? "작업 목록 보기" : "작업 목록 숨기기"}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all duration-200 whitespace-nowrap cursor-pointer ${
                 isTasksHidden
@@ -792,7 +818,7 @@ function App() {
               우선순위
             </button>
           </div>
-          <TaskList tasks={filteredTasks} onToggle={toggleTask} onDelete={deleteTask} savedAccounts={savedAccounts} isHidden={isTasksHidden} onToggleHidden={() => setIsTasksHidden(false)} />
+          <TaskList tasks={filteredTasks} onToggle={toggleTask} onDelete={deleteTask} savedAccounts={savedAccounts} isHidden={isTasksHidden} onToggleHidden={() => togglePrivacyHidden(false)} />
           <DeliveryGallery selectedDate={selectedDate} deliveries={deliveryData} />
         </div>
 
