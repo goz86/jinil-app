@@ -338,6 +338,9 @@ export default function MiniWidget() {
                 await setDoc(userDocRef, { tasks: [enhancedTask, ...existingTasks] });
                 await signOut(secondaryAuth);
 
+                // Also save to current user's task list so it persists in owner's doc
+                await saveTasks([enhancedTask, ...tasks]);
+
                 Swal.fire({
                     icon: 'success',
                     title: '작업 배정 완료',
@@ -371,7 +374,16 @@ export default function MiniWidget() {
         setAssigneeUid(null);
     };
 
-    const allMergedTasks = [...tasks, ...Object.values(patrolledTasks).flat()];
+    const allMergedTasks = useMemo(() => {
+        const taskMap = new Map();
+        tasks.forEach(t => {
+            if (t && t.id) taskMap.set(t.id, t);
+        });
+        Object.values(patrolledTasks).flat().forEach(t => {
+            if (t && t.id) taskMap.set(t.id, t);
+        });
+        return Array.from(taskMap.values());
+    }, [tasks, patrolledTasks]);
     const todayTasks = allMergedTasks.filter(t => t.date === today);
 
     // Sort tasks: active (uncompleted) tasks first, completed tasks moved to the bottom

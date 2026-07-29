@@ -245,37 +245,19 @@ function App() {
     
     setLoading(true);
     const userTodoKey = `todos_${user.uid}`;
-    let isFirstSnapshot = true;
     
     const unsubStore = onSnapshot(doc(db, "users", user.uid), (docSnap) => {
       if (docSnap.exists()) {
         const cloudTasks = docSnap.data().tasks || [];
-        
-        if (isFirstSnapshot) {
-          isFirstSnapshot = false;
-          const saved = localStorage.getItem(userTodoKey);
-          const localTasks = saved ? JSON.parse(saved) : [];
-          
-          if (localTasks.length > 0) {
-            const cloudIds = new Set(cloudTasks.map(t => t.id));
-            const localOnly = localTasks.filter(t => !cloudIds.has(t.id));
-            const merged = [...localOnly, ...cloudTasks];
-            setTasks(merged);
-            localStorage.setItem(userTodoKey, JSON.stringify(merged));
-            setDoc(doc(db, "users", user.uid), { tasks: merged });
-          } else {
-            setTasks(cloudTasks);
-            localStorage.setItem(userTodoKey, JSON.stringify(cloudTasks));
-          }
-        } else {
-          setTasks(cloudTasks);
-          localStorage.setItem(userTodoKey, JSON.stringify(cloudTasks));
-        }
+        setTasks(cloudTasks);
+        localStorage.setItem(userTodoKey, JSON.stringify(cloudTasks));
       } else {
         const saved = localStorage.getItem(userTodoKey);
         const localTasks = saved ? JSON.parse(saved) : [];
         setTasks(localTasks);
-        setDoc(doc(db, "users", user.uid), { tasks: localTasks });
+        if (localTasks.length > 0) {
+          setDoc(doc(db, "users", user.uid), { tasks: localTasks });
+        }
       }
       setLoading(false);
     }, (error) => {
@@ -516,6 +498,20 @@ function App() {
     };
     if (targetUid && user && targetUid !== user.uid) {
       assignTaskToUser(targetUid, newTask);
+      
+      const targetAcc = savedAccounts.find(a => (a.uid && a.uid === targetUid) || a.email === targetUid);
+      const targetName = targetAcc?.alias || targetAcc?.email?.split('@')[0] || '직원';
+      const myName = user?.email?.split('@')[0] || '나';
+
+      const enhancedForOwner = {
+        ...newTask,
+        assignedByUid: user.uid,
+        assignedByName: myName,
+        assigneeUid: targetAcc?.uid || targetUid,
+        assigneeName: targetName,
+        assigneeEmail: targetAcc?.email
+      };
+      updateTasks([enhancedForOwner, ...tasks]);
     } else {
       updateTasks([newTask, ...tasks]);
     }
@@ -581,10 +577,18 @@ function App() {
 
   const priorityOrder = { urgent: 0, high: 1, 'Quan trọng': 1, 'CAO': 1, normal: 2, low: 3, 'Không quan trọng': 3 };
 
-  // Aggregate current user's tasks with patrolled tasks assigned by them
+  // Aggregate current user's tasks with patrolled tasks assigned by them, deduplicated by ID
   const allMergedTasks = useMemo(() => {
-    const pTasksArray = Object.values(patrolledTasks).flat();
-    return [...tasks, ...pTasksArray];
+    const taskMap = new Map();
+    // 1. Local tasks first
+    tasks.forEach(t => {
+      if (t && t.id) taskMap.set(t.id, t);
+    });
+    // 2. Patrolled tasks (live status from assigned employee docs takes priority)
+    Object.values(patrolledTasks).flat().forEach(t => {
+      if (t && t.id) taskMap.set(t.id, t);
+    });
+    return Array.from(taskMap.values());
   }, [tasks, patrolledTasks]);
 
   const filteredTasks = allMergedTasks
