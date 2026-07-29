@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 
-export default function TaskItem({ task, onToggle, onDelete }) {
+export default function TaskItem({ task, onToggle, onDelete, savedAccounts = [] }) {
     const { t } = useLanguage();
     const [timeLeft, setTimeLeft] = useState('');
 
@@ -88,11 +88,17 @@ export default function TaskItem({ task, onToggle, onDelete }) {
                             {getPriorityText(task.priority)}
                         </span>
                         
-                        {task.assigneeName && task.assignedByName && (
+                        {task.assigneeName && (
                             <span className={`flex items-center gap-1 px-2 py-0.5 rounded-md font-bold text-[10px] ${task.completed ? 'bg-gray-100 text-gray-400 dark:bg-gray-700 dark:text-gray-500' : 'bg-purple-50 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 border border-purple-100 dark:border-purple-800/30'}`}>
-                                <span>{task.assignedByName}</span>
+                                <span>{(() => {
+                                    const acc = savedAccounts.find(a => (a.uid && a.uid === task.assignedByUid) || (a.email && a.email === task.assignedByUid) || (a.email && a.email.split('@')[0] === task.assignedByName));
+                                    return acc?.alias || task.assignedByName || '나';
+                                })()}</span>
                                 <svg className="w-3 h-3 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                                <span>{task.assigneeName}</span>
+                                <span>{(() => {
+                                    const acc = savedAccounts.find(a => (a.uid && a.uid === task.assigneeUid) || (a.email && a.email === task.assigneeUid) || (a.email && a.email.split('@')[0] === task.assigneeName));
+                                    return acc?.alias || task.assigneeName;
+                                })()}</span>
                             </span>
                         )}
 

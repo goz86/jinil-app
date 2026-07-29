@@ -20,6 +20,7 @@ export default function AuthWidget({ user, onLogin, onLogout, email, setEmail, p
         const accs = savedAccounts.filter(a => a.email !== emailToRemove);
         localStorage.setItem('jinil_saved_accounts', JSON.stringify(accs));
         setSavedAccounts(accs);
+        window.dispatchEvent(new Event('jinil_accounts_updated'));
     };
 
     const handleStartEdit = (e, targetEmail, currentAlias) => {
@@ -42,6 +43,7 @@ export default function AuthWidget({ user, onLogin, onLogout, email, setEmail, p
         localStorage.setItem('jinil_saved_accounts', JSON.stringify(accs));
         setSavedAccounts(accs);
         setEditingEmail(null);
+        window.dispatchEvent(new Event('jinil_accounts_updated'));
     };
 
     const activeAcc = user ? savedAccounts.find(a => a.email === user.email) : null;

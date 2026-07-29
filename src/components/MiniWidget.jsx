@@ -6,7 +6,7 @@ import { doc, onSnapshot, setDoc, getDoc, getFirestore } from 'firebase/firestor
 import { useLanguage } from '../contexts/LanguageContext';
 import Swal from 'sweetalert2';
 
-const MiniTaskItem = ({ task, toggleTask }) => {
+const MiniTaskItem = ({ task, toggleTask, savedAccounts = [] }) => {
     const [timeLeft, setTimeLeft] = useState('');
 
     useEffect(() => {
@@ -91,12 +91,18 @@ const MiniTaskItem = ({ task, toggleTask }) => {
                     {task.priority === 'high' && <span className={`w-2 h-2 rounded-full bg-orange-400 mt-1.5 shrink-0 ${task.completed ? 'opacity-40' : ''}`} title="급" />}
                     {task.priority === 'normal' && <span className={`w-2 h-2 rounded-full bg-yellow-400 mt-1.5 shrink-0 ${task.completed ? 'opacity-30' : 'opacity-60'}`} title="보통" />}
                 </div>
-                {task.assigneeName && task.assignedByName && (
+                {task.assigneeName && (
                     <div className="pl-8 -mt-0.5">
                         <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold ${task.completed ? 'bg-white/5 text-white/30' : 'bg-purple-500/20 text-purple-300'}`}>
-                            {task.assignedByName}
+                            {(() => {
+                                const acc = savedAccounts.find(a => (a.uid && a.uid === task.assignedByUid) || (a.email && a.email === task.assignedByUid) || (a.email && a.email.split('@')[0] === task.assignedByName));
+                                return acc?.alias || task.assignedByName || '나';
+                            })()}
                             <svg className="w-2.5 h-2.5 mx-0.5 opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                            {task.assigneeName}
+                            {(() => {
+                                const acc = savedAccounts.find(a => (a.uid && a.uid === task.assigneeUid) || (a.email && a.email === task.assigneeUid) || (a.email && a.email.split('@')[0] === task.assigneeName));
+                                return acc?.alias || task.assigneeName;
+                            })()}
                         </span>
                     </div>
                 )}
@@ -141,12 +147,18 @@ export default function MiniWidget() {
     const today = getLocalDateString();
 
     useEffect(() => {
-        try {
-            const accs = JSON.parse(localStorage.getItem('jinil_saved_accounts') || '[]');
-            setSavedAccounts(accs);
-        } catch (e) {
-            setSavedAccounts([]);
-        }
+        const reloadAccounts = () => {
+            try {
+                const accs = JSON.parse(localStorage.getItem('jinil_saved_accounts') || '[]');
+                setSavedAccounts(accs);
+            } catch (e) {
+                setSavedAccounts([]);
+            }
+        };
+
+        reloadAccounts();
+        window.addEventListener('jinil_accounts_updated', reloadAccounts);
+        window.addEventListener('storage', reloadAccounts);
 
         const handleClickOutside = (e) => {
             if (assigneeRef.current && !assigneeRef.current.contains(e.target)) {
@@ -154,7 +166,11 @@ export default function MiniWidget() {
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
+        return () => {
+            window.removeEventListener('jinil_accounts_updated', reloadAccounts);
+            window.removeEventListener('storage', reloadAccounts);
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
     }, []);
 
     useEffect(() => {
@@ -522,7 +538,7 @@ export default function MiniWidget() {
                 ) : (
                     <div className="space-y-2.5">
                         {sortedTasks.map(task => (
-                            <MiniTaskItem key={task.id} task={task} toggleTask={toggleTask} />
+                            <MiniTaskItem key={task.id} task={task} toggleTask={toggleTask} savedAccounts={savedAccounts} />
                         ))}
                     </div>
                 )}

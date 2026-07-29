@@ -2,7 +2,7 @@ import React from 'react';
 import TaskItem from './TaskItem';
 import { useLanguage } from '../contexts/LanguageContext';
 
-export default function TaskList({ tasks, onToggle, onDelete }) {
+export default function TaskList({ tasks, onToggle, onDelete, savedAccounts = [] }) {
     const { t } = useLanguage();
 
     if (tasks.length === 0) {
@@ -21,6 +21,7 @@ export default function TaskList({ tasks, onToggle, onDelete }) {
                     task={task}
                     onToggle={onToggle}
                     onDelete={onDelete}
+                    savedAccounts={savedAccounts}
                 />
             ))}
         </div>

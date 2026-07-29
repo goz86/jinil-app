@@ -209,34 +209,40 @@ function App() {
     };
   }, []);
 
-  // Sync UID to saved accounts when user changes
+  // Sync UID to saved accounts when user changes and listen for custom alias updates
   useEffect(() => {
-    if (user) {
+    const reloadAccounts = () => {
       try {
         const accs = JSON.parse(localStorage.getItem('jinil_saved_accounts') || '[]');
-        let updated = false;
-        const newAccs = accs.map(a => {
-          if (a.email === user.email && a.uid !== user.uid) {
-            updated = true;
-            return { ...a, uid: user.uid };
+        if (user) {
+          let updated = false;
+          const newAccs = accs.map(a => {
+            if (a.email === user.email && a.uid !== user.uid) {
+              updated = true;
+              return { ...a, uid: user.uid };
+            }
+            return a;
+          });
+          if (updated) {
+            localStorage.setItem('jinil_saved_accounts', JSON.stringify(newAccs));
           }
-          return a;
-        });
-        if (updated) {
-          localStorage.setItem('jinil_saved_accounts', JSON.stringify(newAccs));
+          setSavedAccounts(newAccs);
+        } else {
+          setSavedAccounts(accs);
         }
-        setSavedAccounts(newAccs);
       } catch (e) {
         setSavedAccounts([]);
       }
-    } else {
-      try {
-        const accs = JSON.parse(localStorage.getItem('jinil_saved_accounts') || '[]');
-        setSavedAccounts(accs);
-      } catch (e) {
-        setSavedAccounts([]);
-      }
-    }
+    };
+
+    reloadAccounts();
+    window.addEventListener('jinil_accounts_updated', reloadAccounts);
+    window.addEventListener('storage', reloadAccounts);
+
+    return () => {
+      window.removeEventListener('jinil_accounts_updated', reloadAccounts);
+      window.removeEventListener('storage', reloadAccounts);
+    };
   }, [user?.uid]);
 
   // Effect 2: Handle Task Synchronization (User-specific)
@@ -763,7 +769,7 @@ function App() {
               우선순위
             </button>
           </div>
-          <TaskList tasks={filteredTasks} onToggle={toggleTask} onDelete={deleteTask} />
+          <TaskList tasks={filteredTasks} onToggle={toggleTask} onDelete={deleteTask} savedAccounts={savedAccounts} />
           <DeliveryGallery selectedDate={selectedDate} deliveries={deliveryData} />
         </div>
 
