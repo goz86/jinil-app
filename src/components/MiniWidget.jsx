@@ -188,7 +188,7 @@ const MiniTaskItem = ({ task, toggleTask, savedAccounts = [], theme, isHighContr
     const isLight = theme?.isLight;
 
     return (
-        <div className={`group p-3 rounded-2xl border transition-all duration-300 animate-in fade-in slide-in-from-bottom-2 ${
+        <div className={`group p-3 rounded-2xl border transition-all duration-200 animate-in fade-in slide-in-from-bottom-2 hover:scale-[1.01] ${
             task.completed
                 ? isLight
                     ? 'bg-slate-200/50 border-slate-300/60 opacity-60'
@@ -229,8 +229,8 @@ const MiniTaskItem = ({ task, toggleTask, savedAccounts = [], theme, isHighContr
                     >
                         {task.title}
                     </span>
-                    {task.priority === 'urgent' && <span className={`w-2.5 h-2.5 rounded-full bg-red-500 mt-1 shrink-0 ${task.completed ? 'opacity-40' : ''}`} title="급급급" />}
-                    {task.priority === 'high' && <span className={`w-2.5 h-2.5 rounded-full bg-orange-400 mt-1 shrink-0 ${task.completed ? 'opacity-40' : ''}`} title="급" />}
+                    {task.priority === 'urgent' && <span className={`w-2.5 h-2.5 rounded-full bg-red-500 mt-1 shrink-0 shadow-sm shadow-red-500/50 ${task.completed ? 'opacity-40' : ''}`} title="급급급" />}
+                    {task.priority === 'high' && <span className={`w-2.5 h-2.5 rounded-full bg-orange-400 mt-1 shrink-0 shadow-sm shadow-orange-400/50 ${task.completed ? 'opacity-40' : ''}`} title="급" />}
                     {task.priority === 'normal' && <span className={`w-2.5 h-2.5 rounded-full bg-yellow-400 mt-1 shrink-0 ${task.completed ? 'opacity-30' : 'opacity-60'}`} title="보통" />}
                 </div>
                 {task.assigneeName && (
@@ -656,6 +656,8 @@ export default function MiniWidget() {
     });
 
     const activeTasksCount = todayTasks.filter(t => !t.completed).length;
+    const completedTasksCount = todayTasks.filter(t => t.completed).length;
+    const completionPercentage = todayTasks.length > 0 ? Math.round((completedTasksCount / todayTasks.length) * 100) : 0;
 
     const handleClose = () => {
         if (window.electronAPI && window.electronAPI.hideMiniWidget) {
@@ -738,6 +740,9 @@ export default function MiniWidget() {
                     background-image: radial-gradient(rgba(150, 150, 150, 0.18) 1px, transparent 1px);
                     background-size: 16px 16px;
                 }
+                /* Hide native scrollbar for modal popups */
+                .no-scrollbar::-webkit-scrollbar { display: none; }
+                .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
             `}</style>
 
             {/* Custom Background Graphic Overlays */}
@@ -780,9 +785,11 @@ export default function MiniWidget() {
                         type="button"
                         onClick={() => setShowThemeModal(true)}
                         title="테마 및 배경화면 설정"
-                        className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer active:scale-95 ${currentTheme.headerBtn}`}
+                        className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-sm ${currentTheme.headerBtn}`}
                     >
-                        <span className="text-xs">🎨</span>
+                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                        </svg>
                         <span className="hidden sm:inline">테마</span>
                     </button>
 
@@ -800,7 +807,8 @@ export default function MiniWidget() {
 
             {/* Content Area */}
             <div className="flex-1 overflow-y-auto p-4 custom-scrollbar relative z-10">
-                <div className="flex items-center justify-between mb-4 px-1">
+                {/* Header & Status Section */}
+                <div className="flex items-center justify-between mb-3 px-1">
                     <h3 className="text-[11px] font-black uppercase tracking-[0.1em] flex items-center gap-2" style={{ color: currentTheme.accentColor }}>
                         <span className="w-2 h-2 rounded-full" style={{ backgroundColor: currentTheme.accentColor }}></span>
                         {t('today')}
@@ -827,6 +835,30 @@ export default function MiniWidget() {
                         </span>
                     </div>
                 </div>
+
+                {/* Sleek Mini Progress Bar Dashboard Pill */}
+                {!isTasksHidden && todayTasks.length > 0 && (
+                    <div className={`mb-3.5 p-2.5 rounded-2xl border transition-all ${
+                        currentTheme.isLight ? 'bg-white/80 border-slate-200/80' : 'bg-white/5 border-white/10'
+                    }`}>
+                        <div className="flex items-center justify-between text-[10px] font-bold mb-1.5 opacity-80">
+                            <span className="flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                완료율 ({completionPercentage}%)
+                            </span>
+                            <span>{completedTasksCount} / {todayTasks.length} 완료</span>
+                        </div>
+                        <div className="w-full h-1.5 bg-black/10 dark:bg-white/10 rounded-full overflow-hidden">
+                            <div 
+                                className="h-full rounded-full transition-all duration-500" 
+                                style={{ 
+                                    width: `${completionPercentage}%`, 
+                                    backgroundColor: currentTheme.accentColor 
+                                }}
+                            ></div>
+                        </div>
+                    </div>
+                )}
 
                 {isTasksHidden ? (
                     <div 
@@ -997,7 +1029,7 @@ export default function MiniWidget() {
                                 <div className="flex gap-1.5 text-center">
                                     <div className="flex-1">
                                         <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">시</p>
-                                        <div className="h-28 overflow-y-auto custom-scrollbar bg-black/30 rounded-lg p-1 space-y-0.5">
+                                        <div className="h-28 overflow-y-auto no-scrollbar bg-black/30 rounded-lg p-1 space-y-0.5">
                                             {Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0')).map(h => (
                                                 <button
                                                     key={h}
@@ -1013,7 +1045,7 @@ export default function MiniWidget() {
                                     <div className="flex items-center text-gray-500 font-bold pt-3">:</div>
                                     <div className="flex-1">
                                         <p className="text-[9px] font-bold text-gray-400 uppercase mb-1">분</p>
-                                        <div className="h-28 overflow-y-auto custom-scrollbar bg-black/30 rounded-lg p-1 space-y-0.5">
+                                        <div className="h-28 overflow-y-auto no-scrollbar bg-black/30 rounded-lg p-1 space-y-0.5">
                                             {Array.from({ length: 12 }, (_, i) => String(i * 5).padStart(2, '0')).map(m => (
                                                 <button
                                                     key={m}
@@ -1137,17 +1169,19 @@ export default function MiniWidget() {
 
             {/* 🎨 Toss / Kakao Modern High Contrast Theme & Wallpaper Modal */}
             {showThemeModal && (
-                <div className="fixed inset-0 bg-black/70 backdrop-blur-md z-50 flex items-center justify-center p-3 animate-in fade-in duration-200" style={{ WebkitAppRegion: 'no-drag' }}>
-                    <div className="w-full max-w-sm max-h-[85vh] overflow-y-auto bg-slate-900 border border-white/20 rounded-3xl shadow-2xl p-4 text-white flex flex-col gap-4 custom-scrollbar animate-in zoom-in-95 duration-200">
+                <div className="fixed inset-0 bg-black/75 backdrop-blur-lg z-50 flex items-center justify-center p-3 animate-in fade-in duration-200" style={{ WebkitAppRegion: 'no-drag' }}>
+                    <div className="w-full max-w-sm max-h-[85vh] overflow-y-auto no-scrollbar bg-slate-900/95 border border-white/20 rounded-3xl shadow-2xl p-4 text-white flex flex-col gap-4 animate-in zoom-in-95 duration-200 relative">
                         {/* Modal Header */}
                         <div className="flex items-center justify-between border-b border-white/10 pb-3">
                             <div className="flex items-center gap-2">
                                 <div className="w-7 h-7 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-md">
-                                    🎨
+                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                                    </svg>
                                 </div>
                                 <div>
                                     <h3 className="text-xs font-black text-white">테마 및 배경화면 설정</h3>
-                                    <p className="text-[9px] text-gray-400">Kakao & Toss 고대비 팝업 디자인</p>
+                                    <p className="text-[9px] text-gray-400">Kakao & Toss 프리미엄 디자인</p>
                                 </div>
                             </div>
                             <button
@@ -1159,10 +1193,11 @@ export default function MiniWidget() {
                             </button>
                         </div>
 
-                        {/* Section 1: Themes Selection */}
+                        {/* Section 1: Visual Theme Cards Preview */}
                         <div>
                             <label className="text-[10px] font-black uppercase tracking-wider text-blue-400 mb-2 block flex items-center gap-1">
-                                <span>🎨</span> UI 테마 선택 (Themes)
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" /></svg>
+                                UI 테마 (Visual Preview)
                             </label>
                             <div className="grid grid-cols-1 gap-2">
                                 {PRESET_THEMES.map((theme) => {
@@ -1173,26 +1208,31 @@ export default function MiniWidget() {
                                             onClick={() => setThemeId(theme.id)}
                                             className={`p-2.5 rounded-2xl border cursor-pointer transition-all flex items-center justify-between ${
                                                 isSelected 
-                                                    ? 'border-blue-500 bg-blue-500/10 shadow-lg shadow-blue-500/10 ring-1 ring-blue-500' 
+                                                    ? 'border-blue-500 bg-blue-500/15 shadow-lg shadow-blue-500/10 ring-1 ring-blue-500 scale-[1.01]' 
                                                     : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20'
                                             }`}
                                         >
-                                            <div className="flex items-center gap-2.5">
-                                                <div 
-                                                    className="w-5 h-5 rounded-full border border-white/30 shrink-0 shadow-inner flex items-center justify-center text-[10px]"
-                                                    style={{ backgroundColor: theme.accentColor }}
-                                                >
-                                                    {isSelected && <span className="text-white drop-shadow font-black">✓</span>}
+                                            <div className="flex items-center gap-3">
+                                                {/* Mini Theme Thumbnail Card Preview */}
+                                                <div className="w-9 h-9 rounded-xl border border-white/20 shrink-0 overflow-hidden flex flex-col shadow-inner bg-slate-950">
+                                                    <div className="h-3 w-full" style={{ backgroundColor: theme.id === 'kakao-yellow' ? '#FEE500' : theme.accentColor }}></div>
+                                                    <div className="flex-1 p-1 flex items-center justify-center">
+                                                        <div className="w-5 h-2.5 rounded-sm border border-white/30" style={{ backgroundColor: theme.isLight ? '#FFFFFF' : '#222222' }}></div>
+                                                    </div>
                                                 </div>
                                                 <div>
-                                                    <p className="text-[11px] font-bold text-white">{theme.name}</p>
+                                                    <p className="text-[11px] font-bold text-white flex items-center gap-1.5">
+                                                        {theme.name}
+                                                    </p>
                                                     <p className="text-[9px] text-gray-400">{theme.category}</p>
                                                 </div>
                                             </div>
-                                            {isSelected && (
-                                                <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-blue-500 text-white">
-                                                    선택됨
+                                            {isSelected ? (
+                                                <span className="w-5 h-5 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-black shadow-md">
+                                                    ✓
                                                 </span>
+                                            ) : (
+                                                <div className="w-4 h-4 rounded-full border border-white/20"></div>
                                             )}
                                         </div>
                                     );
@@ -1203,7 +1243,8 @@ export default function MiniWidget() {
                         {/* Section 2: Wallpaper Effects Selection */}
                         <div className="border-t border-white/10 pt-3">
                             <label className="text-[10px] font-black uppercase tracking-wider text-purple-400 mb-2 block flex items-center gap-1">
-                                <span>🖼</span> 배경화면 그래픽 효과 (Wallpapers)
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                배경화면 그래픽 효과 (Wallpapers)
                             </label>
                             <div className="grid grid-cols-2 gap-2">
                                 {PRESET_WALLPAPERS.map((wp) => {
@@ -1213,7 +1254,7 @@ export default function MiniWidget() {
                                             key={wp.id}
                                             type="button"
                                             onClick={() => { setWallpaperId(wp.id); setCustomBgUrl(''); }}
-                                            className={`p-2 rounded-xl border text-left transition-all ${
+                                            className={`p-2.5 rounded-xl border text-left transition-all ${
                                                 isSelected
                                                     ? 'border-purple-500 bg-purple-500/20 text-white font-bold ring-1 ring-purple-500'
                                                     : 'border-white/10 bg-white/5 text-gray-300 hover:bg-white/10'
@@ -1238,7 +1279,7 @@ export default function MiniWidget() {
                             </div>
                         </div>
 
-                        {/* Section 3: High Contrast & Readability Mode */}
+                        {/* Section 3: High Contrast Mode */}
                         <div className="border-t border-white/10 pt-3 flex items-center justify-between">
                             <div>
                                 <h4 className="text-[11px] font-bold text-white">선명한 고대비 모드 (High Contrast)</h4>
