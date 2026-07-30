@@ -6,62 +6,74 @@ import { doc, onSnapshot, setDoc, getDoc, getFirestore } from 'firebase/firestor
 import { useLanguage } from '../contexts/LanguageContext';
 import Swal from 'sweetalert2';
 
-// 🎨 Curated Modern Themes (Toss, Kakao, OLED, Neon, Mint)
+// 🎨 Taste-Skill Design System Tokens: Harmonized High-Contrast Themes
 const PRESET_THEMES = [
     {
         id: 'toss-dark',
         name: '토스 다크 (Toss Dark Navy)',
         category: 'Toss Style',
-        bgClass: 'bg-slate-950/90 text-white',
-        headerClass: 'bg-slate-900/90 border-b border-slate-700/60 text-white',
-        cardClass: 'bg-slate-900/70 border-slate-700/50 hover:border-blue-500/50 text-white',
-        inputBg: 'bg-slate-900/80 border-slate-700 text-white placeholder-slate-400',
+        bgClass: 'bg-slate-950 text-white',
+        headerClass: 'bg-slate-900 border-b border-slate-800 text-white',
+        headerBtn: 'bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700',
+        cardClass: 'bg-slate-900/90 border-slate-800 hover:border-blue-500/50 text-white',
+        inputBg: 'bg-slate-900 border-slate-800 text-white placeholder-slate-500',
+        checkboxBg: 'bg-blue-600 border-blue-600 text-white shadow-sm shadow-blue-500/30',
         accentColor: '#3b82f6',
-        accentBg: 'bg-blue-600 hover:bg-blue-500 text-white',
+        accentBg: 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/20',
         badgeBg: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
-        subTextColor: 'text-slate-400',
-        isLight: false,
-    },
-    {
-        id: 'kakao-dark',
-        name: '카카오 다크 (Kakao Charcoal)',
-        category: 'Kakao Style',
-        bgClass: 'bg-[#181818]/95 text-gray-100',
-        headerClass: 'bg-[#222222]/95 border-b border-white/10 text-white',
-        cardClass: 'bg-[#282828]/90 border-white/10 hover:border-[#fee500]/50 text-gray-100',
-        inputBg: 'bg-[#282828] border-white/15 text-white placeholder-gray-400',
-        accentColor: '#fee500',
-        accentBg: 'bg-[#fee500] hover:bg-[#ebd200] text-slate-950 font-bold',
-        badgeBg: 'bg-[#fee500]/20 text-[#fee500] border-[#fee500]/40',
-        subTextColor: 'text-gray-400',
+        privacyBtn: 'bg-slate-900 border-slate-800 text-slate-300 hover:text-white',
+        footerBg: 'bg-slate-950 border-t border-slate-900 text-slate-400',
         isLight: false,
     },
     {
         id: 'kakao-yellow',
         name: '카카오 옐로우 (Kakao Classic)',
         category: 'Kakao Style',
-        bgClass: 'bg-[#fffde7] text-slate-900',
-        headerClass: 'bg-[#fee500] border-b border-yellow-300 text-slate-950 font-extrabold',
-        cardClass: 'bg-white border-yellow-200/90 hover:border-yellow-400 shadow-sm text-slate-900',
-        inputBg: 'bg-white border-yellow-300 text-slate-900 placeholder-slate-400',
-        accentColor: '#ca8a04',
-        accentBg: 'bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-bold',
-        badgeBg: 'bg-yellow-100 text-yellow-800 border-yellow-300',
-        subTextColor: 'text-slate-500',
+        bgClass: 'bg-[#FAF9F5] text-[#191919]',
+        headerClass: 'bg-[#FEE500] border-b border-yellow-400/80 text-[#191919] font-extrabold',
+        headerBtn: 'bg-[#191919]/10 hover:bg-[#191919]/20 text-[#191919] border border-[#191919]/20',
+        cardClass: 'bg-white border-yellow-300/80 hover:border-yellow-500 shadow-sm text-[#191919]',
+        inputBg: 'bg-white border-yellow-300/80 text-[#191919] placeholder-gray-400',
+        checkboxBg: 'bg-[#191919] border-[#191919] text-[#FEE500]',
+        accentColor: '#191919',
+        accentBg: 'bg-[#191919] hover:bg-[#2e2e2e] text-[#FEE500] font-bold shadow-md',
+        badgeBg: 'bg-[#FEE500] text-[#191919] font-bold border border-yellow-400',
+        privacyBtn: 'bg-white border-yellow-300 text-[#191919] hover:bg-yellow-50',
+        footerBg: 'bg-[#FAF9F5] border-t border-yellow-200/80 text-gray-500',
         isLight: true,
+    },
+    {
+        id: 'kakao-dark',
+        name: '카카오 다크 (Kakao Charcoal)',
+        category: 'Kakao Style',
+        bgClass: 'bg-[#181818] text-gray-100',
+        headerClass: 'bg-[#222222] border-b border-white/10 text-white',
+        headerBtn: 'bg-white/10 hover:bg-white/20 text-gray-200 border border-white/15',
+        cardClass: 'bg-[#262626] border-white/10 hover:border-[#FEE500]/60 text-gray-100',
+        inputBg: 'bg-[#262626] border-white/15 text-white placeholder-gray-500',
+        checkboxBg: 'bg-[#FEE500] border-[#FEE500] text-[#181818]',
+        accentColor: '#FEE500',
+        accentBg: 'bg-[#FEE500] hover:bg-[#ebd200] text-[#181818] font-bold shadow-yellow-500/10',
+        badgeBg: 'bg-[#FEE500]/20 text-[#FEE500] border-[#FEE500]/40',
+        privacyBtn: 'bg-[#262626] border-white/15 text-gray-300 hover:text-white',
+        footerBg: 'bg-[#181818] border-t border-white/10 text-gray-400',
+        isLight: false,
     },
     {
         id: 'toss-light',
         name: '토스 화이트 (Toss Light Blue)',
         category: 'Toss Style',
-        bgClass: 'bg-[#f8fafc] text-slate-900',
+        bgClass: 'bg-[#F8FAFC] text-slate-900',
         headerClass: 'bg-white border-b border-slate-200 text-slate-900',
-        cardClass: 'bg-white border-slate-200 hover:border-blue-400 shadow-sm text-slate-900',
+        headerBtn: 'bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200',
+        cardClass: 'bg-white border-slate-200 hover:border-blue-500 shadow-sm text-slate-900',
         inputBg: 'bg-white border-slate-300 text-slate-900 placeholder-slate-400',
+        checkboxBg: 'bg-blue-600 border-blue-600 text-white',
         accentColor: '#2563eb',
-        accentBg: 'bg-blue-600 hover:bg-blue-500 text-white',
-        badgeBg: 'bg-blue-100 text-blue-700 border-blue-300',
-        subTextColor: 'text-slate-500',
+        accentBg: 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-500/20',
+        badgeBg: 'bg-blue-50 text-blue-700 border-blue-200',
+        privacyBtn: 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50',
+        footerBg: 'bg-[#F8FAFC] border-t border-slate-200 text-slate-500',
         isLight: true,
     },
     {
@@ -70,40 +82,49 @@ const PRESET_THEMES = [
         category: 'Minimal',
         bgClass: 'bg-black text-white',
         headerClass: 'bg-zinc-950 border-b border-zinc-800 text-white',
-        cardClass: 'bg-zinc-900/90 border-zinc-800 hover:border-purple-500/50 text-white',
+        headerBtn: 'bg-zinc-900 hover:bg-zinc-800 text-zinc-200 border border-zinc-800',
+        cardClass: 'bg-zinc-900 border-zinc-800 hover:border-purple-500/60 text-white',
         inputBg: 'bg-zinc-900 border-zinc-800 text-white placeholder-zinc-500',
+        checkboxBg: 'bg-purple-600 border-purple-600 text-white',
         accentColor: '#a855f7',
-        accentBg: 'bg-purple-600 hover:bg-purple-500 text-white',
+        accentBg: 'bg-purple-600 hover:bg-purple-500 text-white shadow-purple-500/20',
         badgeBg: 'bg-purple-500/20 text-purple-300 border-purple-500/40',
-        subTextColor: 'text-zinc-400',
+        privacyBtn: 'bg-zinc-900 border-zinc-800 text-zinc-300 hover:text-white',
+        footerBg: 'bg-black border-t border-zinc-900 text-zinc-500',
         isLight: false,
     },
     {
         id: 'cyber-neon',
         name: '네온 사이버 (Neon Magenta)',
         category: 'Vibrant',
-        bgClass: 'bg-gradient-to-b from-indigo-950 via-slate-950 to-purple-950 text-white',
-        headerClass: 'bg-purple-950/80 border-b border-pink-500/30 text-white',
-        cardClass: 'bg-indigo-950/40 border-pink-500/30 hover:border-pink-400/60 text-white',
-        inputBg: 'bg-indigo-950/60 border-pink-500/30 text-white placeholder-pink-200/40',
+        bgClass: 'bg-slate-950 text-white',
+        headerClass: 'bg-purple-950/90 border-b border-pink-500/40 text-white',
+        headerBtn: 'bg-purple-900/60 hover:bg-purple-800/80 text-pink-200 border border-pink-500/30',
+        cardClass: 'bg-indigo-950/60 border-pink-500/30 hover:border-pink-400 text-white',
+        inputBg: 'bg-indigo-950/80 border-pink-500/40 text-white placeholder-pink-300/40',
+        checkboxBg: 'bg-pink-600 border-pink-600 text-white',
         accentColor: '#ec4899',
-        accentBg: 'bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white',
+        accentBg: 'bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white shadow-pink-500/20',
         badgeBg: 'bg-pink-500/20 text-pink-300 border-pink-500/40',
-        subTextColor: 'text-pink-200/70',
+        privacyBtn: 'bg-indigo-950/80 border-pink-500/40 text-pink-200 hover:text-white',
+        footerBg: 'bg-slate-950 border-t border-purple-900/40 text-pink-300/60',
         isLight: false,
     },
     {
         id: 'emerald-mint',
         name: '에메랄드 민트 (Forest Fresh)',
         category: 'Vibrant',
-        bgClass: 'bg-gradient-to-b from-slate-950 via-emerald-950/60 to-slate-950 text-emerald-100',
-        headerClass: 'bg-emerald-950/90 border-b border-emerald-500/20 text-emerald-100',
-        cardClass: 'bg-emerald-950/40 border-emerald-500/30 hover:border-emerald-400/60 text-emerald-100',
-        inputBg: 'bg-emerald-950/60 border-emerald-500/30 text-emerald-100 placeholder-emerald-300/40',
+        bgClass: 'bg-slate-950 text-emerald-100',
+        headerClass: 'bg-emerald-950/90 border-b border-emerald-500/30 text-emerald-100',
+        headerBtn: 'bg-emerald-900/60 hover:bg-emerald-800/80 text-emerald-200 border border-emerald-500/30',
+        cardClass: 'bg-emerald-950/40 border-emerald-500/30 hover:border-emerald-400 text-emerald-100',
+        inputBg: 'bg-emerald-950/60 border-emerald-500/30 text-emerald-100 placeholder-emerald-400/40',
+        checkboxBg: 'bg-emerald-500 border-emerald-500 text-slate-950 font-bold',
         accentColor: '#10b981',
-        accentBg: 'bg-emerald-600 hover:bg-emerald-500 text-white',
+        accentBg: 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-500/20',
         badgeBg: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
-        subTextColor: 'text-emerald-200/60',
+        privacyBtn: 'bg-emerald-950/60 border-emerald-500/30 text-emerald-200 hover:text-white',
+        footerBg: 'bg-slate-950 border-t border-emerald-950 text-emerald-400/60',
         isLight: false,
     }
 ];
@@ -173,7 +194,7 @@ const MiniTaskItem = ({ task, toggleTask, savedAccounts = [], theme, isHighContr
                     ? 'bg-slate-200/50 border-slate-300/60 opacity-60'
                     : 'bg-white/[0.03] border-white/5 opacity-60 hover:opacity-90'
                 : isLight
-                    ? 'bg-white hover:bg-slate-50 border-slate-200/90 hover:border-blue-400 shadow-sm'
+                    ? theme?.cardClass || 'bg-white border-slate-200 hover:border-blue-400 shadow-sm'
                     : theme?.cardClass || 'bg-white/5 hover:bg-white/10 border-white/5 hover:border-white/10'
         } ${isHighContrast ? 'border-2 font-bold shadow-md' : ''}`}>
             <div className="flex flex-col gap-1.5">
@@ -182,10 +203,10 @@ const MiniTaskItem = ({ task, toggleTask, savedAccounts = [], theme, isHighContr
                         onClick={() => toggleTask(task.id)}
                         className={`mt-0.5 w-5 h-5 rounded-lg border-2 flex-shrink-0 transition-all flex items-center justify-center group-active:scale-90 ${
                             task.completed
-                                ? 'bg-blue-500 border-blue-500 text-white shadow-sm shadow-blue-500/30'
+                                ? theme?.checkboxBg || 'bg-blue-600 border-blue-600 text-white shadow-sm'
                                 : isLight
-                                    ? 'border-slate-400 hover:border-blue-500'
-                                    : 'border-white/30 hover:border-blue-500'
+                                    ? 'border-slate-400 hover:border-slate-600 bg-white'
+                                    : 'border-white/30 hover:border-white/60 bg-transparent'
                         }`}
                     >
                         {task.completed ? (
@@ -193,7 +214,7 @@ const MiniTaskItem = ({ task, toggleTask, savedAccounts = [], theme, isHighContr
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                             </svg>
                         ) : (
-                            <div className="w-2 h-2 bg-blue-500 rounded-sm opacity-0 group-hover:opacity-40 transition-opacity"></div>
+                            <div className="w-2 h-2 rounded-sm opacity-0 group-hover:opacity-40 transition-opacity bg-current"></div>
                         )}
                     </button>
                     <span
@@ -202,7 +223,7 @@ const MiniTaskItem = ({ task, toggleTask, savedAccounts = [], theme, isHighContr
                         } ${
                             task.completed
                                 ? isLight ? 'line-through text-slate-400 select-none' : 'line-through text-gray-400/70 select-none'
-                                : isLight ? 'text-slate-900 group-hover:text-blue-600' : 'text-gray-100 group-hover:text-white'
+                                : isLight ? 'text-slate-900 group-hover:opacity-80' : 'text-gray-100 group-hover:text-white'
                         }`}
                         title={task.title}
                     >
@@ -246,7 +267,7 @@ const MiniTaskItem = ({ task, toggleTask, savedAccounts = [], theme, isHighContr
 export default function MiniWidget() {
     const { t } = useLanguage();
     const [tasks, setTasks] = useState([]);
-    const [patrolledTasks, setPatrolledTasks] = useState({}); // { [uid]: Task[] }
+    const [patrolledTasks, setPatrolledTasks] = useState({});
     const [user, setUser] = useState(null);
 
     // Form inputs state
@@ -262,7 +283,7 @@ export default function MiniWidget() {
     const [isTasksHidden, setIsTasksHidden] = useState(true);
     const assigneeRef = useRef(null);
 
-    // 🎨 Theme & Wallpaper & Side-Hide State
+    // 🎨 Theme & Wallpaper State
     const [themeId, setThemeId] = useState(() => {
         try {
             const saved = JSON.parse(localStorage.getItem('jinil_mini_theme') || '{}');
@@ -287,7 +308,6 @@ export default function MiniWidget() {
             return saved.isHighContrast ?? true;
         } catch (e) { return true; }
     });
-    const [isEdgeDocked, setIsEdgeDocked] = useState(false);
     const [showThemeModal, setShowThemeModal] = useState(false);
 
     // Save Theme preferences to localStorage
@@ -645,13 +665,6 @@ export default function MiniWidget() {
         }
     };
 
-    const handleSideHide = () => {
-        setIsEdgeDocked(true);
-        if (window.electronAPI && window.electronAPI.hideMiniWidget) {
-            window.electronAPI.hideMiniWidget();
-        }
-    };
-
     // Drag resize handlers
     const handleMouseDown = (e, direction) => {
         e.preventDefault();
@@ -689,46 +702,9 @@ export default function MiniWidget() {
         window.addEventListener('mouseup', handleMouseUp);
     };
 
-    // 📌 Edge Docked View (Collapses into a sleek vertical handle docked to side)
-    if (isEdgeDocked) {
-        return (
-            <div 
-                onClick={() => setIsEdgeDocked(false)}
-                title="클릭하여 진일 미니 펼치기 (Click to expand Jinil Mini)"
-                className={`h-screen w-full cursor-pointer flex flex-col items-center justify-between py-4 select-none animate-in fade-in slide-in-from-left duration-300 border-r shadow-2xl transition-all ${
-                    currentTheme.isLight 
-                        ? 'bg-white/95 border-yellow-400 text-slate-900 shadow-yellow-500/10' 
-                        : 'bg-slate-950/95 border-blue-500/40 text-white shadow-blue-500/20'
-                }`}
-            >
-                <div className="flex flex-col items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-lg animate-pulse">
-                        <img src="/logo.png" alt="" className="w-5 h-5 invert brightness-0" onError={(e) => e.target.style.display = 'none'} />
-                    </div>
-                    <span className="text-[10px] font-black uppercase tracking-widest pt-2 [writing-mode:vertical-lr] rotate-180 opacity-90">
-                        진일 미니
-                    </span>
-                </div>
-
-                <div className="flex flex-col items-center gap-1">
-                    <span className="w-7 h-7 rounded-full bg-blue-600 text-white font-black text-xs flex items-center justify-center shadow-md border border-white/20">
-                        {activeTasksCount}
-                    </span>
-                    <span className="text-[8px] font-bold text-blue-400 uppercase">Tasks</span>
-                </div>
-
-                <div className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-all border border-white/10">
-                    <svg className="w-4 h-4 text-blue-400 animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-                    </svg>
-                </div>
-            </div>
-        );
-    }
-
     return (
         <div className={`h-screen w-screen ${currentTheme.bgClass} rounded-3xl overflow-hidden flex flex-col border shadow-3xl backdrop-blur-2xl relative transition-all duration-300 ${
-            isHighContrast ? 'border-white/30 font-semibold' : 'border-white/10'
+            isHighContrast ? (currentTheme.isLight ? 'border-slate-300 font-semibold' : 'border-white/30 font-semibold') : (currentTheme.isLight ? 'border-slate-200' : 'border-white/10')
         }`}>
             {/* Custom Embedded Background Wallpaper Styles & FX */}
             <style>{`
@@ -747,19 +723,19 @@ export default function MiniWidget() {
                 .mini-bg-mesh {
                     position: absolute; inset: 0; pointer-events: none;
                     background-image: 
-                        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.2) 0px, transparent 50%),
-                        radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.2) 0px, transparent 50%),
-                        radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.2) 0px, transparent 50%);
+                        radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+                        radial-gradient(at 100% 0%, rgba(236, 72, 153, 0.15) 0px, transparent 50%),
+                        radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.15) 0px, transparent 50%);
                 }
                 .mini-bg-grid {
                     position: absolute; inset: 0; pointer-events: none;
-                    background-image: linear-gradient(to right, rgba(255, 255, 255, 0.06) 1px, transparent 1px),
-                                      linear-gradient(to bottom, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+                    background-image: linear-gradient(to right, rgba(150, 150, 150, 0.08) 1px, transparent 1px),
+                                      linear-gradient(to bottom, rgba(150, 150, 150, 0.08) 1px, transparent 1px);
                     background-size: 24px 24px;
                 }
                 .mini-bg-dots {
                     position: absolute; inset: 0; pointer-events: none;
-                    background-image: radial-gradient(rgba(255, 255, 255, 0.15) 1px, transparent 1px);
+                    background-image: radial-gradient(rgba(150, 150, 150, 0.18) 1px, transparent 1px);
                     background-size: 16px 16px;
                 }
             `}</style>
@@ -789,20 +765,22 @@ export default function MiniWidget() {
                 style={{ WebkitAppRegion: 'drag' }}
             >
                 <div className="flex items-center gap-2">
-                    <div className="w-5 h-5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-lg shrink-0">
-                        <img src="/logo.png" alt="" className="w-3.5 h-3.5 invert brightness-0" onError={(e) => e.target.style.display = 'none'} />
+                    <div className={`w-5 h-5 rounded-lg flex items-center justify-center shadow-md shrink-0 ${
+                        currentTheme.id === 'kakao-yellow' ? 'bg-[#191919] text-[#FEE500]' : 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white'
+                    }`}>
+                        <img src="/logo.png" alt="" className={`w-3.5 h-3.5 ${currentTheme.id === 'kakao-yellow' ? 'brightness-200' : 'invert brightness-0'}`} onError={(e) => e.target.style.display = 'none'} />
                     </div>
                     <span className="text-[11px] font-black tracking-[0.1em] uppercase">진일 미니</span>
                 </div>
 
                 {/* Right Action Buttons */}
-                <div className="flex items-center gap-1" style={{ WebkitAppRegion: 'no-drag' }}>
+                <div className="flex items-center gap-1.5" style={{ WebkitAppRegion: 'no-drag' }}>
                     {/* Theme & Wallpaper Switcher Button */}
                     <button
                         type="button"
                         onClick={() => setShowThemeModal(true)}
                         title="테마 및 배경화면 설정"
-                        className="px-2 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer active:scale-95 border border-white/15"
+                        className={`px-2.5 py-1 rounded-xl text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer active:scale-95 ${currentTheme.headerBtn}`}
                     >
                         <span className="text-xs">🎨</span>
                         <span className="hidden sm:inline">테마</span>
@@ -811,7 +789,9 @@ export default function MiniWidget() {
                     {/* Close Window Button */}
                     <button
                         onClick={handleClose}
-                        className="w-7 h-7 rounded-xl hover:bg-red-500 flex items-center justify-center text-white/50 hover:text-white transition-all active:scale-90"
+                        className={`w-7 h-7 rounded-xl hover:bg-red-500 flex items-center justify-center transition-all active:scale-90 ${
+                            currentTheme.id === 'kakao-yellow' ? 'text-[#191919]/70 hover:text-white' : 'text-white/60 hover:text-white'
+                        }`}
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
                     </button>
@@ -821,8 +801,8 @@ export default function MiniWidget() {
             {/* Content Area */}
             <div className="flex-1 overflow-y-auto p-4 custom-scrollbar relative z-10">
                 <div className="flex items-center justify-between mb-4 px-1">
-                    <h3 className="text-[11px] font-bold uppercase tracking-[0.1em] flex items-center gap-2" style={{ color: currentTheme.accentColor }}>
-                        <span className="w-1.5 h-1.5 rounded-full animate-ping" style={{ backgroundColor: currentTheme.accentColor }}></span>
+                    <h3 className="text-[11px] font-black uppercase tracking-[0.1em] flex items-center gap-2" style={{ color: currentTheme.accentColor }}>
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: currentTheme.accentColor }}></span>
                         {t('today')}
                     </h3>
 
@@ -831,13 +811,9 @@ export default function MiniWidget() {
                             type="button"
                             onClick={() => togglePrivacyHidden()}
                             title={isTasksHidden ? "작업 목록 보기" : "작업 목록 숨기기"}
-                            className={`px-2 py-0.5 rounded-lg border text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
-                                currentTheme.isLight
-                                    ? 'bg-white/80 border-slate-300 text-slate-700 hover:bg-slate-100'
-                                    : 'bg-white/5 border-white/10 text-white/70 hover:text-white'
-                            }`}
+                            className={`px-2.5 py-1 rounded-lg border text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer ${currentTheme.privacyBtn}`}
                         >
-                            <svg className="w-3 h-3 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg className="w-3 h-3 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 {isTasksHidden ? (
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                 ) : (
@@ -846,7 +822,7 @@ export default function MiniWidget() {
                             </svg>
                             <span>{isTasksHidden ? "숨김 해제" : "숨기기"}</span>
                         </button>
-                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${currentTheme.badgeBg}`}>
+                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ${currentTheme.badgeBg}`}>
                             {activeTasksCount}
                         </span>
                     </div>
@@ -857,14 +833,15 @@ export default function MiniWidget() {
                         onClick={() => togglePrivacyHidden(false)}
                         className={`group rounded-2xl p-6 border flex flex-col items-center justify-center text-center min-h-[220px] animate-in fade-in duration-300 cursor-pointer hover:scale-[1.01] transition-all my-2 relative overflow-hidden ${
                             currentTheme.isLight
-                                ? 'bg-white/80 border-slate-300 hover:border-blue-400 shadow-md'
+                                ? 'bg-white border-slate-200/90 hover:border-blue-400 shadow-md'
                                 : 'bg-white/5 backdrop-blur-xl border-white/10 hover:border-blue-500/40 hover:bg-white/10'
                         }`}
                     >
-                        {/* 3D Glowing Security Shield Icon */}
                         <div className="relative mb-4">
                             <div className="absolute -inset-2 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 opacity-30 blur-lg group-hover:opacity-60 transition-opacity duration-500"></div>
-                            <div className="relative w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 flex items-center justify-center text-white shadow-[0_8px_20px_-4px_rgba(59,130,246,0.5)] border border-white/30 group-hover:scale-110 transition-transform duration-300">
+                            <div className={`relative w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg border group-hover:scale-110 transition-transform duration-300 ${
+                                currentTheme.id === 'kakao-yellow' ? 'bg-[#191919] text-[#FEE500] border-yellow-400/50' : 'bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 border-white/30'
+                            }`}>
                                 <svg className="w-6 h-6 drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                 </svg>
@@ -874,14 +851,14 @@ export default function MiniWidget() {
                         <h3 className={`text-xs font-black mb-1 tracking-tight ${currentTheme.isLight ? 'text-slate-900' : 'text-white'}`}>
                             작업 목록이 가려져 있습니다
                         </h3>
-                        <p className={`text-[10px] max-w-[180px] mb-4 leading-relaxed ${currentTheme.subTextColor}`}>
+                        <p className={`text-[10px] max-w-[180px] mb-4 leading-relaxed opacity-70`}>
                             보안을 위해 가려졌습니다. 클릭하여 내용을 확인하세요.
                         </p>
 
                         <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); togglePrivacyHidden(false); }}
-                            className={`relative group/btn overflow-hidden rounded-xl px-4 py-2 font-bold text-[10px] shadow-lg active:scale-95 transition-all duration-200 cursor-pointer flex items-center gap-2 border border-white/20 ${currentTheme.accentBg}`}
+                            className={`relative group/btn overflow-hidden rounded-xl px-4 py-2 font-bold text-[10px] shadow-lg active:scale-95 transition-all duration-200 cursor-pointer flex items-center gap-2 border ${currentTheme.accentBg}`}
                         >
                             <div className="w-4 h-4 rounded-md bg-white/20 flex items-center justify-center shrink-0 border border-white/30 shadow-inner">
                                 <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -915,9 +892,7 @@ export default function MiniWidget() {
             </div>
 
             {/* Task Input Section at the Bottom */}
-            <div className={`p-3 border-t shrink-0 space-y-2 relative z-30 ${
-                currentTheme.isLight ? 'bg-white/90 border-slate-200' : 'bg-black/40 border-white/10'
-            }`} style={{ WebkitAppRegion: 'no-drag' }}>
+            <div className={`p-3 shrink-0 space-y-2 relative z-30 ${currentTheme.footerBg}`} style={{ WebkitAppRegion: 'no-drag' }}>
                 <form onSubmit={handleAddTask} className="flex items-center gap-2">
                     <div className="relative flex-1">
                         <input
@@ -931,7 +906,7 @@ export default function MiniWidget() {
                     <button
                         type="submit"
                         disabled={!title.trim()}
-                        className={`w-8 h-8 disabled:opacity-40 rounded-xl flex items-center justify-center transition-all active:scale-95 shrink-0 shadow-lg ${currentTheme.accentBg}`}
+                        className={`w-8 h-8 disabled:opacity-40 rounded-xl flex items-center justify-center transition-all active:scale-95 shrink-0 shadow-md ${currentTheme.accentBg}`}
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 4v16m8-8H4" />
@@ -947,8 +922,8 @@ export default function MiniWidget() {
                             onClick={() => setPriority('normal')}
                             className={`px-2 py-0.5 rounded-lg border text-[10px] font-bold transition-all flex items-center gap-1 ${
                                 priority === 'normal'
-                                    ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-400'
-                                    : currentTheme.isLight ? 'bg-slate-100 border-slate-200 text-slate-600' : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80'
+                                    ? 'bg-yellow-500/20 border-yellow-500/50 text-yellow-500'
+                                    : currentTheme.isLight ? 'bg-white border-slate-200 text-slate-600' : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80'
                             }`}
                         >
                             <span className="w-1.5 h-1.5 rounded-full bg-yellow-400"></span>
@@ -960,8 +935,8 @@ export default function MiniWidget() {
                             onClick={() => setPriority('high')}
                             className={`px-2 py-0.5 rounded-lg border text-[10px] font-bold transition-all flex items-center gap-1 ${
                                 priority === 'high'
-                                    ? 'bg-orange-500/20 border-orange-500/50 text-orange-400'
-                                    : currentTheme.isLight ? 'bg-slate-100 border-slate-200 text-slate-600' : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80'
+                                    ? 'bg-orange-500/20 border-orange-500/50 text-orange-500'
+                                    : currentTheme.isLight ? 'bg-white border-slate-200 text-slate-600' : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80'
                             }`}
                         >
                             <span className="w-1.5 h-1.5 rounded-full bg-orange-400"></span>
@@ -973,8 +948,8 @@ export default function MiniWidget() {
                             onClick={() => setPriority('urgent')}
                             className={`px-2 py-0.5 rounded-lg border text-[10px] font-bold transition-all flex items-center gap-1 ${
                                 priority === 'urgent'
-                                    ? 'bg-red-500/20 border-red-500/50 text-red-400'
-                                    : currentTheme.isLight ? 'bg-slate-100 border-slate-200 text-slate-600' : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80'
+                                    ? 'bg-red-500/20 border-red-500/50 text-red-500'
+                                    : currentTheme.isLight ? 'bg-white border-slate-200 text-slate-600' : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80'
                             }`}
                         >
                             <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
@@ -998,8 +973,8 @@ export default function MiniWidget() {
                             }}
                             className={`px-2 py-0.5 rounded-lg border text-[10px] font-bold transition-all flex items-center gap-1 ${
                                 time
-                                    ? 'bg-blue-500/20 border-blue-500/50 text-blue-400'
-                                    : currentTheme.isLight ? 'bg-slate-100 border-slate-200 text-slate-600' : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80'
+                                    ? 'bg-blue-500/20 border-blue-500/50 text-blue-500'
+                                    : currentTheme.isLight ? 'bg-white border-slate-200 text-slate-600' : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80'
                             }`}
                         >
                             <svg className="w-3 h-3 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1009,7 +984,7 @@ export default function MiniWidget() {
                             {time && (
                                 <span
                                     onClick={(e) => { e.stopPropagation(); setTime(''); }}
-                                    className="ml-0.5 text-blue-400 hover:text-red-400"
+                                    className="ml-0.5 text-blue-500 hover:text-red-500"
                                 >
                                     ×
                                 </span>
@@ -1085,8 +1060,8 @@ export default function MiniWidget() {
                                 onClick={() => setShowAssignee(!showAssignee)}
                                 className={`px-2 py-0.5 rounded-lg border text-[10px] font-bold transition-all flex items-center gap-1 ${
                                     assigneeUid
-                                        ? 'bg-purple-500/20 border-purple-500/50 text-purple-400'
-                                        : currentTheme.isLight ? 'bg-slate-100 border-slate-200 text-slate-600' : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80'
+                                        ? 'bg-purple-500/20 border-purple-500/50 text-purple-500'
+                                        : currentTheme.isLight ? 'bg-white border-slate-200 text-slate-600' : 'bg-white/5 border-white/10 text-white/50 hover:text-white/80'
                                 }`}
                             >
                                 <svg className="w-3 h-3 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1152,9 +1127,7 @@ export default function MiniWidget() {
             </div>
 
             {/* Footer */}
-            <div className={`h-10 border-t flex justify-between items-center px-4 shrink-0 relative z-10 ${
-                currentTheme.isLight ? 'bg-slate-100/90 border-slate-200 text-slate-600' : 'bg-black/40 border-white/5 text-gray-400'
-            }`}>
+            <div className={`h-9 flex justify-between items-center px-4 shrink-0 relative z-10 ${currentTheme.footerBg}`}>
                 <span className="text-[10px] font-black tracking-tighter opacity-80">{today}</span>
                 <div className="flex items-center gap-1.5 bg-green-500/10 px-2 py-0.5 rounded-lg border border-green-500/20">
                     <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
