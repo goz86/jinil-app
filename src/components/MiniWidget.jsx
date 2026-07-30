@@ -808,19 +808,6 @@ export default function MiniWidget() {
                         <span className="hidden sm:inline">테마</span>
                     </button>
 
-                    {/* Edge Dock / Side Hide Button */}
-                    <button
-                        type="button"
-                        onClick={handleSideHide}
-                        title="cạnh 숨기기 (사이드 사이드 숨기기)"
-                        className="px-2 py-1 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 hover:text-blue-300 text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer active:scale-95 border border-blue-500/30"
-                    >
-                        <svg className="w-3 h-3 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-                        </svg>
-                        <span>숨기기</span>
-                    </button>
-
                     {/* Close Window Button */}
                     <button
                         onClick={handleClose}
