@@ -108,12 +108,21 @@ export default function CalendarSidebar({ tasks, selectedDate, setSelectedDate }
                     const holidayName = holidays[dateStr];
 
                     let dayStyle = 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700';
-                    if (hasActiveTasks) {
+
+                    if (isSelected) {
+                        dayStyle = 'bg-blue-600 text-white font-black shadow-lg shadow-blue-500/40 ring-2 ring-blue-400 dark:ring-blue-300';
+                    } else if (isToday) {
+                        if (hasActiveTasks) {
+                            dayStyle = 'bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-200 font-extrabold border-2 border-blue-600 dark:border-blue-400 shadow-md ring-2 ring-blue-500/50';
+                        } else if (hasOnlyCompleted) {
+                            dayStyle = 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-200 font-extrabold border-2 border-blue-600 dark:border-blue-400 shadow-md ring-2 ring-blue-500/50';
+                        } else {
+                            dayStyle = 'bg-blue-500/25 dark:bg-blue-500/40 text-blue-800 dark:text-blue-100 font-black border-2 border-blue-600 dark:border-blue-400 shadow-md shadow-blue-500/30 ring-2 ring-blue-400/40';
+                        }
+                    } else if (hasActiveTasks) {
                         dayStyle = 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-300 font-bold border border-red-200 dark:border-red-800/60';
                     } else if (hasOnlyCompleted) {
                         dayStyle = 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800/60';
-                    } else if (isSelected) {
-                        dayStyle = 'bg-blue-600 text-white font-bold shadow-md shadow-blue-500/30';
                     }
 
                     return (
@@ -121,12 +130,16 @@ export default function CalendarSidebar({ tasks, selectedDate, setSelectedDate }
                             key={day}
                             onClick={() => handleDateClick(day)}
                             className={`
-                                group aspect-square flex flex-col items-center justify-center rounded-full relative transition-all duration-200
+                                group aspect-square flex flex-col items-center justify-center rounded-full relative transition-all duration-200 cursor-pointer active:scale-95
                                 ${dayStyle}
-                                ${isSelected && (hasActiveTasks || hasOnlyCompleted) ? 'ring-2 ring-blue-600 ring-offset-2 dark:ring-offset-gray-800 scale-105 shadow-sm' : isSelected ? 'scale-105' : ''}
-                                ${isToday && !isSelected ? 'ring-2 ring-blue-400/60 ring-offset-1 dark:ring-offset-gray-800' : ''}
+                                ${isSelected ? 'scale-105' : ''}
                             `}
                         >
+                            {/* Today Pulse Badge Dot */}
+                            {isToday && (
+                                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-blue-600 dark:bg-blue-400 ring-2 ring-white dark:ring-gray-800 shadow-md animate-pulse"></span>
+                            )}
+
                             {holidayName && (
                                 <div className="absolute bottom-full mb-2 hidden group-hover:block z-50 whitespace-nowrap bg-red-500 text-white text-xs font-medium px-2.5 py-1.5 rounded-lg shadow-xl translate-y-2 group-hover:translate-y-0 transition-all duration-200 pointer-events-none">
                                     {holidayName}
@@ -134,7 +147,9 @@ export default function CalendarSidebar({ tasks, selectedDate, setSelectedDate }
                                 </div>
                             )}
 
-                            <span className={`text-sm ${holidayName && !isSelected && !hasActiveTasks && !hasOnlyCompleted ? 'text-red-500 font-bold' : ''}`}>{day}</span>
+                            <span className={`text-sm ${holidayName && !isSelected && !isToday && !hasActiveTasks && !hasOnlyCompleted ? 'text-red-500 font-bold' : ''}`}>
+                                {day}
+                            </span>
                         </button>
                     );
                 })}
@@ -142,6 +157,12 @@ export default function CalendarSidebar({ tasks, selectedDate, setSelectedDate }
 
             <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700 space-y-3">
                 <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">{t('calendarLegend')}</h3>
+                <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                    <div className="w-3.5 h-3.5 rounded-full bg-blue-500/20 border-2 border-blue-600 dark:border-blue-400 mr-2 flex items-center justify-center">
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
+                    </div>
+                    <span className="font-bold text-blue-700 dark:text-blue-300">오늘 (Today)</span>
+                </div>
                 <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
                     <div className="w-3.5 h-3.5 rounded-full bg-red-100 dark:bg-red-900/40 border border-red-300 dark:border-red-700 mr-2 flex items-center justify-center">
                         <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
@@ -159,6 +180,7 @@ export default function CalendarSidebar({ tasks, selectedDate, setSelectedDate }
                     {t('selectedDate')}
                 </div>
             </div>
+
         </div>
     );
 }
