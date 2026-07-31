@@ -335,9 +335,8 @@ function positionMiniNextToMain() {
 }
 
 function getAppIconPath(isDev) {
-    const icoPath = isDev ? path.join(__dirname, '../public/icon.ico') : path.join(__dirname, '../dist/icon.ico');
     const pngPath = isDev ? path.join(__dirname, '../public/logo.png') : path.join(__dirname, '../dist/logo.png');
-    return icoPath;
+    return pngPath;
 }
 
 function createMiniWindow() {
