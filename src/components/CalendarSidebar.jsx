@@ -84,9 +84,22 @@ export default function CalendarSidebar({ tasks, selectedDate, setSelectedDate }
             </div>
 
             <div className="grid grid-cols-7 gap-1 text-center mb-2">
-                {dayNames.map(d => (
-                    <div key={d} className="text-xs font-semibold text-gray-400 dark:text-gray-500 py-2">{d}</div>
-                ))}
+                {dayNames.map((d, index) => {
+                    const isSun = index === 0;
+                    const isSat = index === 6;
+                    return (
+                        <div 
+                            key={d} 
+                            className={`text-xs font-bold py-2 ${
+                                isSun ? 'text-red-500 dark:text-red-400' :
+                                isSat ? 'text-blue-500 dark:text-blue-400' :
+                                'text-gray-400 dark:text-gray-500'
+                            }`}
+                        >
+                            {d}
+                        </div>
+                    );
+                })}
             </div>
 
             <div className="grid grid-cols-7 gap-1 text-center">
@@ -102,12 +115,16 @@ export default function CalendarSidebar({ tasks, selectedDate, setSelectedDate }
                     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
                     const isToday = todayStr === dateStr;
 
+                    const dayOfWeek = new Date(year, month, day).getDay(); // 0 = Sun, 6 = Sat
+                    const isSunday = dayOfWeek === 0;
+                    const isSaturday = dayOfWeek === 6;
+
                     const stats = taskCounts[dateStr];
                     const hasActiveTasks = stats && stats.active > 0;
                     const hasOnlyCompleted = stats && stats.active === 0 && stats.total > 0;
                     const holidayName = holidays[dateStr];
 
-                    let dayStyle = 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700';
+                    let dayStyle = 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium';
 
                     if (isSelected) {
                         dayStyle = 'bg-blue-600 text-white font-black shadow-lg shadow-blue-500/40 ring-2 ring-blue-400 dark:ring-blue-300';
@@ -123,6 +140,10 @@ export default function CalendarSidebar({ tasks, selectedDate, setSelectedDate }
                         dayStyle = 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-300 font-bold border border-red-200 dark:border-red-800/60';
                     } else if (hasOnlyCompleted) {
                         dayStyle = 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800/60';
+                    } else if (isSunday || holidayName) {
+                        dayStyle = 'text-red-500 dark:text-red-400 font-bold hover:bg-red-50 dark:hover:bg-red-950/30';
+                    } else if (isSaturday) {
+                        dayStyle = 'text-blue-500 dark:text-blue-400 font-bold hover:bg-blue-50 dark:hover:bg-blue-950/30';
                     }
 
                     return (
@@ -147,7 +168,15 @@ export default function CalendarSidebar({ tasks, selectedDate, setSelectedDate }
                                 </div>
                             )}
 
-                            <span className={`text-sm ${holidayName && !isSelected && !isToday && !hasActiveTasks && !hasOnlyCompleted ? 'text-red-500 font-bold' : ''}`}>
+                            <span className={`text-sm ${
+                                isSelected 
+                                    ? 'text-white' 
+                                    : (isSunday || holidayName) && !hasActiveTasks && !hasOnlyCompleted && !isToday 
+                                        ? 'text-red-500 dark:text-red-400 font-bold' 
+                                        : isSaturday && !hasActiveTasks && !hasOnlyCompleted && !isToday 
+                                            ? 'text-blue-500 dark:text-blue-400 font-bold' 
+                                            : ''
+                            }`}>
                                 {day}
                             </span>
                         </button>
