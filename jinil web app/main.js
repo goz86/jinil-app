@@ -334,6 +334,12 @@ function positionMiniNextToMain() {
     }
 }
 
+function getAppIconPath(isDev) {
+    const icoPath = isDev ? path.join(__dirname, '../public/icon.ico') : path.join(__dirname, '../dist/icon.ico');
+    const pngPath = isDev ? path.join(__dirname, '../public/logo.png') : path.join(__dirname, '../dist/logo.png');
+    return icoPath;
+}
+
 function createMiniWindow() {
     if (miniWindow) {
         if (miniWindow.isMinimized()) miniWindow.restore();
@@ -343,7 +349,7 @@ function createMiniWindow() {
         return;
     }
     const isDev = !app.isPackaged;
-    const iconPath = isDev ? path.join(__dirname, '../public/logo.png') : path.join(__dirname, '../dist/logo.png');
+    const iconPath = getAppIconPath(isDev);
     miniWindow = new BrowserWindow({
         width: 300, height: 480, title: "Jinil Mini",
         icon: nativeImage.createFromPath(iconPath),
@@ -363,7 +369,7 @@ function createMiniWindow() {
 
 function createWindow() {
     const isDev = !app.isPackaged;
-    const iconPath = isDev ? path.join(__dirname, '../public/logo.png') : path.join(__dirname, '../dist/logo.png');
+    const iconPath = getAppIconPath(isDev);
     mainWindow = new BrowserWindow({
         width: 1400, height: 900, title: "진일 라벨",
         icon: nativeImage.createFromPath(iconPath),
