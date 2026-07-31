@@ -56,7 +56,14 @@ html.is-mini body {
 
 
 
+
 /* Slow down marquee on hover */
 .marquee-container:hover .animate-marquee {
   animation-play-state: paused;
 }
+
+/* Ensure SweetAlert2 popups, toasts & modals float on top of all application modals */
+.swal2-container {
+  z-index: 999999 !important;
+}
+

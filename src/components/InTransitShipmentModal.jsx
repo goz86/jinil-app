@@ -135,6 +135,7 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
         title: '전체 배송 상태 동기화 중...',
         text: `총 ${totalCount}건의 택배 배송 상태를 조회하고 있습니다.`,
         allowOutsideClick: false,
+        target: 'body',
         didOpen: () => { Swal.showLoading(); }
       });
 
@@ -150,11 +151,12 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
         title: '전체 동기화 완료',
         text: `총 ${totalCount}건의 배송 상태가 모두 업데이트되었습니다.`,
         timer: 2000,
-        showConfirmButton: false
+        showConfirmButton: false,
+        target: 'body'
       });
     } catch (err) {
       console.error(err);
-      Swal.fire({ icon: 'error', title: '동기화 오류', text: err.message });
+      Swal.fire({ icon: 'error', title: '동기화 오류', text: err.message, target: 'body' });
     } finally {
       setSyncing(false);
       setSyncProgress(null);
@@ -186,6 +188,7 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
       position: 'top-end',
       showConfirmButton: false,
       timer: 2000,
+      target: 'body'
     });
   };
 
@@ -197,7 +200,8 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
       showCancelButton: true,
       confirmButtonText: '삭제',
       cancelButtonText: '취소',
-      confirmButtonColor: '#ef4444'
+      confirmButtonColor: '#ef4444',
+      target: 'body'
     });
 
     if (result.isConfirmed) {
@@ -206,9 +210,9 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
         if (error) throw error;
         setShipments((prev) => prev.filter((s) => s.id !== id));
         if (onRefreshCount) onRefreshCount(shipments.length - 1);
-        Swal.fire({ icon: 'success', title: '삭제되었습니다.', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false });
+        Swal.fire({ icon: 'success', title: '삭제되었습니다.', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false, target: 'body' });
       } catch (err) {
-        Swal.fire({ icon: 'error', title: '삭제 실패', text: err.message });
+        Swal.fire({ icon: 'error', title: '삭제 실패', text: err.message, target: 'body' });
       }
     }
   };
@@ -246,24 +250,33 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
       icon: 'info',
       title: '카톡 안내 메시지가 복사되었습니다!',
       html: `<pre style="text-align: left; background: #f3f4f6; padding: 12px; border-radius: 8px; font-size: 11px; white-space: pre-wrap; font-family: monospace;">${message}</pre><p style="margin-top: 10px; font-size: 12px; color: #666;">카카오톡 채팅창에 Ctrl+V로 붙여넣어 발송하세요.</p>`,
-      confirmButtonText: '확인'
+      confirmButtonText: '확인',
+      target: 'body'
     });
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+    <div className="fixed inset-0 z-[9000] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-100 dark:border-gray-700">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-            배송 중인 운송장 내역
+          <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+              <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+              </svg>
+            </div>
+            <span>배송 중인 운송장 내역</span>
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition active:scale-95"
           >
-            ✕
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </button>
         </div>
 
@@ -289,9 +302,11 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
               type="button"
               onClick={handleManualSync}
               disabled={syncing || filteredShipments.length === 0}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-200 font-medium hover:bg-gray-50 dark:hover:bg-gray-600 transition disabled:opacity-50"
+              className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-bold hover:bg-gray-50 dark:hover:bg-gray-600 transition disabled:opacity-50 active:scale-95 shadow-sm cursor-pointer"
             >
-              <span className={syncing ? 'animate-spin' : ''}>🔄</span>
+              <svg className={`w-3.5 h-3.5 ${syncing ? 'animate-spin text-blue-500' : 'text-gray-500 dark:text-gray-300'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
               <span>{syncing ? `전체 동기화 중... (${syncProgress?.current || 0}/${syncProgress?.total || filteredShipments.length}건)` : '전체 배송상태 동기화 (15분 자동)'}</span>
             </button>
           </div>
@@ -306,8 +321,12 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
             </div>
           ) : filteredShipments.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-gray-400 dark:text-gray-500">
-              <div className="text-4xl mb-2">📦</div>
-              <p className="font-medium">배송 중인 운송장 내역이 없습니다.</p>
+              <div className="w-14 h-14 mb-3 bg-gray-100 dark:bg-gray-700/50 rounded-2xl flex items-center justify-center text-gray-400 dark:text-gray-400 border border-gray-200/50 dark:border-gray-600/50">
+                <svg className="w-7 h-7 stroke-[1.5]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+              </div>
+              <p className="font-bold text-sm">배송 중인 운송장 내역이 없습니다.</p>
             </div>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-700">
@@ -337,10 +356,13 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
                         <button
                           type="button"
                           onClick={() => handleCopyTrackingNumber(s.tracking_number)}
-                          className="font-mono font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1"
+                          className="font-mono font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1.5 group cursor-pointer"
                           title="클릭하여 운송장번호 복사"
                         >
-                          {s.tracking_number}
+                          <span>{s.tracking_number}</span>
+                          <svg className="w-3.5 h-3.5 opacity-40 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                          </svg>
                         </button>
                       </td>
                       <td className="py-3 px-4">
@@ -352,19 +374,24 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
                         <button
                           type="button"
                           onClick={() => handleSendKakaoNotice(s)}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-yellow-400 hover:bg-yellow-500 text-slate-900 font-bold rounded-lg text-[11px] transition shadow-sm"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FEE500] hover:bg-[#FDD800] text-[#191919] font-bold rounded-xl text-[11px] transition shadow-sm border border-yellow-400/60 cursor-pointer active:scale-95"
                         >
-                          💬 카톡 안내
+                          <svg className="w-3.5 h-3.5 fill-[#191919]" viewBox="0 0 24 24">
+                            <path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.557 1.707 4.8 4.27 6.054-.188.702-.682 2.545-.78 2.94-.122.49.18.484.378.352.157-.104 2.5-1.7 3.513-2.393.535.08 1.077.12 1.619.12 4.97 0 9-3.186 9-7.116S16.97 3 12 3z"/>
+                          </svg>
+                          <span>카톡 안내</span>
                         </button>
                       </td>
                       <td className="py-3 px-4 text-center">
                         <button
                           type="button"
                           onClick={() => handleDeleteShipment(s.id, s.tracking_number)}
-                          className="text-gray-400 hover:text-red-600 dark:hover:text-red-400 p-1 transition"
+                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition active:scale-95 cursor-pointer"
                           title="삭제"
                         >
-                          🗑️
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                          </svg>
                         </button>
                       </td>
                     </tr>
