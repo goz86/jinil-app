@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Jinil Todo Application",
   "author": "Jinil",
-  "version": "1.1.82",
+  "version": "1.1.83",
   "main": "jinil web app/main.js",
   "scripts": {
     "dev": "vite",
