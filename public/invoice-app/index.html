@@ -1513,7 +1513,10 @@
       event.data.clients.forEach(item => {
         const name = (item.name || '').trim();
         if (!name) return;
-        if (!clientAddressBook.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+        const existingIdx = clientAddressBook.findIndex(c => c.name.toLowerCase() === name.toLowerCase());
+        if (existingIdx >= 0) {
+          clientAddressBook[existingIdx] = { ...clientAddressBook[existingIdx], ...item };
+        } else {
           clientAddressBook.push(item);
         }
       });
@@ -1530,20 +1533,25 @@
       return;
     }
 
-    const query = val.trim().toLowerCase();
-    const matches = clientAddressBook.filter(c => 
-      (c.name && c.name.toLowerCase().includes(query)) ||
-      (c.rep && c.rep.toLowerCase().includes(query)) ||
-      (c.addr && c.addr.toLowerCase().includes(query)) ||
-      (c.tel && c.tel.toLowerCase().includes(query))
-    );
+    const queryRaw = val.trim().toLowerCase();
+    const queryClean = queryRaw.replace(/\s+/g, '');
+
+    const matches = clientAddressBook.filter(c => {
+      const nameRaw = (c.name || '').toLowerCase();
+      const nameClean = nameRaw.replace(/\s+/g, '');
+      const repClean = (c.rep || '').toLowerCase().replace(/\s+/g, '');
+      const addrClean = (c.addr || '').toLowerCase().replace(/\s+/g, '');
+      const telClean = (c.tel || '').toLowerCase().replace(/\s+/g, '');
+
+      return nameRaw.includes(queryRaw) || nameClean.includes(queryClean) || repClean.includes(queryClean) || addrClean.includes(queryClean) || telClean.includes(queryClean);
+    });
 
     if (matches.length === 0) {
       dropdown.style.display = 'none';
       return;
     }
 
-    dropdown.innerHTML = matches.map(c => `
+    dropdown.innerHTML = matches.slice(0, 20).map(c => `
       <div class="autocomplete-item" onclick="selectClient('${esc(c.name)}', '${esc(c.rep || '')}', '${esc(c.tel || '')}', '${esc(c.addr || '')}', '${esc(c.biz || '')}', '${esc(c.bizType || '')}', '${esc(c.itemType || '')}')">
         <div class="comp-title">
           <span>${esc(c.name)}</span>

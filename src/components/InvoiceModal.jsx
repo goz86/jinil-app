@@ -11,22 +11,56 @@ export default function InvoiceModal({ isOpen, onClose }) {
         if (!isOpen) return;
 
         const sendClientsToIframe = async () => {
-            let combinedClients = [];
-            const namesSet = new Set();
+            const locationMap = new Map();
 
-            // 1. Supabase partners
+            // 1. Supabase RPC search_public_b2b_shipments (Same queries as ClientAddressBook.jsx)
+            try {
+                const searchQueries = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '서울', '경기', '미지정', 'Open', '공장', '스튜디오', '컴퍼니', '타워', '빌딩', '마포', '성북', '동대문', '중구', '야드', '오픈'];
+                for (const qStr of searchQueries) {
+                    const { data: sbData, error: sbError } = await supabase.rpc('search_public_b2b_shipments', {
+                        p_query: qStr,
+                        p_limit: 200
+                    });
+
+                    if (!sbError && sbData) {
+                        sbData.forEach((s) => {
+                            const locName = (s.location_name || s.company_name || '').trim();
+                            if (!locName || locName === '미지정') return;
+
+                            const key = locName.toLowerCase();
+                            if (!locationMap.has(key)) {
+                                const compName = (s.company_name && s.company_name !== '미지정') ? s.company_name : '';
+                                locationMap.set(key, {
+                                    name: locName,
+                                    rep: compName || s.recipient_name || '',
+                                    tel: s.courier_phone || '',
+                                    addr: s.recipient_address || '',
+                                    biz: '',
+                                    bizType: '',
+                                    itemType: ''
+                                });
+                            }
+                        });
+                    }
+                }
+            } catch (err) {
+                console.error("Supabase RPC search error:", err);
+            }
+
+            // 2. Supabase partners
             try {
                 const { data: partnersData } = await supabase.from('partners').select('*');
                 if (partnersData) {
                     partnersData.forEach(p => {
                         const name = (p.company_name || p.name || '').trim();
-                        if (name && !namesSet.has(name.toLowerCase())) {
-                            namesSet.add(name.toLowerCase());
-                            combinedClients.push({
+                        if (name) {
+                            const key = name.toLowerCase();
+                            const existing = locationMap.get(key) || {};
+                            locationMap.set(key, {
                                 name: name,
-                                rep: p.representative_name || p.contact_person || '',
-                                tel: p.phone || p.tel || '',
-                                addr: p.address || p.default_address || '',
+                                rep: p.representative_name || p.contact_person || existing.rep || '',
+                                tel: p.phone || p.tel || existing.tel || '',
+                                addr: p.address || p.default_address || existing.addr || '',
                                 biz: p.business_number || p.biz || '',
                                 bizType: p.biz_type || '',
                                 itemType: p.item_type || ''
@@ -38,19 +72,20 @@ export default function InvoiceModal({ isOpen, onClose }) {
                 console.error("Supabase partners fetch error:", e);
             }
 
-            // 2. Firestore clients
+            // 3. Firestore clients
             try {
                 const querySnapshot = await getDocs(collection(db, 'clients'));
                 querySnapshot.forEach(doc => {
                     const data = doc.data();
                     const name = (data.name || '').trim();
-                    if (name && !namesSet.has(name.toLowerCase())) {
-                        namesSet.add(name.toLowerCase());
-                        combinedClients.push({
+                    if (name) {
+                        const key = name.toLowerCase();
+                        const existing = locationMap.get(key) || {};
+                        locationMap.set(key, {
                             name: name,
-                            rep: data.representative || data.contactName || '',
-                            tel: data.phone || '',
-                            addr: data.address || '',
+                            rep: data.representative || data.contactName || existing.rep || '',
+                            tel: data.phone || existing.tel || '',
+                            addr: data.address || existing.addr || '',
                             biz: data.biz || '',
                             bizType: data.bizType || '',
                             itemType: data.itemType || ''
@@ -61,7 +96,9 @@ export default function InvoiceModal({ isOpen, onClose }) {
                 console.error("Firestore clients fetch error:", e);
             }
 
-            // 3. Send message to iframe
+            const combinedClients = Array.from(locationMap.values());
+
+            // 4. Send message to iframe
             if (iframeRef.current && iframeRef.current.contentWindow) {
                 iframeRef.current.contentWindow.postMessage({
                     type: 'SET_CLIENT_ADDRESS_BOOK',
