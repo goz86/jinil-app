@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useTheme } from '../contexts/ThemeContext';
+import { hasAppLockPin, APP_LOCK_CHANGED_EVENT } from '../lib/appLock';
 
 export const WALLPAPERS = [
     { id: 'default', name: '기본', previewBg: 'bg-gray-100 dark:bg-gray-800' },
@@ -14,12 +15,20 @@ export const WALLPAPERS = [
     { id: 'futureCat', name: '푸른 도라에몽', previewBg: 'bg-gradient-to-br from-sky-400 via-blue-600 to-amber-300' }
 ];
 
-export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics, wallpaper = 'default', setWallpaper = () => {} }) {
+export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics, wallpaper = 'default', setWallpaper = () => {}, onOpenAppLock }) {
     const { t, lang, setLang } = useLanguage();
     const { theme, toggleTheme } = useTheme();
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [isAutoStart, setIsAutoStart] = useState(false);
+    const [hasPin, setHasPin] = useState(() => hasAppLockPin());
     const settingsRef = useRef(null);
+
+    // Sync PIN status
+    useEffect(() => {
+        const syncPin = () => setHasPin(hasAppLockPin());
+        window.addEventListener(APP_LOCK_CHANGED_EVENT, syncPin);
+        return () => window.removeEventListener(APP_LOCK_CHANGED_EVENT, syncPin);
+    }, []);
 
     // Check Windows auto-start state on load
     useEffect(() => {
@@ -235,7 +244,34 @@ export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics, wal
                                 </div>
                             </div>
 
-                            {/* Section 3: Windows Auto-start */}
+                            {/* Section 3: 숨김 비밀번호 (Khoá app) */}
+                            <div className="mb-3.5 px-1 pt-2 border-t border-gray-100 dark:border-slate-700/80">
+                                <div 
+                                    onClick={() => { setIsSettingsOpen(false); if (onOpenAppLock) onOpenAppLock(); }}
+                                    className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors"
+                                >
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <span className="text-xs font-bold block text-gray-800 dark:text-slate-100">
+                                                숨김 비밀번호 (Khoá app)
+                                            </span>
+                                            <span className="text-[10px] text-gray-400 dark:text-slate-400 block">
+                                                {hasPin ? 'PIN 4자리 설정됨' : '비활성화됨 (클릭하여 설정)'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                    </svg>
+                                </div>
+                            </div>
+
+                            {/* Section 4: Windows Auto-start */}
                             {window.electronAPI && (
                                 <div className="mb-3.5 px-1 pt-2 border-t border-gray-100 dark:border-slate-700/80">
                                     <div 
@@ -266,7 +302,7 @@ export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics, wal
                                 </div>
                             )}
 
-                            {/* Section 4: 언어 선택 */}
+                            {/* Section 5: 언어 선택 */}
                             <div className="px-1 pt-2 border-t border-gray-100 dark:border-slate-700/80">
                                 <label className="text-[11px] font-bold text-gray-400 dark:text-slate-400 block mb-1.5 uppercase tracking-wide">
                                     언어 선택

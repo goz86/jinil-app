@@ -15,6 +15,9 @@ import ClientAddressBook from './components/ClientAddressBook';
 import InventoryManagement from './components/InventoryManagement';
 import LabelPrinter from './components/LabelPrinter';
 import StockTicker from './components/StockTicker';
+import AppLockModal from './components/AppLockModal';
+import PinVerifyModal from './components/PinVerifyModal';
+import { hasAppLockPin } from './lib/appLock';
 import { initializeApp } from 'firebase/app';
 import { auth, db, secondaryAuth, secondaryDb, firebaseConfig } from './firebase';
 import { signInWithCredential, signInWithEmailAndPassword, GoogleAuthProvider, signOut, onAuthStateChanged, getAuth } from 'firebase/auth';
@@ -45,6 +48,8 @@ function App() {
   const [isClientsOpen, setIsClientsOpen] = useState(false);
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
   const [isLabelPrintOpen, setIsLabelPrintOpen] = useState(false);
+  const [isAppLockModalOpen, setIsAppLockModalOpen] = useState(false);
+  const [isPinVerifyModalOpen, setIsPinVerifyModalOpen] = useState(false);
   const [isTasksHidden, setIsTasksHidden] = useState(true);
   const [wallpaper, setWallpaperState] = useState(() => localStorage.getItem('app_wallpaper') || 'default');
 
@@ -384,14 +389,27 @@ function App() {
     };
   }, []);
 
-  const togglePrivacyHidden = (targetState) => {
-    const newState = typeof targetState === 'boolean' ? targetState : !isTasksHidden;
+  const performPrivacyToggle = (newState) => {
     setIsTasksHidden(newState);
     try {
       const channel = new BroadcastChannel('jinil_privacy_sync');
       channel.postMessage({ isHidden: newState });
       channel.close();
     } catch (e) {}
+  };
+
+  const togglePrivacyHidden = (targetState) => {
+    const newState = typeof targetState === 'boolean' ? targetState : !isTasksHidden;
+    // If target state is to UNHIDE tasks (newState === false), check if PIN is configured
+    if (!newState) {
+      if (hasAppLockPin()) {
+        setIsPinVerifyModalOpen(true);
+      } else {
+        performPrivacyToggle(false);
+      }
+    } else {
+      performPrivacyToggle(true);
+    }
   };
 
   const updateTasks = async (newTasks) => {
@@ -795,6 +813,7 @@ function App() {
             onOpenAnalytics={() => setIsAnalyticsOpen(true)}
             wallpaper={wallpaper}
             setWallpaper={setWallpaper}
+            onOpenAppLock={() => setIsAppLockModalOpen(true)}
           />
 
           <div className="mb-4 flex items-center justify-between">
@@ -906,6 +925,20 @@ function App() {
       >
         <LabelPrinter user={user} />
       </GenericModal>
+
+      <AppLockModal
+        isOpen={isAppLockModalOpen}
+        onClose={() => setIsAppLockModalOpen(false)}
+      />
+
+      <PinVerifyModal
+        isOpen={isPinVerifyModalOpen}
+        onClose={() => setIsPinVerifyModalOpen(false)}
+        onSuccess={() => {
+          setIsPinVerifyModalOpen(false);
+          performPrivacyToggle(false);
+        }}
+      />
     </div>
   );
 }
