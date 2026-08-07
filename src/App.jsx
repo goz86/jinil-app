@@ -24,10 +24,12 @@ import { signInWithCredential, signInWithEmailAndPassword, GoogleAuthProvider, s
 import { collection, doc, onSnapshot, setDoc, query, orderBy, limit, where, getDocs, deleteDoc, getDoc, getFirestore } from 'firebase/firestore';
 import { ref, deleteObject } from 'firebase/storage';
 import { useLanguage } from './contexts/LanguageContext';
+import { useTheme } from './contexts/ThemeContext';
 import Swal from 'sweetalert2';
 
 function App() {
   const { t } = useLanguage();
+  const { theme } = useTheme();
   const [tasks, setTasks] = useState([]);
   const [patrolledTasks, setPatrolledTasks] = useState({}); // { [uid]: Task[] }
   const [filter, setFilter] = useState('all');
@@ -59,23 +61,56 @@ function App() {
   };
 
   const getWallpaperStyle = () => {
+    const isDark = theme === 'dark';
     switch (wallpaper) {
       case 'blue':
-        return { background: 'linear-gradient(135deg, #e0f2fe 0%, #38bdf8 100%)' };
+        return {
+          background: isDark
+            ? 'linear-gradient(135deg, #030712 0%, #0c4a6e 60%, #0369a1 100%)'
+            : 'linear-gradient(135deg, #e0f2fe 0%, #38bdf8 100%)'
+        };
       case 'yellow':
-        return { background: 'linear-gradient(135deg, #fef3c7 0%, #f59e0b 100%)' };
+        return {
+          background: isDark
+            ? 'linear-gradient(135deg, #09090b 0%, #451a03 60%, #78350f 100%)'
+            : 'linear-gradient(135deg, #fef3c7 0%, #f59e0b 100%)'
+        };
       case 'green':
-        return { background: 'linear-gradient(135deg, #dcfce7 0%, #22c55e 100%)' };
+        return {
+          background: isDark
+            ? 'linear-gradient(135deg, #022c22 0%, #064e3b 60%, #047857 100%)'
+            : 'linear-gradient(135deg, #dcfce7 0%, #22c55e 100%)'
+        };
       case 'purple':
-        return { background: 'linear-gradient(135deg, #f3e8ff 0%, #a855f7 100%)' };
+        return {
+          background: isDark
+            ? 'linear-gradient(135deg, #0f0728 0%, #3b0764 60%, #581c87 100%)'
+            : 'linear-gradient(135deg, #f3e8ff 0%, #a855f7 100%)'
+        };
       case 'pink':
-        return { background: 'linear-gradient(135deg, #ffe4e6 0%, #fb7185 100%)' };
+        return {
+          background: isDark
+            ? 'linear-gradient(135deg, #1f0409 0%, #881337 60%, #9f1239 100%)'
+            : 'linear-gradient(135deg, #ffe4e6 0%, #fb7185 100%)'
+        };
       case 'vietnam':
-        return { background: 'linear-gradient(135deg, #dc2626 0%, #ef4444 34%, #fef3c7 64%, #22c55e 100%)' };
+        return {
+          background: isDark
+            ? 'linear-gradient(135deg, #450a0a 0%, #7f1d1d 34%, #78350f 64%, #064e3b 100%)'
+            : 'linear-gradient(135deg, #dc2626 0%, #ef4444 34%, #fef3c7 64%, #22c55e 100%)'
+        };
       case 'korea':
-        return { background: 'linear-gradient(135deg, #f8fafc 0%, #dbeafe 52%, #93c5fd 100%)' };
+        return {
+          background: isDark
+            ? 'linear-gradient(135deg, #0f172a 0%, #1e3a8a 52%, #1e1b4b 100%)'
+            : 'linear-gradient(135deg, #f8fafc 0%, #dbeafe 52%, #93c5fd 100%)'
+        };
       case 'futureCat':
-        return { background: 'linear-gradient(135deg, #38bdf8 0%, #2563eb 70%, #facc15 100%)' };
+        return {
+          background: isDark
+            ? 'linear-gradient(135deg, #0c4a6e 0%, #1e40af 60%, #713f12 100%)'
+            : 'linear-gradient(135deg, #38bdf8 0%, #2563eb 70%, #facc15 100%)'
+        };
       default:
         return {};
     }

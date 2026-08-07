@@ -145,7 +145,7 @@ export default function AppLockModal({ isOpen, onClose }) {
               </svg>
             </div>
             <div>
-              <h2 className="text-xl font-bold tracking-tight">숨김 비밀번호 (Khoá app)</h2>
+              <h2 className="text-xl font-bold tracking-tight">숨김 비밀번호</h2>
               <p className="text-xs text-gray-500 dark:text-slate-400">작업 목록 숨김 해제 시 4자리 PIN 설정</p>
             </div>
           </div>
@@ -174,7 +174,7 @@ export default function AppLockModal({ isOpen, onClose }) {
           </div>
           <div className="flex-1">
             <h3 className="text-sm font-bold">
-              {isEnabled ? '이 기기에서 활성화됨 (Đã bật)' : '이 기기에서 비활성화됨 (Chưa bật)'}
+              {isEnabled ? '이 기기에서 활성화됨' : '이 기기에서 비활성화됨'}
             </h3>
             <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 leading-relaxed">
               PIN 번호는 이 기기에만 안전하게 저장되며 서버로 전송되지 않습니다.
@@ -193,7 +193,7 @@ export default function AppLockModal({ isOpen, onClose }) {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
-                <span>비밀번호 설정 (Bật khoá app)</span>
+                <span>비밀번호 설정</span>
               </button>
             ) : (
               <div className="grid grid-cols-2 gap-3">
@@ -227,7 +227,7 @@ export default function AppLockModal({ isOpen, onClose }) {
                 maxLength={4}
                 value={pin}
                 onChange={(e) => setPin(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                placeholder="4-6 số"
+                placeholder="4자리 숫자 입력"
                 autoFocus
                 required
                 className="w-full px-4 py-3 bg-gray-50 dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl text-center text-lg font-bold tracking-widest text-gray-800 dark:text-slate-100 focus:ring-2 focus:ring-blue-400 outline-none"

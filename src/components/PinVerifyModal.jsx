@@ -31,7 +31,7 @@ export default function PinVerifyModal({ isOpen, onClose, onSuccess }) {
         setErrorMsg('');
         onSuccess();
       } else {
-        setErrorMsg('비밀번호가 올바르지 않습니다 (PIN không đúng)');
+              setErrorMsg('비밀번호가 올바르지 않습니다');
         setPin('');
       }
     } catch {
@@ -53,7 +53,7 @@ export default function PinVerifyModal({ isOpen, onClose, onSuccess }) {
               setErrorMsg('');
               onSuccess();
             } else {
-              setErrorMsg('비밀번호가 올바르지 않습니다 (PIN không đúng)');
+                    setErrorMsg('비밀번호가 올바르지 않습니다');
               setPin('');
             }
           });

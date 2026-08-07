@@ -258,7 +258,7 @@ export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics, wal
                                         </div>
                                         <div>
                                             <span className="text-xs font-bold block text-gray-800 dark:text-slate-100">
-                                                숨김 비밀번호 (Khoá app)
+                                                숨김 비밀번호
                                             </span>
                                             <span className="text-[10px] text-gray-400 dark:text-slate-400 block">
                                                 {hasPin ? 'PIN 4자리 설정됨' : '비활성화됨 (클릭하여 설정)'}
