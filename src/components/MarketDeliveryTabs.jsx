@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import MarketWidget from './MarketWidget';
 import DeliveryWidget from './DeliveryWidget';
 import InvoiceWidget from './InvoiceWidget';
+import InvoiceModal from './InvoiceModal';
 import InTransitShipmentModal from './InTransitShipmentModal';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -10,6 +11,7 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
     const { t } = useLanguage();
     const [activeTab, setActiveTab] = useState('market'); // Only for market, delivery, and invoice
     const [isInTransitModalOpen, setIsInTransitModalOpen] = useState(false);
+    const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
     const [liveActiveCount, setLiveActiveCount] = useState(null);
 
     useEffect(() => {
@@ -121,9 +123,12 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
                     <button
                         key={tab.key}
                         onClick={() => {
-                            setActiveTab(tab.key);
                             if (tab.key === 'delivery') {
                                 setIsInTransitModalOpen(true);
+                            } else if (tab.key === 'invoice') {
+                                setIsInvoiceModalOpen(true);
+                            } else {
+                                setActiveTab(tab.key);
                             }
                         }}
                         className={`flex flex-col items-center justify-center gap-1.5 py-3.5 px-2 text-[12px] font-bold transition-all duration-300 border-b border-r last:border-r-0 border-gray-100 dark:border-slate-700/80 relative
@@ -157,15 +162,15 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
 
             {/* Content for Inline Tabs */}
             <div className="p-5">
-                {activeTab === 'market' && <MarketWidget />}
-                {activeTab === 'delivery' && (
+                {activeTab === 'market' ? (
+                    <MarketWidget />
+                ) : (
                     <DeliveryWidget
                         selectedDate={selectedDate}
                         deliveries={deliveries}
                         onOpenInTransitModal={() => setIsInTransitModalOpen(true)}
                     />
                 )}
-                {activeTab === 'invoice' && <InvoiceWidget />}
             </div>
 
             {/* In-Transit Shipment Popup Modal */}
@@ -173,6 +178,12 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
                 isOpen={isInTransitModalOpen}
                 onClose={() => setIsInTransitModalOpen(false)}
                 onRefreshCount={(count) => setLiveActiveCount(count)}
+            />
+
+            {/* Invoice Statement Generator Popup Modal */}
+            <InvoiceModal
+                isOpen={isInvoiceModalOpen}
+                onClose={() => setIsInvoiceModalOpen(false)}
             />
         </div>
     );
