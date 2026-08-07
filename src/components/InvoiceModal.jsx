@@ -1,4 +1,5 @@
 import React from 'react';
+import invoiceHtml from '../../public/invoice-app/index.html?raw';
 
 export default function InvoiceModal({ isOpen, onClose }) {
     if (!isOpen) return null;
@@ -33,7 +34,7 @@ export default function InvoiceModal({ isOpen, onClose }) {
                 {/* Modal Body */}
                 <div className="flex-1 w-full h-full bg-slate-50 dark:bg-slate-900 p-0 overflow-hidden">
                     <iframe
-                        src="/invoice-app/index.html"
+                        srcDoc={invoiceHtml}
                         title="거래명세서 발행"
                         className="w-full h-full border-none"
                     />
