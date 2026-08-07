@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import MarketWidget from './MarketWidget';
 import DeliveryWidget from './DeliveryWidget';
+import InvoiceWidget from './InvoiceWidget';
 import InTransitShipmentModal from './InTransitShipmentModal';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
 
 export default function MarketDeliveryTabs({ selectedDate, deliveryCount, deliveries, onOpenClients, onOpenInventory, onOpenLabelPrint }) {
     const { t } = useLanguage();
-    const [activeTab, setActiveTab] = useState('market'); // Only for market and delivery
+    const [activeTab, setActiveTab] = useState('market'); // Only for market, delivery, and invoice
     const [isInTransitModalOpen, setIsInTransitModalOpen] = useState(false);
     const [liveActiveCount, setLiveActiveCount] = useState(null);
 
@@ -55,6 +56,15 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                </svg>
+            )
+        },
+        {
+            key: 'invoice',
+            label: '거래명세서',
+            icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
             )
         }
@@ -105,8 +115,8 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
 
     return (
         <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700/80 transition-all duration-300 overflow-hidden">
-            {/* Row 1: Market & Delivery (Inline) */}
-            <div className="grid grid-cols-2">
+            {/* Row 1: Market, Delivery & Invoice (Inline) */}
+            <div className="grid grid-cols-3">
                 {inlineTabs.map((tab) => (
                     <button
                         key={tab.key}
@@ -147,15 +157,15 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
 
             {/* Content for Inline Tabs */}
             <div className="p-5">
-                {activeTab === 'market' ? (
-                    <MarketWidget />
-                ) : (
+                {activeTab === 'market' && <MarketWidget />}
+                {activeTab === 'delivery' && (
                     <DeliveryWidget
                         selectedDate={selectedDate}
                         deliveries={deliveries}
                         onOpenInTransitModal={() => setIsInTransitModalOpen(true)}
                     />
                 )}
+                {activeTab === 'invoice' && <InvoiceWidget />}
             </div>
 
             {/* In-Transit Shipment Popup Modal */}
