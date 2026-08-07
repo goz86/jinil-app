@@ -260,11 +260,11 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-100 dark:border-gray-700">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
-          <h2 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2.5">
+          <h2 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2.5">
             <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
               <svg className="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
               </svg>
             </div>
             <span>배송 중인 운송장 내역</span>
@@ -281,21 +281,21 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
         </div>
 
         {/* Status Subheader & Control Bar */}
-        <div className="px-6 py-3 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700 flex flex-wrap items-center justify-between gap-3 text-xs">
-          <div className="text-gray-600 dark:text-gray-400">
-            배송이 완료되지 않은 최근 출고 건 <span className="font-bold text-gray-900 dark:text-white">{shipments.length}건</span> 중{' '}
-            <span className="font-bold text-blue-600 dark:text-blue-400">{filteredShipments.length}건</span> 표시 중
+        <div className="px-6 py-3 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700 flex flex-wrap items-center justify-between gap-3 text-sm font-semibold">
+          <div className="text-gray-800 dark:text-gray-200">
+            배송이 완료되지 않은 최근 출고 건 <span className="font-extrabold text-black dark:text-white">{shipments.length}건</span> 중{' '}
+            <span className="font-extrabold text-blue-700 dark:text-blue-400">{filteredShipments.length}건</span> 표시 중
           </div>
 
           <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+            <label className="flex items-center gap-2 text-gray-900 dark:text-gray-100 font-bold cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={hideCancelledAndPreparing}
                 onChange={(e) => setHideCancelledAndPreparing(e.target.checked)}
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <span>반품취소 / 배송 준비 중 숨기기</span>
+              <span>반품취소 / 배송 시작 숨기기</span>
             </label>
 
             <button
@@ -330,33 +330,33 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
             </div>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-700">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-gray-50 dark:bg-gray-700/50 text-gray-500 dark:text-gray-400 font-semibold border-b border-gray-100 dark:border-gray-700">
+              <table className="w-full text-left text-[13px]">
+                <thead className="bg-gray-50 dark:bg-gray-700/50 text-gray-800 dark:text-gray-200 font-extrabold border-b border-gray-100 dark:border-gray-700">
                   <tr>
-                    <th className="py-3 px-4">집하일자</th>
-                    <th className="py-3 px-4">거래처</th>
-                    <th className="py-3 px-4">수하인/출고처</th>
-                    <th className="py-3 px-4">운송장번호</th>
-                    <th className="py-3 px-4">배송상태</th>
-                    <th className="py-3 px-4 text-center">카톡 안내</th>
-                    <th className="py-3 px-4 text-center">삭제</th>
+                    <th className="py-3 px-4 font-extrabold">집하일자</th>
+                    <th className="py-3 px-4 font-extrabold">거래처</th>
+                    <th className="py-3 px-4 font-extrabold">수하인/출고처</th>
+                    <th className="py-3 px-4 font-extrabold">운송장번호</th>
+                    <th className="py-3 px-4 font-extrabold">배송상태</th>
+                    <th className="py-3 px-4 text-center font-extrabold">카톡 안내</th>
+                    <th className="py-3 px-4 text-center font-extrabold">삭제</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-100 dark:divide-gray-700 text-gray-700 dark:text-gray-200">
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-700 text-gray-900 dark:text-gray-100 font-medium">
                   {filteredShipments.map((s) => (
                     <tr key={s.id} className="hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition">
-                      <td className="py-3 px-4 font-mono text-gray-500">{s.shipment_date || '-'}</td>
-                      <td className="py-3 px-4 font-semibold text-gray-900 dark:text-white">
+                      <td className="py-3 px-4 font-mono text-gray-800 dark:text-gray-200 font-bold">{s.shipment_date || '-'}</td>
+                      <td className="py-3 px-4 font-bold text-gray-900 dark:text-white">
                         {s.partner_name || s.partner_code || '미지정'}
                       </td>
-                      <td className="py-3 px-4 text-gray-600 dark:text-gray-300">
+                      <td className="py-3 px-4 text-gray-900 dark:text-white font-bold">
                         {s.customer_name || s.recipient_name || '-'}
                       </td>
                       <td className="py-3 px-4">
                         <button
                           type="button"
                           onClick={() => handleCopyTrackingNumber(s.tracking_number)}
-                          className="font-mono font-bold text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 flex items-center gap-1.5 group cursor-pointer"
+                          className="font-mono font-extrabold text-blue-700 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 flex items-center gap-1.5 group cursor-pointer text-[14px]"
                           title="클릭하여 운송장번호 복사"
                         >
                           <span>{s.tracking_number}</span>
@@ -366,7 +366,7 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
                         </button>
                       </td>
                       <td className="py-3 px-4">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
+                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 border border-blue-200">
                           {s.tracking_status_label || s.tracking_status || '배송 시작'}
                         </span>
                       </td>
@@ -374,7 +374,7 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
                         <button
                           type="button"
                           onClick={() => handleSendKakaoNotice(s)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#FEE500] hover:bg-[#FDD800] text-[#191919] font-bold rounded-xl text-[11px] transition shadow-sm border border-yellow-400/60 cursor-pointer active:scale-95"
+                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#FEE500] hover:bg-[#FDD800] text-black font-extrabold rounded-xl text-xs transition shadow-sm border border-yellow-500 cursor-pointer active:scale-95"
                         >
                           <svg className="w-3.5 h-3.5 fill-[#191919]" viewBox="0 0 24 24">
                             <path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.557 1.707 4.8 4.27 6.054-.188.702-.682 2.545-.78 2.94-.122.49.18.484.378.352.157-.104 2.5-1.7 3.513-2.393.535.08 1.077.12 1.619.12 4.97 0 9-3.186 9-7.116S16.97 3 12 3z"/>
