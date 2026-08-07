@@ -141,9 +141,9 @@ export default function TaskInput({ onAdd, savedAccounts = [], currentUserEmail,
     };
 
     const priorities = [
-        { id: 'normal', label: t('priorityNormal'), color: 'bg-yellow-400', ring: 'ring-yellow-300', bg: 'bg-yellow-50 dark:bg-yellow-900/20', border: 'border-yellow-300 dark:border-yellow-700', text: 'text-yellow-700 dark:text-yellow-300' },
-        { id: 'high', label: '급', color: 'bg-orange-400', ring: 'ring-orange-300', bg: 'bg-orange-50 dark:bg-orange-900/20', border: 'border-orange-300 dark:border-orange-700', text: 'text-orange-700 dark:text-orange-300' },
-        { id: 'urgent', label: '급급급', color: 'bg-red-500', ring: 'ring-red-300', bg: 'bg-red-50 dark:bg-red-900/20', border: 'border-red-300 dark:border-red-700', text: 'text-red-700 dark:text-red-300' },
+        { id: 'normal', label: t('priorityNormal'), color: 'bg-yellow-400', ring: 'ring-yellow-400/50', bg: 'bg-yellow-50 dark:bg-amber-950/50', border: 'border-yellow-300 dark:border-amber-500/50', text: 'text-yellow-800 dark:text-amber-300' },
+        { id: 'high', label: '급', color: 'bg-orange-400', ring: 'ring-orange-400/50', bg: 'bg-orange-50 dark:bg-orange-950/50', border: 'border-orange-300 dark:border-orange-500/50', text: 'text-orange-800 dark:text-orange-300' },
+        { id: 'urgent', label: '급급급', color: 'bg-rose-500', ring: 'ring-rose-400/50', bg: 'bg-rose-50 dark:bg-rose-950/50', border: 'border-rose-300 dark:border-rose-500/50', text: 'text-rose-800 dark:text-rose-300' },
     ];
 
     const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
@@ -158,12 +158,12 @@ export default function TaskInput({ onAdd, savedAccounts = [], currentUserEmail,
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder={t('addTaskPlaceholder')}
-                    className="w-full pl-6 pr-16 py-4 border-none rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-800 text-gray-700 dark:text-white text-lg transition-shadow duration-200 hover:shadow-md"
+                    className="w-full pl-6 pr-16 py-4 border border-gray-100 dark:border-slate-700/80 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-slate-800 text-gray-800 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 text-lg transition-all duration-200 hover:shadow-md"
                 />
                 <button
                     type="submit"
                     disabled={!title.trim()}
-                    className="absolute right-2 top-2 bottom-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 text-white p-2 rounded-xl aspect-square flex items-center justify-center shadow-md transition-colors duration-200"
+                    className="absolute right-2 top-2 bottom-2 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-300 dark:disabled:bg-slate-700 text-white p-2 rounded-xl aspect-square flex items-center justify-center shadow-md transition-colors duration-200"
                 >
                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -182,7 +182,7 @@ export default function TaskInput({ onAdd, savedAccounts = [], currentUserEmail,
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-semibold border transition-all duration-200 cursor-pointer select-none
                             ${priority === p.id
                                 ? `${p.bg} ${p.border} ${p.text} ring-2 ${p.ring} shadow-sm scale-105`
-                                : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-500'
+                                : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 hover:border-gray-300 dark:hover:border-slate-600'
                             }`}
                     >
                         <span className={`w-2.5 h-2.5 rounded-full ${p.color} ${priority === p.id ? 'animate-pulse' : ''}`}></span>
@@ -191,7 +191,7 @@ export default function TaskInput({ onAdd, savedAccounts = [], currentUserEmail,
                 ))}
 
                 {/* Divider */}
-                <div className="w-px h-6 bg-gray-200 dark:bg-gray-600 mx-1"></div>
+                <div className="w-px h-6 bg-gray-200 dark:bg-slate-700 mx-1"></div>
 
                 {/* Time picker button */}
                 <div className="relative" ref={timePickerRef}>
@@ -200,8 +200,8 @@ export default function TaskInput({ onAdd, savedAccounts = [], currentUserEmail,
                         onClick={openTimePicker}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border transition-all duration-200 cursor-pointer
                             ${time
-                                ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-300 dark:border-blue-700 text-blue-700 dark:text-blue-300'
-                                : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:border-gray-300'
+                                ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-300 dark:border-blue-700/60 text-blue-700 dark:text-blue-300 font-bold'
+                                : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-500 dark:text-slate-300 hover:border-gray-300 dark:hover:border-slate-600'
                             }`}
                     >
                         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -211,7 +211,7 @@ export default function TaskInput({ onAdd, savedAccounts = [], currentUserEmail,
                         {time && (
                             <span
                                 onClick={(e) => { e.stopPropagation(); clearTime(); }}
-                                className="ml-0.5 w-4 h-4 flex items-center justify-center rounded-full hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-500"
+                                className="ml-0.5 w-4 h-4 flex items-center justify-center rounded-full hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-500 dark:text-blue-300"
                             >
                                 ×
                             </span>
@@ -220,12 +220,12 @@ export default function TaskInput({ onAdd, savedAccounts = [], currentUserEmail,
 
                     {/* Time picker dropdown */}
                     {showTimePicker && (
-                        <div className="absolute top-full left-0 mt-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-2xl shadow-xl p-3 z-50 w-56 animate-in fade-in slide-in-from-top-2 duration-200">
+                        <div className="absolute top-full left-0 mt-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-2xl shadow-xl p-3 z-50 w-56 animate-in fade-in slide-in-from-top-2 duration-200">
                             <div className="flex gap-2 mb-3">
                                 {/* Hour column */}
                                 <div className="flex-1">
-                                    <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5 text-center">시</p>
-                                    <div ref={hourScrollRef} className="h-36 overflow-y-auto custom-scrollbar rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                                    <p className="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider mb-1.5 text-center">시</p>
+                                    <div ref={hourScrollRef} className="h-36 overflow-y-auto custom-scrollbar rounded-lg bg-gray-50 dark:bg-slate-900/60">
                                         {hours.map(h => (
                                             <button
                                                 key={h}
@@ -233,8 +233,8 @@ export default function TaskInput({ onAdd, savedAccounts = [], currentUserEmail,
                                                 onClick={() => setTempHour(h)}
                                                 data-active={tempHour === h}
                                                 className={`w-full py-1.5 text-sm font-medium rounded-lg transition-all ${tempHour === h
-                                                    ? 'bg-blue-500 text-white shadow-sm'
-                                                    : 'text-gray-600 dark:text-gray-300 hover:bg-blue-100 dark:hover:bg-blue-900/30'
+                                                    ? 'bg-blue-600 text-white shadow-xs font-bold'
+                                                    : 'text-gray-600 dark:text-slate-300 hover:bg-blue-100 dark:hover:bg-slate-700'
                                                 }`}
                                             >
                                                 {h}
@@ -243,11 +243,11 @@ export default function TaskInput({ onAdd, savedAccounts = [], currentUserEmail,
                                     </div>
                                 </div>
                                 {/* Separator */}
-                                <div className="flex items-center text-2xl font-bold text-gray-300 dark:text-gray-500 pt-5">:</div>
+                                <div className="flex items-center text-2xl font-bold text-gray-300 dark:text-slate-600 pt-5">:</div>
                                 {/* Minute column */}
                                 <div className="flex-1">
-                                    <p className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider mb-1.5 text-center">분</p>
-                                    <div ref={minuteScrollRef} className="h-36 overflow-y-auto custom-scrollbar rounded-lg bg-gray-50 dark:bg-gray-700/50">
+                                    <p className="text-[10px] font-bold text-gray-400 dark:text-slate-400 uppercase tracking-wider mb-1.5 text-center">분</p>
+                                    <div ref={minuteScrollRef} className="h-36 overflow-y-auto custom-scrollbar rounded-lg bg-gray-50 dark:bg-slate-900/60">
                                         {minutes.map(m => (
                                             <button
                                                 key={m}

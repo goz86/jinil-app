@@ -1,8 +1,25 @@
-@import "tailwindcss";
 @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+@import "tailwindcss";
 
 /* ===== Dark Mode Custom Variant for Tailwind v4 ===== */
 @custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg-page: #f3f4f6;
+  --bg-card: #ffffff;
+  --text-main: #1e293b;
+  --text-soft: #64748b;
+  --line: rgba(226, 232, 240, 0.8);
+}
+
+.dark {
+  --bg-page: #0b0f19;
+  --bg-card: #1e293b;
+  --text-main: #f8fafc;
+  --text-soft: #94a3b8;
+  --line: rgba(255, 255, 255, 0.08);
+  color-scheme: dark;
+}
 
 body, *, button, input, select, textarea {
   font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", sans-serif;
@@ -15,27 +32,50 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
   transition: background-color 0.3s ease, color 0.3s ease;
+  background-color: var(--bg-page);
 }
 
-/* Light Mode (default) body background */
-body {
-  background-color: #f3f4f6;
-}
-
-/* Dark Mode body background */
+/* Dark Mode body background with rich ambient gradient inspired by tien-luong */
 .dark body,
 body:where(.dark *) {
-  background-color: #111827;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(59, 130, 246, 0.06), transparent 30%),
+    radial-gradient(circle at 86% 10%, rgba(99, 102, 241, 0.08), transparent 32%),
+    linear-gradient(135deg, #0b0f19 0%, #0f172a 50%, #080d1a 100%);
+  color: var(--text-main);
 }
 
 html.dark {
   color-scheme: dark;
 }
 
+/* Custom Scrollbar for Dark Mode */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 9999px;
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
 /* Force transparency for Mini Widget */
 html.is-mini, 
 html.is-mini body {
-  background-color: transparent !important;
+  background: transparent !important;
 }
 
 /* Marquee Animation - Seamless loop from 0 to -50% with duplicated items */
@@ -53,10 +93,6 @@ html.is-mini body {
   width: max-content;
 }
 
-
-
-
-
 /* Slow down marquee on hover */
 .marquee-container:hover .animate-marquee {
   animation-play-state: paused;
@@ -66,4 +102,16 @@ html.is-mini body {
 .swal2-container {
   z-index: 999999 !important;
 }
+
+.dark .swal2-popup {
+  background-color: #1e293b !important;
+  color: #f8fafc !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+.dark .swal2-title,
+.dark .swal2-html-container {
+  color: #f8fafc !important;
+}
+
 

@@ -395,17 +395,17 @@ function createWindow() {
         setTimeout(positionMiniNextToMain, 200);
     });
 
-    mainWindow.on('closed', () => { 
-        console.log('[Main] mainWindow closed'); 
-        mainWindow = null; 
+    mainWindow.on('closed', () => {
+        console.log('[Main] mainWindow closed');
+        mainWindow = null;
         if (miniWindow) { miniWindow.close(); miniWindow = null; }
     });
 
     mainWindow.on('close', (event) => {
         console.log('[Main] close event triggered, isQuitting:', isQuitting);
-        if (!isQuitting) { 
-            event.preventDefault(); 
-            mainWindow.hide(); 
+        if (!isQuitting) {
+            event.preventDefault();
+            mainWindow.hide();
             if (miniWindow) miniWindow.hide();
         }
         return false;
@@ -418,14 +418,14 @@ function createWindow() {
             const data = await fs.readFile(configPath, 'utf8');
             const prefs = JSON.parse(data);
             if (prefs.autostartSet) return true;
-        } catch (e) {}
+        } catch (e) { }
         return app.getLoginItemSettings().openAtLogin;
     });
 
     ipcMain.handle('toggle-auto-start', async (event, enable) => {
         if (!isDev) {
             app.setLoginItemSettings({ openAtLogin: enable, path: app.getPath('exe'), args: [] });
-            
+
             // Update the preferences.json so get-auto-start doesn't read stale 'true' forever
             const configPath = path.join(app.getPath('userData'), 'preferences.json');
             try {
@@ -687,9 +687,9 @@ if (!gotTheLock) {
 
                     autoUpdater.on('update-available', (info) => {
                         console.log('Update available:', info.version);
-                        new Notification({ 
-                            title: '프로그램 업데이트', 
-                            body: `새로운 버전(${info.version})을 찾았습니다. 다운로드 중...` 
+                        new Notification({
+                            title: '프로그램 업데이트',
+                            body: `새로운 버전(${info.version})을 찾았습니다. 다운로드 중...`
                         }).show();
                     });
 
@@ -722,11 +722,11 @@ if (!gotTheLock) {
                     // Tự động kiểm tra cập nhật mỗi khi hiện cửa sổ hoặc định kỳ 15 phút
                     if (mainWindow) {
                         mainWindow.on('show', () => {
-                            autoUpdater.checkForUpdatesAndNotify().catch(() => {});
+                            autoUpdater.checkForUpdatesAndNotify().catch(() => { });
                         });
                     }
                     setInterval(() => {
-                        autoUpdater.checkForUpdatesAndNotify().catch(() => {});
+                        autoUpdater.checkForUpdatesAndNotify().catch(() => { });
                     }, 15 * 60 * 1000);
                 } catch (err) { console.error('Non-critical init error:', err); }
             }

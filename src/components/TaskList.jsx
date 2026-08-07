@@ -9,7 +9,7 @@ export default function TaskList({ tasks, onToggle, onDelete, savedAccounts = []
         return (
             <div 
                 onClick={onToggleHidden}
-                className="group bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl p-10 border border-gray-100 dark:border-gray-700/60 shadow-lg shadow-blue-500/5 flex flex-col items-center justify-center text-center min-h-[280px] animate-in fade-in duration-300 cursor-pointer hover:border-blue-300 dark:hover:border-blue-600/50 hover:shadow-xl transition-all duration-300 my-2 relative overflow-hidden"
+                className="group bg-white/80 dark:bg-slate-800/90 backdrop-blur-xl rounded-3xl p-10 border border-gray-100 dark:border-slate-700/80 shadow-lg shadow-blue-500/5 flex flex-col items-center justify-center text-center min-h-[280px] animate-in fade-in duration-300 cursor-pointer hover:border-blue-300 dark:hover:border-blue-500/60 hover:shadow-xl transition-all duration-300 my-2 relative overflow-hidden"
             >
                 {/* 3D Glowing Security Shield Icon */}
                 <div className="relative mb-5">
@@ -21,10 +21,10 @@ export default function TaskList({ tasks, onToggle, onDelete, savedAccounts = []
                     </div>
                 </div>
 
-                <h3 className="text-base font-bold text-gray-800 dark:text-gray-100 mb-2 tracking-tight">
+                <h3 className="text-base font-bold text-gray-800 dark:text-slate-100 mb-2 tracking-tight">
                     작업 목록이 가려져 있습니다
                 </h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 max-w-sm mb-6 leading-relaxed">
+                <p className="text-xs text-gray-500 dark:text-slate-300 max-w-sm mb-6 leading-relaxed">
                     보안 및 개인 정보 보호를 위해 작업 목록이 숨겨졌습니다. 클릭하여 내용을 확인하세요.
                 </p>
 
@@ -48,7 +48,7 @@ export default function TaskList({ tasks, onToggle, onDelete, savedAccounts = []
     if (tasks.length === 0) {
         return (
             <div className="text-center py-12">
-                <p className="text-gray-400 dark:text-gray-500 text-lg">{t('noTasks')}</p>
+                <p className="text-gray-400 dark:text-slate-400 text-lg">{t('noTasks')}</p>
             </div>
         );
     }

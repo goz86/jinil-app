@@ -141,27 +141,27 @@ export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics, wal
 
                     {/* Settings Popover Dropdown Menu */}
                     {isSettingsOpen && (
-                        <div className="absolute right-0 top-full mt-2.5 w-80 bg-white/95 dark:bg-gray-800/95 backdrop-blur-xl rounded-2xl p-3.5 shadow-2xl border border-gray-100 dark:border-gray-700/80 z-50 animate-in fade-in zoom-in-95 duration-150 text-gray-800 dark:text-gray-100 max-h-[85vh] overflow-y-auto custom-scrollbar">
+                        <div className="absolute right-0 top-full mt-2.5 w-80 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl rounded-2xl p-3.5 shadow-2xl border border-gray-100 dark:border-slate-700 z-50 animate-in fade-in zoom-in-95 duration-150 text-gray-800 dark:text-gray-100 max-h-[85vh] overflow-y-auto custom-scrollbar">
                             
                             {/* Header */}
-                            <div className="flex items-center justify-between px-2 pb-2.5 mb-2 border-b border-gray-100 dark:border-gray-700/60">
-                                <span className="text-xs font-black uppercase tracking-wider text-gray-500 dark:text-gray-400">
+                            <div className="flex items-center justify-between px-2 pb-2.5 mb-2 border-b border-gray-100 dark:border-slate-700/80">
+                                <span className="text-xs font-black uppercase tracking-wider text-gray-500 dark:text-slate-400">
                                     시스템 설정
                                 </span>
                             </div>
 
                             {/* Section 1: Appearance / 테마 설정 */}
                             <div className="mb-3.5 px-1">
-                                <label className="text-[11px] font-bold text-gray-400 dark:text-gray-400 block mb-1.5 uppercase tracking-wide">
+                                <label className="text-[11px] font-bold text-gray-400 dark:text-slate-400 block mb-1.5 uppercase tracking-wide">
                                     테마 설정
                                 </label>
-                                <div className="grid grid-cols-2 gap-1.5 p-1 bg-gray-100 dark:bg-gray-700/50 rounded-xl border border-gray-200/50 dark:border-gray-600/40">
+                                <div className="grid grid-cols-2 gap-1.5 p-1 bg-gray-100 dark:bg-slate-900/60 rounded-xl border border-gray-200/50 dark:border-slate-700/60">
                                     <button
                                         onClick={() => { if (theme !== 'light') toggleTheme(); }}
                                         className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                                             theme === 'light'
-                                                ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-300 shadow-sm font-bold'
-                                                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                                                ? 'bg-white text-blue-600 shadow-xs font-bold'
+                                                : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'
                                         }`}
                                     >
                                         <svg className="w-3.5 h-3.5 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
@@ -173,11 +173,11 @@ export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics, wal
                                         onClick={() => { if (theme !== 'dark') toggleTheme(); }}
                                         className={`flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                                             theme === 'dark'
-                                                ? 'bg-gray-600 text-blue-300 shadow-sm font-bold'
-                                                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                                                ? 'bg-blue-600 text-white shadow-xs font-bold'
+                                                : 'text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-slate-200'
                                         }`}
                                     >
-                                        <svg className="w-3.5 h-3.5 text-indigo-400" fill="currentColor" viewBox="0 0 20 20">
+                                        <svg className="w-3.5 h-3.5 text-blue-200" fill="currentColor" viewBox="0 0 20 20">
                                             <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
                                         </svg>
                                         <span>다크 모드</span>
@@ -185,9 +185,9 @@ export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics, wal
                                 </div>
                             </div>
 
-                            {/* Section 2: Wallpaper Selection (3x3 Grid matching Screenshot 2!) */}
-                            <div className="mb-3.5 px-1 pt-2 border-t border-gray-100 dark:border-gray-700/60">
-                                <label className="text-[11px] font-bold text-gray-400 dark:text-gray-400 block mb-2 uppercase tracking-wide flex items-center gap-1.5">
+                            {/* Section 2: Wallpaper Selection */}
+                            <div className="mb-3.5 px-1 pt-2 border-t border-gray-100 dark:border-slate-700/80">
+                                <label className="text-[11px] font-bold text-gray-400 dark:text-slate-400 block mb-2 uppercase tracking-wide flex items-center gap-1.5">
                                     <svg className="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                     </svg>
@@ -203,7 +203,7 @@ export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics, wal
                                                 className={`flex flex-col items-center gap-1 p-1.5 rounded-xl border transition-all cursor-pointer ${
                                                     isActive
                                                         ? 'border-blue-500 bg-blue-50/60 dark:bg-blue-900/40 shadow-xs'
-                                                        : 'border-gray-200/80 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 bg-transparent'
+                                                        : 'border-gray-200/80 dark:border-slate-700 hover:border-gray-300 dark:hover:border-slate-600 bg-transparent'
                                                 }`}
                                             >
                                                 <div className={`w-full aspect-[4/3] rounded-lg ${wp.previewBg} relative shadow-xs overflow-hidden flex items-center justify-center border border-white/20`}>
@@ -226,7 +226,7 @@ export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics, wal
                                                         </div>
                                                     )}
                                                 </div>
-                                                <span className="text-[10px] font-bold text-gray-700 dark:text-gray-200 truncate max-w-[72px]">
+                                                <span className="text-[10px] font-bold text-gray-700 dark:text-slate-200 truncate max-w-[72px]">
                                                     {wp.name}
                                                 </span>
                                             </button>
@@ -237,10 +237,10 @@ export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics, wal
 
                             {/* Section 3: Windows Auto-start */}
                             {window.electronAPI && (
-                                <div className="mb-3.5 px-1 pt-2 border-t border-gray-100 dark:border-gray-700/60">
+                                <div className="mb-3.5 px-1 pt-2 border-t border-gray-100 dark:border-slate-700/80">
                                     <div 
                                         onClick={toggleAutoStartSetting}
-                                        className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer transition-colors"
+                                        className="flex items-center justify-between p-2 rounded-xl hover:bg-gray-50 dark:hover:bg-slate-700/50 cursor-pointer transition-colors"
                                     >
                                         <div className="flex items-center gap-2">
                                             <div className="w-7 h-7 rounded-lg bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
@@ -249,26 +249,26 @@ export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics, wal
                                                 </svg>
                                             </div>
                                             <div>
-                                                <span className="text-xs font-bold block text-gray-800 dark:text-gray-100">
+                                                <span className="text-xs font-bold block text-gray-800 dark:text-slate-100">
                                                     Windows 시작 시 자동 실행
                                                 </span>
-                                                <span className="text-[10px] text-gray-400 block">
+                                                <span className="text-[10px] text-gray-400 dark:text-slate-400 block">
                                                     {isAutoStart ? '자동 실행 활성화됨' : '비활성화됨'}
                                                 </span>
                                             </div>
                                         </div>
 
                                         {/* iOS Style Switch */}
-                                        <div className={`w-9 h-5 flex items-center rounded-full p-0.5 transition-colors ${isAutoStart ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'}`}>
+                                        <div className={`w-9 h-5 flex items-center rounded-full p-0.5 transition-colors ${isAutoStart ? 'bg-blue-600' : 'bg-gray-300 dark:bg-slate-600'}`}>
                                             <div className={`w-4 h-4 bg-white rounded-full shadow-md transform transition-transform ${isAutoStart ? 'translate-x-4' : 'translate-x-0'}`} />
                                         </div>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Section 4: 언어 선택 (Matching Screenshot 2 style!) */}
-                            <div className="px-1 pt-2 border-t border-gray-100 dark:border-gray-700/60">
-                                <label className="text-[11px] font-bold text-gray-400 dark:text-gray-400 block mb-1.5 uppercase tracking-wide">
+                            {/* Section 4: 언어 선택 */}
+                            <div className="px-1 pt-2 border-t border-gray-100 dark:border-slate-700/80">
+                                <label className="text-[11px] font-bold text-gray-400 dark:text-slate-400 block mb-1.5 uppercase tracking-wide">
                                     언어 선택
                                 </label>
                                 <div className="space-y-1">
@@ -282,8 +282,8 @@ export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics, wal
                                             onClick={() => setLang(item.code)}
                                             className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                                                 lang === item.code
-                                                    ? 'bg-amber-500/10 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 border border-amber-500/30'
-                                                    : 'hover:bg-gray-100 dark:hover:bg-gray-700/60 text-gray-700 dark:text-gray-300 border border-transparent'
+                                                    ? 'bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-300 border border-blue-200 dark:border-blue-700/60 shadow-xs font-bold'
+                                                    : 'hover:bg-gray-100 dark:hover:bg-slate-700/60 text-gray-700 dark:text-slate-300 border border-transparent'
                                             }`}
                                         >
                                             <div className="flex items-center gap-2">
@@ -291,7 +291,7 @@ export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics, wal
                                                 <span>{item.label}</span>
                                             </div>
                                             {lang === item.code && (
-                                                <svg className="w-4 h-4 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <svg className="w-4 h-4 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
                                                 </svg>
                                             )}

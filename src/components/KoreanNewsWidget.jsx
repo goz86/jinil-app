@@ -58,36 +58,36 @@ const KoreanNewsWidget = () => {
   }, []);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-5 mt-6 transition-colors duration-300">
+    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700/80 p-5 mt-6 transition-colors duration-300">
       <div className="flex items-center gap-3 mb-4">
-        <div className="p-2 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl">
+        <div className="p-2 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-xl">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
           </svg>
         </div>
-        <h3 className="font-bold text-gray-800 dark:text-white">{t('koreanNews')}</h3>
+        <h3 className="font-bold text-gray-800 dark:text-slate-100">{t('koreanNews')}</h3>
       </div>
 
       {loading ? (
-        <div className="text-sm text-gray-500 dark:text-gray-400 py-2">{t('loadingNews')}</div>
+        <div className="text-sm text-gray-500 dark:text-slate-400 py-2">{t('loadingNews')}</div>
       ) : error ? (
         <div className="text-sm text-red-500 py-2">Error loading news.</div>
       ) : news.length === 0 ? (
-        <div className="text-sm text-gray-500 dark:text-gray-400 py-2">No news available.</div>
+        <div className="text-sm text-gray-500 dark:text-slate-400 py-2">No news available.</div>
       ) : (
         <ul className="space-y-3">
           {news.map((item, index) => (
-            <li key={index} className="border-b border-gray-50 dark:border-gray-700 last:border-0 pb-2 last:pb-0">
+            <li key={index} className="border-b border-gray-50 dark:border-slate-700/60 last:border-0 pb-2 last:pb-0">
               <a
                 href={item.link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 line-clamp-2 transition-colors duration-200"
+                className="text-sm font-medium text-gray-700 dark:text-slate-200 hover:text-blue-600 dark:hover:text-blue-400 line-clamp-2 transition-colors duration-200"
                 title={item.title}
               >
                 {item.title}
               </a>
-              <div className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              <div className="text-xs text-gray-400 dark:text-slate-400 mt-1 font-medium">
                 {new Date(item.pubDate).toLocaleDateString()}
               </div>
             </li>

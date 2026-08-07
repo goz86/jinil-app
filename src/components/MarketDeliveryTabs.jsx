@@ -104,7 +104,7 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
     ];
 
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 transition-all duration-300 overflow-hidden">
+        <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700/80 transition-all duration-300 overflow-hidden">
             {/* Row 1: Market & Delivery (Inline) */}
             <div className="grid grid-cols-2">
                 {inlineTabs.map((tab) => (
@@ -116,28 +116,28 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
                                 setIsInTransitModalOpen(true);
                             }
                         }}
-                        className={`flex flex-col items-center justify-center gap-1.5 py-3 px-2 text-[12px] font-bold transition-all duration-300 border-b border-r last:border-r-0 border-gray-50 dark:border-gray-700 relative
+                        className={`flex flex-col items-center justify-center gap-1.5 py-3.5 px-2 text-[12px] font-bold transition-all duration-300 border-b border-r last:border-r-0 border-gray-100 dark:border-slate-700/80 relative
                             ${activeTab === tab.key
-                                ? 'text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/10'
-                                : 'text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300'
+                                ? 'text-blue-600 dark:text-blue-400 bg-blue-50/60 dark:bg-blue-950/40 font-black'
+                                : 'text-gray-500 dark:text-slate-300 hover:text-gray-800 dark:hover:text-white dark:hover:bg-slate-700/40'
                             }`}
                     >
                         {tab.icon}
                         <span>{tab.label}</span>
                         {activeTab === tab.key && (
-                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 rounded-full mx-8" />
+                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 rounded-full mx-8 shadow-xs" />
                         )}
                     </button>
                 ))}
             </div>
                 
             {/* Row 2: Clients, Inventory, Order Management & Label Print (Modals) */}
-            <div className="grid grid-cols-4 border-b border-gray-50 dark:border-gray-700">
+            <div className="grid grid-cols-4 border-b border-gray-100 dark:border-slate-700/80 bg-gray-50/50 dark:bg-slate-900/30">
                 {modalTabs.map((tab) => (
                     <button
                         key={tab.key}
                         onClick={tab.onClick}
-                        className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 text-[10px] font-bold text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-all duration-300 border-r last:border-r-0 border-gray-50 dark:border-gray-700"
+                        className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 text-[11px] font-bold text-gray-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-300 hover:bg-gray-100 dark:hover:bg-slate-700/60 transition-all duration-200 border-r last:border-r-0 border-gray-100 dark:border-slate-700/80"
                     >
                         {tab.icon}
                         <span className="whitespace-nowrap">{tab.label}</span>
@@ -146,7 +146,7 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
             </div>
 
             {/* Content for Inline Tabs */}
-            <div className="p-5 border-t border-gray-50 dark:border-gray-700">
+            <div className="p-5">
                 {activeTab === 'market' ? (
                     <MarketWidget />
                 ) : (

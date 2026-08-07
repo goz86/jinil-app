@@ -50,7 +50,7 @@ export default function AuthWidget({ user, onLogin, onLogout, email, setEmail, p
     const activeName = activeAcc?.alias || (user?.email || 'User').split('@')[0];
 
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-100 dark:border-gray-700 p-4 mb-4 flex flex-col gap-3">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700/80 p-4 mb-4 flex flex-col gap-3">
             {user ? (
                 <div className="flex flex-col gap-3">
                     <div className="flex items-center justify-between w-full">
@@ -73,7 +73,7 @@ export default function AuthWidget({ user, onLogin, onLogout, email, setEmail, p
                                             onKeyDown={(e) => e.key === 'Enter' && handleSaveAlias(user.email)}
                                             onBlur={() => handleSaveAlias(user.email)}
                                             autoFocus
-                                            className="w-20 px-1.5 py-0.5 text-xs font-bold border border-blue-400 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none"
+                                            className="w-20 px-1.5 py-0.5 text-xs font-bold border border-blue-400 rounded bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none"
                                         />
                                     </div>
                                 ) : (
@@ -82,7 +82,7 @@ export default function AuthWidget({ user, onLogin, onLogout, email, setEmail, p
                                         onClick={(e) => handleStartEdit(e, user.email, activeName)}
                                         title="클릭하여 계정 이름 수정"
                                     >
-                                        <span className="text-sm font-bold text-gray-800 dark:text-gray-100 truncate">
+                                        <span className="text-sm font-bold text-gray-800 dark:text-slate-100 truncate">
                                             {activeName}
                                         </span>
                                         <span className="text-[10px] text-gray-400 opacity-0 group-hover/name:opacity-100 transition-opacity">✏️</span>
@@ -102,11 +102,11 @@ export default function AuthWidget({ user, onLogin, onLogout, email, setEmail, p
                                     return (
                                         <div 
                                             key={acc.email} 
-                                            className="relative group flex items-center gap-1.5 px-2 py-1.5 bg-gray-50 hover:bg-gray-100 dark:bg-gray-700/50 dark:hover:bg-gray-600 rounded-lg cursor-pointer border border-transparent hover:border-gray-200 dark:hover:border-gray-500 transition-all shadow-sm"
+                                            className="relative group flex items-center gap-1.5 px-2 py-1.5 bg-gray-50 hover:bg-gray-100 dark:bg-slate-900/60 dark:hover:bg-slate-700/80 rounded-lg cursor-pointer border border-transparent dark:border-slate-700/50 hover:border-gray-200 dark:hover:border-slate-600 transition-all shadow-sm"
                                             onClick={() => !isEditingThis && onSwitchAccount(acc.email, atob(acc.p || ''))}
                                             title={`계정 전환: ${acc.email} (클릭하여 전환, ✏️ 버튼으로 이름 수정)`}
                                         >
-                                            <div className="w-5 h-5 rounded-full bg-blue-100 dark:bg-gray-800 flex items-center justify-center text-[10px] font-bold text-blue-600 dark:text-blue-400 shrink-0">
+                                            <div className="w-5 h-5 rounded-full bg-blue-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-bold text-blue-600 dark:text-blue-400 shrink-0">
                                                 {acc.email[0].toUpperCase()}
                                             </div>
 
@@ -119,10 +119,10 @@ export default function AuthWidget({ user, onLogin, onLogout, email, setEmail, p
                                                     onBlur={() => handleSaveAlias(acc.email)}
                                                     onClick={(e) => e.stopPropagation()}
                                                     autoFocus
-                                                    className="w-16 px-1 py-0.5 text-[11px] font-bold border border-blue-400 rounded bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:outline-none"
+                                                    className="w-16 px-1 py-0.5 text-[11px] font-bold border border-blue-400 rounded bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:outline-none"
                                                 />
                                             ) : (
-                                                <span className="text-[11px] font-semibold text-gray-600 dark:text-gray-300 max-w-[70px] truncate">
+                                                <span className="text-[11px] font-semibold text-gray-600 dark:text-slate-300 max-w-[70px] truncate">
                                                     {accName}
                                                 </span>
                                             )}
@@ -150,24 +150,24 @@ export default function AuthWidget({ user, onLogin, onLogout, email, setEmail, p
                     </div>
                     
                     {/* Bottom Actions */}
-                    <div className="border-t border-gray-100 dark:border-gray-700 pt-3 flex items-center justify-between">
+                    <div className="border-t border-gray-100 dark:border-slate-700/80 pt-3 flex items-center justify-between">
                         <button 
                             onClick={onLogout} 
-                            className="text-[11px] font-medium text-gray-500 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors flex items-center gap-1"
+                            className="text-[11px] font-medium text-gray-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-blue-400 transition-colors flex items-center gap-1"
                         >
                             <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" /></svg>
                             새 계정 추가
                         </button>
                         <button 
                             onClick={onLogout} 
-                            className="text-[11px] font-medium text-red-400 hover:text-red-600 transition-colors px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-900/20"
+                            className="text-[11px] font-medium text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 transition-colors px-2 py-1 rounded hover:bg-red-50 dark:hover:bg-red-950/40"
                         >
                             로그아웃
                         </button>
                     </div>
                 </div>
             ) : isExtension ? (
-                <button onClick={onLogin} className="flex items-center justify-center space-x-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 px-3 py-2.5 rounded-xl shadow-sm hover:shadow-md transition-shadow font-medium text-gray-700 dark:text-gray-200 text-sm w-full">
+                <button onClick={onLogin} className="flex items-center justify-center space-x-2 bg-white dark:bg-slate-700 border border-gray-200 dark:border-slate-600 px-3 py-2.5 rounded-xl shadow-sm hover:shadow-md transition-shadow font-medium text-gray-700 dark:text-slate-200 text-sm w-full">
                     <svg className="w-5 h-5" viewBox="0 0 24 24">
                         <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
                         <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
@@ -183,7 +183,7 @@ export default function AuthWidget({ user, onLogin, onLogout, email, setEmail, p
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="Email"
-                        className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors"
+                        className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-900/60 text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors"
                     />
                     <input
                         type="password"
@@ -191,7 +191,7 @@ export default function AuthWidget({ user, onLogin, onLogout, email, setEmail, p
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Password"
                         onKeyDown={(e) => e.key === 'Enter' && onEmailLogin()}
-                        className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors"
+                        className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-900/60 text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors"
                     />
                     <button
                         onClick={onEmailLogin}

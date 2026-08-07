@@ -66,16 +66,16 @@ export default function CalendarSidebar({ tasks, selectedDate, setSelectedDate }
     const dayNames = [t('sun'), t('mon'), t('tue'), t('wed'), t('thu'), t('fri'), t('sat')];
 
     return (
-        <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-700 p-6 flex flex-col h-fit sticky top-6 transition-colors duration-300">
+        <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700/80 p-6 flex flex-col h-fit sticky top-6 transition-colors duration-300">
             <div className="flex justify-between items-center mb-6">
-                <h2 className="text-xl font-bold text-gray-800 dark:text-white">{monthNames[month]} {year}</h2>
+                <h2 className="text-xl font-bold text-gray-800 dark:text-slate-100">{monthNames[month]} {year}</h2>
                 <div className="flex space-x-2">
-                    <button onClick={prevMonth} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors">
+                    <button onClick={prevMonth} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-500 dark:text-slate-300 transition-colors">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                         </svg>
                     </button>
-                    <button onClick={nextMonth} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 transition-colors">
+                    <button onClick={nextMonth} className="p-2 rounded-xl hover:bg-gray-100 dark:hover:bg-slate-700 text-gray-500 dark:text-slate-300 transition-colors">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                         </svg>
@@ -93,7 +93,7 @@ export default function CalendarSidebar({ tasks, selectedDate, setSelectedDate }
                             className={`text-xs font-bold py-2 ${
                                 isSun ? 'text-red-500 dark:text-red-400' :
                                 isSat ? 'text-blue-500 dark:text-blue-400' :
-                                'text-gray-400 dark:text-gray-500'
+                                'text-gray-400 dark:text-slate-400'
                             }`}
                         >
                             {d}
@@ -124,22 +124,22 @@ export default function CalendarSidebar({ tasks, selectedDate, setSelectedDate }
                     const hasOnlyCompleted = stats && stats.active === 0 && stats.total > 0;
                     const holidayName = holidays[dateStr];
 
-                    let dayStyle = 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 font-medium';
+                    let dayStyle = 'text-gray-700 dark:text-slate-200 hover:bg-gray-100 dark:hover:bg-slate-700/60 font-medium';
 
                     if (isSelected) {
-                        dayStyle = 'bg-blue-600 text-white font-black shadow-lg shadow-blue-500/40 ring-2 ring-blue-400 dark:ring-blue-300';
+                        dayStyle = 'bg-blue-600 text-white font-black shadow-lg shadow-blue-500/30 ring-2 ring-blue-400 dark:ring-blue-400';
                     } else if (isToday) {
                         if (hasActiveTasks) {
-                            dayStyle = 'bg-red-100 dark:bg-red-950/60 text-red-700 dark:text-red-200 font-extrabold border-2 border-blue-600 dark:border-blue-400 shadow-md ring-2 ring-blue-500/50';
+                            dayStyle = 'bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-200 font-extrabold border-2 border-blue-500 dark:border-blue-400 shadow-sm';
                         } else if (hasOnlyCompleted) {
-                            dayStyle = 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-200 font-extrabold border-2 border-blue-600 dark:border-blue-400 shadow-md ring-2 ring-blue-500/50';
+                            dayStyle = 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-200 font-extrabold border-2 border-blue-500 dark:border-blue-400 shadow-sm';
                         } else {
-                            dayStyle = 'bg-blue-500/25 dark:bg-blue-500/40 text-blue-800 dark:text-blue-100 font-black border-2 border-blue-600 dark:border-blue-400 shadow-md shadow-blue-500/30 ring-2 ring-blue-400/40';
+                            dayStyle = 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-200 font-black border-2 border-blue-500 dark:border-blue-400 shadow-sm';
                         }
                     } else if (hasActiveTasks) {
-                        dayStyle = 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-300 font-bold border border-red-200 dark:border-red-800/60';
+                        dayStyle = 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-300 font-bold border border-red-200 dark:border-red-800/50';
                     } else if (hasOnlyCompleted) {
-                        dayStyle = 'bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800/60';
+                        dayStyle = 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-300 font-bold border border-emerald-200 dark:border-emerald-800/50';
                     } else if (isSunday || holidayName) {
                         dayStyle = 'text-red-500 dark:text-red-400 font-bold hover:bg-red-50 dark:hover:bg-red-950/30';
                     } else if (isSaturday) {
@@ -158,7 +158,7 @@ export default function CalendarSidebar({ tasks, selectedDate, setSelectedDate }
                         >
                             {/* Today Pulse Badge Dot */}
                             {isToday && (
-                                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-blue-600 dark:bg-blue-400 ring-2 ring-white dark:ring-gray-800 shadow-md animate-pulse"></span>
+                                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-blue-600 dark:bg-blue-400 ring-2 ring-white dark:ring-slate-800 shadow-md animate-pulse"></span>
                             )}
 
                             {holidayName && (
@@ -184,27 +184,27 @@ export default function CalendarSidebar({ tasks, selectedDate, setSelectedDate }
                 })}
             </div>
 
-            <div className="mt-8 pt-6 border-t border-gray-100 dark:border-gray-700 space-y-3">
-                <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">{t('calendarLegend')}</h3>
-                <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+            <div className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-700/80 space-y-3">
+                <h3 className="text-sm font-semibold text-gray-800 dark:text-slate-200 mb-2">{t('calendarLegend')}</h3>
+                <div className="flex items-center text-xs text-gray-500 dark:text-slate-300">
                     <div className="w-3.5 h-3.5 rounded-full bg-blue-500/20 border-2 border-blue-600 dark:border-blue-400 mr-2 flex items-center justify-center">
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-600"></div>
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400"></div>
                     </div>
                     <span className="font-bold text-blue-700 dark:text-blue-300">오늘 (Today)</span>
                 </div>
-                <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
-                    <div className="w-3.5 h-3.5 rounded-full bg-red-100 dark:bg-red-900/40 border border-red-300 dark:border-red-700 mr-2 flex items-center justify-center">
-                        <div className="w-1.5 h-1.5 rounded-full bg-red-500"></div>
+                <div className="flex items-center text-xs text-gray-500 dark:text-slate-300">
+                    <div className="w-3.5 h-3.5 rounded-full bg-red-100 dark:bg-red-950/50 border border-red-300 dark:border-red-700/60 mr-2 flex items-center justify-center">
+                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 dark:bg-red-400"></div>
                     </div>
                     {t('hasActiveTasks')}
                 </div>
-                <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
-                    <div className="w-3.5 h-3.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 border border-emerald-300 dark:border-emerald-700 mr-2 flex items-center justify-center">
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                <div className="flex items-center text-xs text-gray-500 dark:text-slate-300">
+                    <div className="w-3.5 h-3.5 rounded-full bg-emerald-100 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-700/60 mr-2 flex items-center justify-center">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400"></div>
                     </div>
                     {t('hasCompletedTasks')}
                 </div>
-                <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+                <div className="flex items-center text-xs text-gray-500 dark:text-slate-300">
                     <div className="w-3.5 h-3.5 rounded-full bg-blue-600 mr-2"></div>
                     {t('selectedDate')}
                 </div>

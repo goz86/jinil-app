@@ -191,31 +191,31 @@ export default function StockTicker() {
 
     if (loading && stocks.length === 0) {
         return (
-            <div className="w-full bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 h-10 flex items-center px-8 overflow-hidden marquee-container z-50">
-                <span className="text-xs font-bold text-gray-400 dark:text-gray-500 animate-pulse uppercase tracking-tighter">Đang tải dữ liệu thị trường (Loading Market Data)...</span>
+            <div className="w-full bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 h-10 flex items-center px-8 overflow-hidden marquee-container z-50">
+                <span className="text-xs font-bold text-gray-400 dark:text-slate-400 animate-pulse uppercase tracking-tighter">Đang tải dữ liệu thị trường (Loading Market Data)...</span>
             </div>
         );
     }
 
     return (
         <>
-            <div className="w-full bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700 h-10 flex items-center overflow-hidden marquee-container z-50">
+            <div className="w-full bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 h-10 flex items-center overflow-hidden marquee-container z-50">
                 <div className="animate-marquee">
                     {stocks.concat(stocks).map((stock, idx) => (
                         <div 
                             key={`${stock.symbol}-${idx}`} 
                             onClick={() => handleStockClick(stock)}
-                            className="flex items-center px-8 border-r border-gray-100 dark:border-gray-700 h-10 shrink-0 cursor-pointer hover:bg-blue-50/70 dark:hover:bg-gray-700/60 transition-colors group"
+                            className="flex items-center px-8 border-r border-gray-100 dark:border-slate-800 h-10 shrink-0 cursor-pointer hover:bg-blue-50/70 dark:hover:bg-slate-800/80 transition-colors group"
                             title={`${stock.name} 클릭하여 실시간 차트 보기`}
                         >
-                            <span className="text-[13px] font-extrabold text-gray-700 dark:text-gray-200 mr-2.5 tracking-tight whitespace-nowrap group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            <span className="text-[13px] font-extrabold text-gray-700 dark:text-slate-300 mr-2.5 tracking-tight whitespace-nowrap group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                                 {stock.name}
                             </span>
-                            <span className="text-[14px] font-black text-gray-900 dark:text-white mr-2.5 whitespace-nowrap">
+                            <span className="text-[14px] font-black text-gray-900 dark:text-slate-100 mr-2.5 whitespace-nowrap">
                                 {formatCurrency(stock.price, stock.symbol)} 
-                                <span className="text-[10px] text-gray-400 ml-1 font-semibold">KRW</span>
+                                <span className="text-[10px] text-gray-400 dark:text-slate-500 ml-1 font-semibold">KRW</span>
                             </span>
-                            <span className={`text-[13px] font-extrabold ${stock.change >= 0 ? 'text-red-500' : 'text-blue-500'} whitespace-nowrap`}>
+                            <span className={`text-[13px] font-extrabold ${stock.change >= 0 ? 'text-red-500 dark:text-rose-400' : 'text-blue-500 dark:text-sky-400'} whitespace-nowrap`}>
                                 {stock.change >= 0 ? '▲' : '▼'} {Math.abs(stock.change).toFixed(2)}%
                             </span>
                         </div>

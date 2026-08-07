@@ -35,25 +35,25 @@ export default function AnalyticsModal({ isOpen, onClose, tasks = [] }) {
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm transition-opacity duration-300">
-            <div className="bg-white dark:bg-gray-800 rounded-3xl shadow-2xl w-[90%] max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                <div className="p-6 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/50">
+            <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-[90%] max-w-2xl max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200 border border-gray-100 dark:border-slate-700/80">
+                <div className="p-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-900/80">
                     <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400">
                         통계 및 보고서
                     </h2>
                     <button
                         onClick={onClose}
-                        className="p-2 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-full transition-colors"
+                        className="p-2 hover:bg-gray-200 dark:hover:bg-slate-800 rounded-full transition-colors cursor-pointer"
                     >
-                        <svg className="w-6 h-6 text-gray-500 hover:text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="w-6 h-6 text-gray-500 dark:text-slate-400 hover:text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
                 
-                <div className="p-6 overflow-y-auto space-y-6 flex-1">
+                <div className="p-6 overflow-y-auto space-y-6 flex-1 text-gray-800 dark:text-slate-100">
                     {/* Summary Cards */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="bg-blue-50 dark:bg-blue-900/30 p-6 rounded-2xl border border-blue-100 dark:border-blue-800">
+                        <div className="bg-blue-50 dark:bg-blue-950/40 p-6 rounded-2xl border border-blue-100 dark:border-blue-800/50">
                             <h3 className="text-blue-800 dark:text-blue-300 text-sm font-semibold mb-2">최근 7일 전체 작업</h3>
                             <p className="text-4xl font-bold text-blue-600 dark:text-blue-400">
                                 {chartData.reduce((acc, curr) => acc + (curr['전체 작업'] || 0), 0)}

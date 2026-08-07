@@ -798,13 +798,13 @@ function App() {
           />
 
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-bold text-gray-800 dark:text-gray-200">
+            <h2 className="text-xl font-bold text-gray-800 dark:text-slate-100">
               {selectedDate && !searchTerm ? `${t('tasksForDate')} ${selectedDate.split('-').reverse().join('/')} ` : searchTerm ? t('searchPlaceholder') + ` "${searchTerm}"` : t('allTasksTitle')}
             </h2>
             {selectedDate && !searchTerm && (
               <button
                 onClick={() => setSelectedDate(null)}
-                className="text-sm font-medium text-blue-600 hover:text-blue-800 bg-blue-50 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:text-blue-300 px-3 py-1.5 rounded-lg"
+                className="text-sm font-bold text-blue-600 hover:text-blue-800 bg-blue-50 dark:bg-blue-950/40 dark:text-blue-300 dark:hover:text-blue-200 border border-transparent dark:border-blue-800/50 px-3 py-1.5 rounded-lg cursor-pointer"
               >
                 {t('viewAllDates')}
               </button>
@@ -822,11 +822,11 @@ function App() {
               title={isTasksHidden ? "작업 목록 보기" : "작업 목록 숨기기"}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-all duration-200 whitespace-nowrap cursor-pointer ${
                 isTasksHidden
-                  ? 'bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 shadow-sm'
-                  : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 hover:border-gray-300'
+                  ? 'bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 shadow-xs font-bold'
+                  : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 hover:border-gray-300 dark:hover:border-slate-600'
               }`}
             >
-              <div className={`w-5 h-5 rounded-lg flex items-center justify-center text-[10px] ${isTasksHidden ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-xs' : 'bg-gray-100 dark:bg-gray-700 text-gray-500'}`}>
+              <div className={`w-5 h-5 rounded-lg flex items-center justify-center text-[10px] ${isTasksHidden ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-xs' : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-300'}`}>
                 {isTasksHidden ? (
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
@@ -842,10 +842,10 @@ function App() {
             <button
               onClick={() => setSortByPriority(prev => !prev)}
               title="우선순위 정렬"
-              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all duration-200 whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold border transition-all duration-200 whitespace-nowrap cursor-pointer ${
                 sortByPriority
-                  ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 shadow-sm'
-                  : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:border-gray-300'
+                  ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-300 shadow-xs font-bold'
+                  : 'bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700 text-gray-600 dark:text-slate-300 hover:border-gray-300 dark:hover:border-slate-600'
               }`}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" /></svg>
