@@ -131,16 +131,34 @@ export default function InvoiceModal({ isOpen, onClose }) {
                             거래명세서 발행
                         </h2>
                     </div>
-                    <button
-                        onClick={onClose}
-                        className="group p-2.5 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-all duration-200 cursor-pointer"
-                        title="닫기"
-                    >
-                        <svg className="w-6 h-6 text-gray-400 dark:text-slate-400 group-hover:text-red-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <line x1="18" y1="6" x2="6" y2="18" strokeWidth="2.5" strokeLinecap="round" />
-                            <line x1="6" y1="6" x2="18" y2="18" strokeWidth="2.5" strokeLinecap="round" />
-                        </svg>
-                    </button>
+                    <div className="flex items-center gap-3">
+                        {/* History Button (발행 내역) */}
+                        <button
+                            onClick={() => {
+                                if (iframeRef.current && iframeRef.current.contentWindow) {
+                                    iframeRef.current.contentWindow.postMessage({ type: 'OPEN_HISTORY_MODAL' }, '*');
+                                }
+                            }}
+                            className="flex items-center gap-2 px-4 py-2 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-600 dark:text-blue-400 rounded-xl text-xs font-bold transition-all border border-blue-200/60 dark:border-blue-800/60 cursor-pointer shadow-xs"
+                            title="발행 내역 목록 보기"
+                        >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span>발행 내역</span>
+                        </button>
+
+                        <button
+                            onClick={onClose}
+                            className="group p-2.5 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-all duration-200 cursor-pointer"
+                            title="닫기"
+                        >
+                            <svg className="w-6 h-6 text-gray-400 dark:text-slate-400 group-hover:text-red-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <line x1="18" y1="6" x2="6" y2="18" strokeWidth="2.5" strokeLinecap="round" />
+                                <line x1="6" y1="6" x2="18" y2="18" strokeWidth="2.5" strokeLinecap="round" />
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 {/* Modal Body */}
