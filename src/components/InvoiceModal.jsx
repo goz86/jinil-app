@@ -1,7 +1,82 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import invoiceHtml from '../../public/invoice-app/index.html?raw';
+import { supabase } from '../lib/supabase';
+import { db } from '../firebase';
+import { collection, getDocs } from 'firebase/firestore';
 
 export default function InvoiceModal({ isOpen, onClose }) {
+    const iframeRef = useRef(null);
+
+    useEffect(() => {
+        if (!isOpen) return;
+
+        const sendClientsToIframe = async () => {
+            let combinedClients = [];
+            const namesSet = new Set();
+
+            // 1. Supabase partners
+            try {
+                const { data: partnersData } = await supabase.from('partners').select('*');
+                if (partnersData) {
+                    partnersData.forEach(p => {
+                        const name = (p.company_name || p.name || '').trim();
+                        if (name && !namesSet.has(name.toLowerCase())) {
+                            namesSet.add(name.toLowerCase());
+                            combinedClients.push({
+                                name: name,
+                                rep: p.representative_name || p.contact_person || '',
+                                tel: p.phone || p.tel || '',
+                                addr: p.address || p.default_address || '',
+                                biz: p.business_number || p.biz || '',
+                                bizType: p.biz_type || '',
+                                itemType: p.item_type || ''
+                            });
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error("Supabase partners fetch error:", e);
+            }
+
+            // 2. Firestore clients
+            try {
+                const querySnapshot = await getDocs(collection(db, 'clients'));
+                querySnapshot.forEach(doc => {
+                    const data = doc.data();
+                    const name = (data.name || '').trim();
+                    if (name && !namesSet.has(name.toLowerCase())) {
+                        namesSet.add(name.toLowerCase());
+                        combinedClients.push({
+                            name: name,
+                            rep: data.representative || data.contactName || '',
+                            tel: data.phone || '',
+                            addr: data.address || '',
+                            biz: data.biz || '',
+                            bizType: data.bizType || '',
+                            itemType: data.itemType || ''
+                        });
+                    }
+                });
+            } catch (e) {
+                console.error("Firestore clients fetch error:", e);
+            }
+
+            // 3. Send message to iframe
+            if (iframeRef.current && iframeRef.current.contentWindow) {
+                iframeRef.current.contentWindow.postMessage({
+                    type: 'SET_CLIENT_ADDRESS_BOOK',
+                    clients: combinedClients
+                }, '*');
+            }
+        };
+
+        const timer = setTimeout(() => {
+            void sendClientsToIframe();
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     return (
@@ -34,6 +109,7 @@ export default function InvoiceModal({ isOpen, onClose }) {
                 {/* Modal Body */}
                 <div className="flex-1 w-full h-full bg-slate-50 dark:bg-slate-900 p-0 overflow-hidden">
                     <iframe
+                        ref={iframeRef}
                         srcDoc={invoiceHtml}
                         title="거래명세서 발행"
                         className="w-full h-full border-none"

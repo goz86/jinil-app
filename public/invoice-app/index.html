@@ -539,8 +539,8 @@
           <input type="date" id="invDate" onchange="renderStatement()">
         </div>
         <div class="form-group" style="position: relative;">
-          <label for="toName">수신자 상호 <span style="font-size: 11px; color: var(--accent-blue); font-weight: 600;">🔍 거래처 주소록 검색</span></label>
-          <input type="text" id="toName" placeholder="거래처명 입력 (자동 gợi ý)" autocomplete="off" oninput="handleClientSearch(this.value); renderStatement();" onfocus="handleClientSearch(this.value)">
+          <label for="toName">수신자 상호 <span style="font-size: 11px; color: var(--accent-blue); font-weight: 600;">(거래처 검색)</span></label>
+          <input type="text" id="toName" placeholder="거래처명 입력" autocomplete="off" oninput="handleClientSearch(this.value); renderStatement();" onfocus="handleClientSearch(this.value)">
           <div id="clientAutocompleteDropdown" class="autocomplete-dropdown" style="display: none;"></div>
         </div>
         <div class="form-group">
@@ -1507,6 +1507,21 @@
     localStorage.setItem('jinil_client_address_book', JSON.stringify(clientAddressBook));
   }
 
+  // Lắng nghe dữ liệu danh sách 거래처 từ React Parent Component (InvoiceModal)
+  window.addEventListener('message', (event) => {
+    if (event.data && event.data.type === 'SET_CLIENT_ADDRESS_BOOK' && Array.isArray(event.data.clients)) {
+      event.data.clients.forEach(item => {
+        const name = (item.name || '').trim();
+        if (!name) return;
+        if (!clientAddressBook.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+          clientAddressBook.push(item);
+        }
+      });
+      const inputVal = document.getElementById('toName').value;
+      if (inputVal) handleClientSearch(inputVal);
+    }
+  });
+
   // Tìm kiếm 거래처 khi người dùng gõ vào ô '수신자 상호'
   function handleClientSearch(val) {
     const dropdown = document.getElementById('clientAutocompleteDropdown');
@@ -1531,12 +1546,12 @@
     dropdown.innerHTML = matches.map(c => `
       <div class="autocomplete-item" onclick="selectClient('${esc(c.name)}', '${esc(c.rep || '')}', '${esc(c.tel || '')}', '${esc(c.addr || '')}', '${esc(c.biz || '')}', '${esc(c.bizType || '')}', '${esc(c.itemType || '')}')">
         <div class="comp-title">
-          <span>🏢 ${esc(c.name)}</span>
-          <span style="font-size: 10px; color: var(--accent-blue); font-weight: 500;">선택 ↵</span>
+          <span>${esc(c.name)}</span>
+          <span style="font-size: 11px; color: var(--accent-blue); font-weight: 600;">선택</span>
         </div>
         <div class="comp-info">
-          ${c.rep ? '👤 대표: ' + esc(c.rep) : ''} ${c.tel ? ' | 📞 Tel: ' + esc(c.tel) : ''}
-          ${c.addr ? ' | 📍 ' + esc(c.addr) : ''}
+          ${c.rep ? '대표: ' + esc(c.rep) : ''} ${c.tel ? ' | Tel: ' + esc(c.tel) : ''}
+          ${c.addr ? ' | 주소: ' + esc(c.addr) : ''}
         </div>
       </div>
     `).join('');
@@ -1556,7 +1571,7 @@
 
     document.getElementById('clientAutocompleteDropdown').style.display = 'none';
     renderStatement();
-    showToast(`'${name}' 거래처 정보가 자동 입력되었습니다! ✨`);
+    showToast(`'${name}' 거래처 정보가 입력되었습니다.`);
   }
 
   // Tự động đóng dropdown khi click ra ngoài
