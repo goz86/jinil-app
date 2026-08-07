@@ -250,6 +250,54 @@
       background: #fee2e2;
     }
 
+    /* Client Address Book Autocomplete Dropdown */
+    .autocomplete-dropdown {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+      background: #ffffff;
+      border: 1.5px solid var(--accent-blue);
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(37, 99, 235, 0.18);
+      max-height: 240px;
+      overflow-y: auto;
+      margin-top: 4px;
+    }
+
+    .autocomplete-item {
+      padding: 10px 14px;
+      cursor: pointer;
+      border-bottom: 1px solid var(--slate-100);
+      transition: all 0.15s ease;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .autocomplete-item:last-child {
+      border-bottom: none;
+    }
+
+    .autocomplete-item:hover {
+      background: #eff6ff;
+    }
+
+    .autocomplete-item .comp-title {
+      font-weight: 700;
+      font-size: 13.5px;
+      color: var(--accent-blue);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .autocomplete-item .comp-info {
+      font-size: 11.5px;
+      color: var(--slate-600);
+    }
+
     /* Summary Row */
     .summary-section {
       display: grid;
@@ -490,9 +538,10 @@
           <label for="invDate">발행일</label>
           <input type="date" id="invDate" onchange="renderStatement()">
         </div>
-        <div class="form-group">
-          <label for="toName">수신자 상호</label>
-          <input type="text" id="toName" placeholder="거래처명" oninput="renderStatement()">
+        <div class="form-group" style="position: relative;">
+          <label for="toName">수신자 상호 <span style="font-size: 11px; color: var(--accent-blue); font-weight: 600;">🔍 거래처 주소록 검색</span></label>
+          <input type="text" id="toName" placeholder="거래처명 입력 (자동 gợi ý)" autocomplete="off" oninput="handleClientSearch(this.value); renderStatement();" onfocus="handleClientSearch(this.value)">
+          <div id="clientAutocompleteDropdown" class="autocomplete-dropdown" style="display: none;"></div>
         </div>
         <div class="form-group">
           <label for="toRep">대표자</label>
@@ -656,6 +705,9 @@
 
     // Khôi phục thông tin 공급자 từ LocalStorage nếu có
     loadSupplierData();
+
+    // Tải danh sách 거래처 주소록 để tự động gợi ý
+    loadClientAddressBook();
 
     // Render bảng 품목 và xem trước 거래명세서
     renderItemTable();
@@ -1403,6 +1455,118 @@
       showToast('PDF 저장 실패');
     }
   }
+
+  // Danh sách 거래처 주소록 cache & auto-search
+  let clientAddressBook = [
+    { name: '진일 라벨', rep: '홍성모', tel: '02-2266-2826', addr: '서울시 중구 주교동 19-1 방산시장 A동 3/221호', biz: '104-06-54611', bizType: '의류부자재', itemType: '제조,도매' }
+  ];
+
+  // Tải danh sách 거래처 주소록 (từ LocalStorage & Supabase)
+  async function loadClientAddressBook() {
+    let clients = [...clientAddressBook];
+    
+    // 1. Tải từ LocalStorage jinil_client_address_book
+    const saved = localStorage.getItem('jinil_client_address_book');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          parsed.forEach(item => {
+            const name = (item.name || item.company_name || '').trim();
+            if (!name) return;
+            if (!clients.some(c => c.name.toLowerCase() === name.toLowerCase())) {
+              clients.push({
+                name: name,
+                rep: item.rep || item.representative || item.representative_name || item.contactName || '',
+                tel: item.tel || item.phone || '',
+                addr: item.addr || item.address || '',
+                biz: item.biz || item.business_number || '',
+                bizType: item.bizType || item.biz_type || '',
+                itemType: item.itemType || item.item_type || ''
+              });
+            }
+          });
+        }
+      } catch (e) {}
+    }
+
+    clientAddressBook = clients;
+  }
+
+  // Lưu 거래처 mới vào 주소록
+  function saveClientToAddressBook(clientObj) {
+    if (!clientObj || !clientObj.name || !clientObj.name.trim()) return;
+    const cleanName = clientObj.name.trim();
+
+    const existingIdx = clientAddressBook.findIndex(c => c.name.toLowerCase() === cleanName.toLowerCase());
+    if (existingIdx >= 0) {
+      clientAddressBook[existingIdx] = { ...clientAddressBook[existingIdx], ...clientObj };
+    } else {
+      clientAddressBook.push(clientObj);
+    }
+    localStorage.setItem('jinil_client_address_book', JSON.stringify(clientAddressBook));
+  }
+
+  // Tìm kiếm 거래처 khi người dùng gõ vào ô '수신자 상호'
+  function handleClientSearch(val) {
+    const dropdown = document.getElementById('clientAutocompleteDropdown');
+    if (!val || !val.trim()) {
+      dropdown.style.display = 'none';
+      return;
+    }
+
+    const query = val.trim().toLowerCase();
+    const matches = clientAddressBook.filter(c => 
+      (c.name && c.name.toLowerCase().includes(query)) ||
+      (c.rep && c.rep.toLowerCase().includes(query)) ||
+      (c.addr && c.addr.toLowerCase().includes(query)) ||
+      (c.tel && c.tel.toLowerCase().includes(query))
+    );
+
+    if (matches.length === 0) {
+      dropdown.style.display = 'none';
+      return;
+    }
+
+    dropdown.innerHTML = matches.map(c => `
+      <div class="autocomplete-item" onclick="selectClient('${esc(c.name)}', '${esc(c.rep || '')}', '${esc(c.tel || '')}', '${esc(c.addr || '')}', '${esc(c.biz || '')}', '${esc(c.bizType || '')}', '${esc(c.itemType || '')}')">
+        <div class="comp-title">
+          <span>🏢 ${esc(c.name)}</span>
+          <span style="font-size: 10px; color: var(--accent-blue); font-weight: 500;">선택 ↵</span>
+        </div>
+        <div class="comp-info">
+          ${c.rep ? '👤 대표: ' + esc(c.rep) : ''} ${c.tel ? ' | 📞 Tel: ' + esc(c.tel) : ''}
+          ${c.addr ? ' | 📍 ' + esc(c.addr) : ''}
+        </div>
+      </div>
+    `).join('');
+
+    dropdown.style.display = 'block';
+  }
+
+  // Khi chọn 1 거래처 từ danh sách gợi ý
+  function selectClient(name, rep, tel, addr, biz, bizType, itemType) {
+    document.getElementById('toName').value = name;
+    document.getElementById('toRep').value = rep;
+    document.getElementById('toTel').value = tel;
+    document.getElementById('toAddr').value = addr;
+    document.getElementById('toBiz').value = biz;
+    document.getElementById('toBizType').value = bizType;
+    document.getElementById('toItemType').value = itemType;
+
+    document.getElementById('clientAutocompleteDropdown').style.display = 'none';
+    renderStatement();
+    showToast(`'${name}' 거래처 정보가 자동 입력되었습니다! ✨`);
+  }
+
+  // Tự động đóng dropdown khi click ra ngoài
+  document.addEventListener('click', (e) => {
+    const dropdown = document.getElementById('clientAutocompleteDropdown');
+    const input = document.getElementById('toName');
+    if (dropdown && input && !dropdown.contains(e.target) && e.target !== input) {
+      dropdown.style.display = 'none';
+    }
+  });
 </script>
 
 </body>
