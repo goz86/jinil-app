@@ -131,7 +131,7 @@ export default function StockTicker() {
     const fetchData = async () => {
         try {
             const results = [];
-            const chunkSize = 15; // Phân vùng 15 mã mỗi lần tải
+            const chunkSize = 15; // 15개 종목씩 청크 분할
             
             for (let i = 0; i < SYMBOLS.length; i += chunkSize) {
                 const chunk = SYMBOLS.slice(i, i + chunkSize);
@@ -171,7 +171,7 @@ export default function StockTicker() {
                 const chunkResults = await Promise.all(chunkPromises);
                 chunkResults.forEach(r => { if (r) results.push(r); });
                 
-                // Nghỉ 500ms giữa các chunk để tránh bị block IP
+                // IP 차단 방지를 위해 청크 간 500ms 대기
                 await new Promise(r => setTimeout(r, 500));
             }
             
@@ -192,7 +192,7 @@ export default function StockTicker() {
     if (loading && stocks.length === 0) {
         return (
             <div className="w-full bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 h-10 flex items-center px-8 overflow-hidden marquee-container z-50">
-                <span className="text-xs font-bold text-gray-400 dark:text-slate-400 animate-pulse uppercase tracking-tighter">Đang tải dữ liệu thị trường (Loading Market Data)...</span>
+                <span className="text-xs font-bold text-gray-400 dark:text-slate-400 animate-pulse uppercase tracking-tighter">증시 및 금융 시장 데이터 로딩 중...</span>
             </div>
         );
     }

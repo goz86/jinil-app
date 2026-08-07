@@ -618,7 +618,7 @@ export default function MarketWidget() {
                 onClose={() => setIsChartModalOpen(false)}
             />
 
-            <p className="text-[10px] text-gray-400 dark:text-gray-500 text-center mt-4">{t('updatedAt')} {new Date().toLocaleTimeString()} (Độ trễ ~1p)</p>
+            <p className="text-[10px] text-gray-400 dark:text-slate-400 text-center mt-4">{t('updatedAt')} {new Date().toLocaleTimeString()} (지연 ~1분)</p>
         </div>
     );
 }
