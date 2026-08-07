@@ -54,7 +54,7 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
                 tracking_number: trackingNum,
                 courier_name: '롯데택배',
                 driver_name: getDriverInfo(s),
-                tracking_status_label: s.tracking_status_label || '배송 중',
+                tracking_status_label: s.tracking_status_label || '배송 시작',
                 source: 'supabase',
               });
             }
@@ -77,7 +77,7 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
         // Avoid duplicate tracking numbers if already in Supabase
         const exists = combined.some((c) => c.tracking_number === trackingNum);
         if (!exists) {
-          const status = item.tracking_status_label || (item.is_delivered ? '배달완료' : '배송 중');
+          const status = item.tracking_status_label || (item.is_delivered ? '배달완료' : '배송 시작');
           if (status === '배달완료') return;
 
           let dateStr = '-';
@@ -228,7 +228,7 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
 
     const courier = '롯데택배';
     const driver = getDriverInfo(shipment);
-    const status = shipment.tracking_status_label || shipment.tracking_status || '배송 중';
+    const status = shipment.tracking_status_label || shipment.tracking_status || '배송 시작';
     const pickupDate = shipment.shipment_date || '-';
     const trackingNo = shipment.tracking_number || '';
 
@@ -367,7 +367,7 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
                       </td>
                       <td className="py-3 px-4">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
-                          {s.tracking_status_label || s.tracking_status || '배송 중'}
+                          {s.tracking_status_label || s.tracking_status || '배송 시작'}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-center">
