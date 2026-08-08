@@ -905,7 +905,7 @@ export default function MiniWidget() {
                                 currentTheme.id === 'kakao-yellow' 
                                     ? 'bg-[#191919] text-[#FEE500] hover:bg-[#2e2e2e]' 
                                     : currentTheme.isLight
-                                        ? 'bg-slate-900 text-white hover:bg-slate-800'
+                                        ? 'bg-blue-600 text-white hover:bg-blue-500'
                                         : 'bg-blue-600 text-white hover:bg-blue-500'
                             }`}
                         >

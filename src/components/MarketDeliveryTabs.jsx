@@ -116,7 +116,7 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
     ];
 
     return (
-        <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700/80 transition-all duration-300 overflow-hidden">
+        <div className="backdrop-blur-md bg-white/75 dark:bg-slate-800/75 rounded-3xl shadow-sm border border-white/80 dark:border-slate-700/70 transition-all duration-300 overflow-hidden">
             {/* Row 1: Market, Delivery & Invoice (Inline) */}
             <div className="grid grid-cols-3">
                 {inlineTabs.map((tab) => (

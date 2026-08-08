@@ -67,7 +67,7 @@ export default function CalendarSidebar({ tasks, selectedDate, setSelectedDate }
     const dayNames = [t('sun'), t('mon'), t('tue'), t('wed'), t('thu'), t('fri'), t('sat')];
 
     return (
-        <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-sm border border-gray-100 dark:border-slate-700/80 p-6 flex flex-col h-fit sticky top-6 transition-colors duration-300">
+        <div className="backdrop-blur-md bg-white/75 dark:bg-slate-800/75 rounded-3xl shadow-sm border border-white/80 dark:border-slate-700/70 p-6 flex flex-col h-fit sticky top-6 transition-all duration-300">
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-gray-800 dark:text-slate-100">{monthNames[month]} {year}</h2>
                 <div className="flex space-x-2">

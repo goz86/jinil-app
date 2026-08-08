@@ -50,7 +50,7 @@ export default function AuthWidget({ user, onLogin, onLogout, email, setEmail, p
     const activeName = activeAcc?.alias || (user?.email || 'User').split('@')[0];
 
     return (
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700/80 p-4 mb-4 flex flex-col gap-3">
+        <div className="backdrop-blur-md bg-white/70 dark:bg-slate-800/70 rounded-2xl shadow-sm border border-white/80 dark:border-slate-700/70 p-4 mb-4 flex flex-col gap-3">
             {user ? (
                 <div className="flex flex-col gap-3">
                     <div className="flex items-center justify-between w-full">
@@ -177,30 +177,32 @@ export default function AuthWidget({ user, onLogin, onLogout, email, setEmail, p
                     <span>{t('loginGoogle')}</span>
                 </button>
             ) : (
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-col gap-2.5">
                     <input
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="Email"
-                        className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-900/60 text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors"
+                        placeholder={t('email') || "이메일 주소"}
+                        autoComplete="off"
+                        className="w-full px-3.5 py-2.5 text-xs font-medium border border-slate-200/80 dark:border-slate-700/80 rounded-xl bg-white/70 dark:bg-slate-900/70 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all placeholder:text-slate-400"
                     />
                     <input
                         type="password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Password"
+                        placeholder={t('password') || "비밀번호"}
+                        autoComplete="off"
                         onKeyDown={(e) => e.key === 'Enter' && onEmailLogin()}
-                        className="w-full px-3 py-2 text-sm border border-gray-200 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-900/60 text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-colors"
+                        className="w-full px-3.5 py-2.5 text-xs font-medium border border-slate-200/80 dark:border-slate-700/80 rounded-xl bg-white/70 dark:bg-slate-900/70 text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all placeholder:text-slate-400"
                     />
                     <button
                         onClick={onEmailLogin}
                         disabled={loginLoading}
-                        className="w-full px-3 py-2 mt-1 text-sm font-semibold bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors disabled:opacity-50"
+                        className="w-full px-4 py-2.5 mt-1 text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl shadow-sm transition-all duration-200 active:scale-[0.99] disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer"
                     >
-                        {loginLoading ? t('loadingShort') : t('login')}
+                        <span>{loginLoading ? t('loadingShort') : (t('login') || '로그인')}</span>
                     </button>
-                    {loginError && <p className="text-xs text-red-500 text-center mt-1">{loginError}</p>}
+                    {loginError && <p className="text-xs text-red-500 font-semibold text-center mt-1">{loginError}</p>}
                 </div>
             )}
         </div>

@@ -191,7 +191,7 @@ export default function StockTicker() {
 
     if (loading && stocks.length === 0) {
         return (
-            <div className="w-full bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 h-10 flex items-center px-8 overflow-hidden marquee-container z-50">
+            <div className="w-full backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-b border-slate-200/60 dark:border-slate-800/60 h-10 flex items-center px-8 overflow-hidden marquee-container z-50 shadow-2xs">
                 <span className="text-xs font-bold text-gray-400 dark:text-slate-400 animate-pulse uppercase tracking-tighter">증시 및 금융 시장 데이터 로딩 중...</span>
             </div>
         );
@@ -199,7 +199,7 @@ export default function StockTicker() {
 
     return (
         <>
-            <div className="w-full bg-white dark:bg-slate-900 border-b border-gray-100 dark:border-slate-800 h-10 flex items-center overflow-hidden marquee-container z-50">
+            <div className="w-full backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-b border-slate-200/60 dark:border-slate-800/60 h-10 flex items-center overflow-hidden marquee-container z-50 shadow-2xs">
                 <div className="animate-marquee">
                     {stocks.concat(stocks).map((stock, idx) => (
                         <div 

@@ -58,7 +58,7 @@ const KoreanNewsWidget = () => {
   }, []);
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700/80 p-5 mt-6 transition-colors duration-300">
+    <div className="backdrop-blur-md bg-white/75 dark:bg-slate-800/75 rounded-2xl shadow-sm border border-white/80 dark:border-slate-700/70 p-5 mt-6 transition-all duration-300">
       <div className="flex items-center gap-3 mb-4">
         <div className="p-2 bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 rounded-xl">
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
