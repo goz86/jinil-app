@@ -9,7 +9,7 @@ import KoreanNewsWidget from './components/KoreanNewsWidget';
 import MarketDeliveryTabs from './components/MarketDeliveryTabs';
 import AuthWidget from './components/AuthWidget';
 import DeliveryGallery from './components/DeliveryGallery';
-import AnalyticsModal from './components/AnalyticsModal';
+const AnalyticsModal = React.lazy(() => import('./components/AnalyticsModal'));
 import GenericModal from './components/GenericModal';
 import ClientAddressBook from './components/ClientAddressBook';
 import InventoryManagement from './components/InventoryManagement';
@@ -833,11 +833,13 @@ function App() {
         className="flex-1 bg-gray-50 dark:bg-gray-900 flex justify-center py-6 px-4 transition-all duration-300"
         style={getWallpaperStyle()}
       >
-        <AnalyticsModal 
-          isOpen={isAnalyticsOpen} 
-          onClose={() => setIsAnalyticsOpen(false)} 
-          tasks={tasks} 
-        />
+        <React.Suspense fallback={null}>
+          <AnalyticsModal 
+            isOpen={isAnalyticsOpen} 
+            onClose={() => setIsAnalyticsOpen(false)} 
+            tasks={tasks} 
+          />
+        </React.Suspense>
       <div className="w-full max-w-[1400px] flex flex-col lg:flex-row gap-6 justify-center">
         {/* Left Column: Calendar & News */}
         <div className="w-full lg:w-80 flex-shrink-0 flex flex-col gap-6">

@@ -20,13 +20,28 @@ export default defineConfig({
       }
     }
   },
+  esbuild: {
+    drop: ['console', 'debugger']
+  },
   build: {
     sourcemap: false,
+    chunkSizeWarningLimit: 1500,
     rollupOptions: {
       output: {
         entryFileNames: `assets/[name].js`,
         chunkFileNames: `assets/[name].js`,
-        assetFileNames: `assets/[name].[ext]`
+        assetFileNames: `assets/[name].[ext]`,
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('recharts') || id.includes('d3')) {
+              return 'vendor-charts';
+            }
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-is')) {
+              return 'vendor-core';
+            }
+            return 'vendor-libs';
+          }
+        }
       }
     }
   }
