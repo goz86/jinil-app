@@ -847,6 +847,8 @@
 
   // Cập nhật thông tin 품목 (Cho phép sửa thủ công cả 금액 sub)
   function updateItem(index, field, value) {
+    if (!items[index]) return;
+
     if (field === 'sub') {
       // Cho phép sửa bằng tay 금액
       const numericVal = parseFloat(String(value).replace(/,/g, '')) || 0;
@@ -857,9 +859,25 @@
         const q = parseFloat(items[index].qty) || 0;
         const p = parseFloat(items[index].price) || 0;
         items[index].sub = Math.round(q * p);
+
+        const subInput = document.getElementById(`sub_${index}`);
+        if (subInput) {
+          subInput.value = items[index].sub;
+        }
       }
     }
-    renderItemTable();
+
+    const tbody = document.getElementById('itemTableBody');
+    if (tbody && tbody.children[index]) {
+      const item = items[index];
+      const hasContent = Boolean((item.name && item.name.trim()) || (item.date && item.date.trim()) || (item.spec && item.spec.trim()));
+      if (hasContent && Number(item.sub) === 0) {
+        tbody.children[index].className = 'row-zero-sub';
+      } else {
+        tbody.children[index].className = '';
+      }
+    }
+
     renderStatement();
   }
 
