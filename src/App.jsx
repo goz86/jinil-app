@@ -112,6 +112,15 @@ function App() {
             : 'linear-gradient(135deg, #38bdf8 0%, #2563eb 70%, #facc15 100%)'
         };
       default:
+        if (wallpaper && (wallpaper.startsWith('data:') || wallpaper.startsWith('http://') || wallpaper.startsWith('https://'))) {
+          return {
+            backgroundImage: `url("${wallpaper}")`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            backgroundAttachment: 'fixed'
+          };
+        }
         return {};
     }
   };
