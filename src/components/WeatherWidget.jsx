@@ -308,7 +308,8 @@ export default function WeatherWidget() {
                 const dailyForecast = [];
                 if (daily.time && daily.time.length > 0) {
                     for (let i = 0; i < Math.min(daily.time.length, 5); i++) {
-                        const d = new Date(daily.time[i]);
+                        const [year, month, day] = daily.time[i].split('-').map(Number);
+                        const d = new Date(year, month - 1, day);
                         const dayLabel = dayNames[d.getDay()];
                         const maxTemp = Math.round(daily.temperature_2m_max[i]);
                         const minTemp = Math.round(daily.temperature_2m_min[i]);
