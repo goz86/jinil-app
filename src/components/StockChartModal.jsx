@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, Component } from 'react';
+import { createPortal } from 'react-dom';
 import { createChart, ColorType, CandlestickSeries, AreaSeries, HistogramSeries } from 'lightweight-charts';
 
 // React Error Boundary to safeguard against any unexpected chart render crashes
@@ -19,7 +20,7 @@ class ChartErrorBoundary extends Component {
     render() {
         if (this.state.hasError) {
             return (
-                <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
                     <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 max-w-md w-full text-center shadow-2xl border border-gray-100 dark:border-gray-700">
                         <p className="text-base font-bold text-red-500 mb-2">차트를 표시하는 중 오류가 발생했습니다.</p>
                         <p className="text-xs text-gray-500 dark:text-gray-400 mb-4">{this.state.error?.message || "알 수 없는 오류"}</p>
@@ -455,7 +456,7 @@ function StockChartContent({ stock, isOpen, onClose }) {
 
     return (
         <div 
-            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
             onClick={onClose}
         >
             <div 
@@ -609,9 +610,11 @@ function StockChartContent({ stock, isOpen, onClose }) {
 }
 
 export default function StockChartModal(props) {
-    return (
+    if (!props.isOpen || !props.stock) return null;
+    return createPortal(
         <ChartErrorBoundary onClose={props.onClose}>
             <StockChartContent {...props} />
-        </ChartErrorBoundary>
+        </ChartErrorBoundary>,
+        document.body
     );
 }
