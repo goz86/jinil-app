@@ -126,7 +126,6 @@ const getKoreanCityName = (lat, lon, rawCityName) => {
         if (clean.includes('Jeju') || clean.includes('제주')) return '제주특별자치도';
     }
 
-    // Latitude / Longitude fallback box check for South Korea regions
     if (lat >= 37.4 && lat <= 37.7 && lon >= 126.8 && lon <= 127.2) return '서울특별시';
     if (lat >= 37.3 && lat <= 37.6 && lon >= 126.5 && lon <= 126.8) return '인천광역시';
     if (lat >= 37.1 && lat <= 37.4 && lon >= 126.9 && lon <= 127.2) return '수원시';
@@ -138,64 +137,142 @@ const getKoreanCityName = (lat, lon, rawCityName) => {
     return rawCityName || '서울특별시';
 };
 
+// Map text weather descriptions from wttr.in to Open-Meteo codes
+const parseWttrConditionCode = (desc) => {
+    if (!desc) return 0;
+    const lower = desc.toLowerCase();
+    if (lower.includes('sunny') || lower.includes('clear')) return 0;
+    if (lower.includes('partly cloudy')) return 2;
+    if (lower.includes('cloudy') || lower.includes('overcast')) return 3;
+    if (lower.includes('fog') || lower.includes('mist')) return 45;
+    if (lower.includes('drizzle')) return 51;
+    if (lower.includes('heavy rain') || lower.includes('torrential')) return 65;
+    if (lower.includes('rain') || lower.includes('shower')) return 61;
+    if (lower.includes('snow') || lower.includes('blizzard')) return 71;
+    if (lower.includes('thunder')) return 95;
+    return 1;
+};
+
 export default function WeatherWidget() {
     const [weather, setWeather] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(false);
     const [lastUpdated, setLastUpdated] = useState('');
 
-    const fetchWeatherData = useCallback(async (lat, lon) => {
+    const saveWeatherToCache = (weatherData, timeStr) => {
         try {
-            setLoading(true);
-            setError(false);
+            localStorage.setItem('jinil_weather_cache', JSON.stringify({
+                data: weatherData,
+                updatedAt: timeStr,
+                timestamp: Date.now()
+            }));
+        } catch (e) {}
+    };
 
-            // Fetch Realtime Weather from Open-Meteo
+    const loadWeatherFromCache = () => {
+        try {
+            const cached = localStorage.getItem('jinil_weather_cache');
+            if (cached) {
+                const parsed = JSON.parse(cached);
+                setWeather(parsed.data);
+                setLastUpdated(`${parsed.updatedAt} (저장됨)`);
+                return true;
+            }
+        } catch (e) {}
+        return false;
+    };
+
+    const fetchWeatherData = useCallback(async (lat, lon) => {
+        setLoading(true);
+        setError(false);
+
+        const now = new Date();
+        const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+
+        // Reverse Geocode for Korean Place Name
+        let placeName = '';
+        try {
+            const geoRes = await fetch(
+                `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=ko`
+            );
+            if (geoRes.ok) {
+                const geoData = await geoRes.json();
+                placeName = geoData.locality || geoData.city || geoData.principalSubdivision || '';
+            }
+        } catch (e) {}
+        const koreanLocation = getKoreanCityName(lat, lon, placeName);
+
+        // --- PRIMARY PROVIDER: Open-Meteo ---
+        try {
             const weatherRes = await fetch(
                 `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=relativehumidity_2m,apparent_temperature&timezone=auto`
             );
-            if (!weatherRes.ok) throw new Error('Weather API error');
-            const data = await weatherRes.json();
+            if (weatherRes.ok) {
+                const data = await weatherRes.json();
+                const current = data.current_weather || {};
+                const hourly = data.hourly || {};
+                const currentHourIndex = now.getHours();
 
-            // Reverse Geocode for Korean Place Name
-            let placeName = '';
-            try {
-                const geoRes = await fetch(
-                    `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=ko`
-                );
-                if (geoRes.ok) {
-                    const geoData = await geoRes.json();
-                    placeName = geoData.locality || geoData.city || geoData.principalSubdivision || '';
-                }
-            } catch (e) {
-                console.warn('Reverse geocode failed, using fallback mapper', e);
+                const humidity = hourly.relativehumidity_2m ? hourly.relativehumidity_2m[currentHourIndex] || 60 : 60;
+                const apparentTemp = hourly.apparent_temperature ? hourly.apparent_temperature[currentHourIndex] : current.temperature;
+
+                const weatherObj = {
+                    location: koreanLocation,
+                    temp: Math.round(current.temperature),
+                    feelsLike: Math.round(apparentTemp),
+                    windSpeed: current.windspeed ? (current.windspeed / 3.6).toFixed(1) : '1.5',
+                    humidity: humidity,
+                    code: current.weathercode || 0,
+                    provider: 'primary'
+                };
+
+                setWeather(weatherObj);
+                setLastUpdated(timeString);
+                saveWeatherToCache(weatherObj, timeString);
+                setLoading(false);
+                return;
             }
-
-            const koreanLocation = getKoreanCityName(lat, lon, placeName);
-            const current = data.current_weather || {};
-            const hourly = data.hourly || {};
-
-            // Humidity & Apparent temp extraction
-            const currentHourIndex = new Date().getHours();
-            const humidity = hourly.relativehumidity_2m ? hourly.relativehumidity_2m[currentHourIndex] || 60 : 60;
-            const apparentTemp = hourly.apparent_temperature ? hourly.apparent_temperature[currentHourIndex] : current.temperature;
-
-            setWeather({
-                location: koreanLocation,
-                temp: Math.round(current.temperature),
-                feelsLike: Math.round(apparentTemp),
-                windSpeed: current.windspeed ? (current.windspeed / 3.6).toFixed(1) : '1.5', // km/h to m/s
-                humidity: humidity,
-                code: current.weathercode || 0,
-            });
-
-            const now = new Date();
-            setLastUpdated(`${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`);
         } catch (err) {
-            console.error('Weather fetch error:', err);
-            setError(true);
-        } finally {
-            setLoading(false);
+            console.warn('[WeatherWidget] Primary API (Open-Meteo) failed, attempting Secondary Provider (wttr.in)...', err);
         }
+
+        // --- SECONDARY FALLBACK PROVIDER: wttr.in ---
+        try {
+            const wttrRes = await fetch(`https://wttr.in/${lat},${lon}?format=j1`);
+            if (wttrRes.ok) {
+                const wttrData = await wttrRes.json();
+                const curr = wttrData.current_condition && wttrData.current_condition[0];
+                if (curr) {
+                    const desc = curr.weatherDesc && curr.weatherDesc[0] ? curr.weatherDesc[0].value : '';
+                    const parsedCode = parseWttrConditionCode(desc);
+
+                    const weatherObj = {
+                        location: koreanLocation,
+                        temp: Math.round(parseFloat(curr.temp_C)),
+                        feelsLike: Math.round(parseFloat(curr.FeelsLikeC || curr.temp_C)),
+                        windSpeed: (parseFloat(curr.windspeedKmph || 5) / 3.6).toFixed(1),
+                        humidity: parseInt(curr.humidity || 60, 10),
+                        code: parsedCode,
+                        provider: 'secondary'
+                    };
+
+                    setWeather(weatherObj);
+                    setLastUpdated(timeString);
+                    saveWeatherToCache(weatherObj, timeString);
+                    setLoading(false);
+                    return;
+                }
+            }
+        } catch (err) {
+            console.warn('[WeatherWidget] Secondary API (wttr.in) failed, checking Offline Cache...', err);
+        }
+
+        // --- TERTIARY FALLBACK: LocalStorage Cache ---
+        const loadedCache = loadWeatherFromCache();
+        if (!loadedCache) {
+            setError(true);
+        }
+        setLoading(false);
     }, []);
 
     const getLocationAndFetch = useCallback(() => {
@@ -205,7 +282,7 @@ export default function WeatherWidget() {
                     fetchWeatherData(pos.coords.latitude, pos.coords.longitude);
                 },
                 (err) => {
-                    console.warn('Geolocation position access denied/failed, falling back to IP location', err);
+                    console.warn('Geolocation position access denied/failed, falling back to Seoul IP location', err);
                     fetchWeatherData(37.5665, 126.9780);
                 },
                 { timeout: 8000, maximumAge: 600000 }
@@ -262,7 +339,7 @@ export default function WeatherWidget() {
                     <div className="flex items-center justify-center py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 animate-pulse">
                         날씨 정보 업데이트 중...
                     </div>
-                ) : error ? (
+                ) : error && !weather ? (
                     <div className="flex items-center justify-between py-2">
                         <span className="text-xs text-slate-500">날씨 불러오기 실패</span>
                         <button onClick={getLocationAndFetch} className="text-xs text-blue-600 font-bold underline">재시도</button>
