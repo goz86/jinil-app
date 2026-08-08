@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
+import WeatherWidget from './WeatherWidget';
 
 export default function CalendarSidebar({ tasks, selectedDate, setSelectedDate }) {
     const { t } = useLanguage();
@@ -184,29 +185,37 @@ export default function CalendarSidebar({ tasks, selectedDate, setSelectedDate }
                 })}
             </div>
 
-            <div className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-700/80 space-y-3">
-                <h3 className="text-sm font-semibold text-gray-800 dark:text-slate-200 mb-2">{t('calendarLegend')}</h3>
-                <div className="flex items-center text-xs text-gray-500 dark:text-slate-300">
-                    <div className="w-3.5 h-3.5 rounded-full bg-blue-500/20 border-2 border-blue-600 dark:border-blue-400 mr-2 flex items-center justify-center">
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400"></div>
+            <div className="mt-8 pt-6 border-t border-gray-100 dark:border-slate-700/80 grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+                {/* Left Column: 일정 안내 (Schedule Guide) */}
+                <div className="space-y-2.5">
+                    <h3 className="text-sm font-semibold text-gray-800 dark:text-slate-200 mb-2">{t('calendarLegend')}</h3>
+                    <div className="flex items-center text-xs text-gray-500 dark:text-slate-300">
+                        <div className="w-3.5 h-3.5 rounded-full bg-blue-500/20 border-2 border-blue-600 dark:border-blue-400 mr-2 flex items-center justify-center">
+                            <div className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400"></div>
+                        </div>
+                        <span className="font-bold text-blue-700 dark:text-blue-300">오늘 (Today)</span>
                     </div>
-                    <span className="font-bold text-blue-700 dark:text-blue-300">오늘 (Today)</span>
-                </div>
-                <div className="flex items-center text-xs text-gray-500 dark:text-slate-300">
-                    <div className="w-3.5 h-3.5 rounded-full bg-red-100 dark:bg-red-950/50 border border-red-300 dark:border-red-700/60 mr-2 flex items-center justify-center">
-                        <div className="w-1.5 h-1.5 rounded-full bg-red-500 dark:bg-red-400"></div>
+                    <div className="flex items-center text-xs text-gray-500 dark:text-slate-300">
+                        <div className="w-3.5 h-3.5 rounded-full bg-red-100 dark:bg-red-950/50 border border-red-300 dark:border-red-700/60 mr-2 flex items-center justify-center">
+                            <div className="w-1.5 h-1.5 rounded-full bg-red-500 dark:bg-red-400"></div>
+                        </div>
+                        {t('hasActiveTasks')}
                     </div>
-                    {t('hasActiveTasks')}
-                </div>
-                <div className="flex items-center text-xs text-gray-500 dark:text-slate-300">
-                    <div className="w-3.5 h-3.5 rounded-full bg-emerald-100 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-700/60 mr-2 flex items-center justify-center">
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400"></div>
+                    <div className="flex items-center text-xs text-gray-500 dark:text-slate-300">
+                        <div className="w-3.5 h-3.5 rounded-full bg-emerald-100 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-700/60 mr-2 flex items-center justify-center">
+                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400"></div>
+                        </div>
+                        {t('hasCompletedTasks')}
                     </div>
-                    {t('hasCompletedTasks')}
+                    <div className="flex items-center text-xs text-gray-500 dark:text-slate-300">
+                        <div className="w-3.5 h-3.5 rounded-full bg-blue-600 mr-2"></div>
+                        {t('selectedDate')}
+                    </div>
                 </div>
-                <div className="flex items-center text-xs text-gray-500 dark:text-slate-300">
-                    <div className="w-3.5 h-3.5 rounded-full bg-blue-600 mr-2"></div>
-                    {t('selectedDate')}
+
+                {/* Right Column: Glassmorphism Weather Widget */}
+                <div className="w-full">
+                    <WeatherWidget />
                 </div>
             </div>
 
