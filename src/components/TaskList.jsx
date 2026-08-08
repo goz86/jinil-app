@@ -22,7 +22,7 @@ export default function TaskList({ tasks, onToggle, onDelete, savedAccounts = []
                 <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 mb-1.5 tracking-tight">
                     작업 목록이 가려져 있습니다
                 </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-xs mb-5 leading-relaxed">
+                <p className="text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap mb-5 leading-relaxed">
                     보안 및 개인 정보 보호를 위해 작업 목록이 숨겨졌습니다. 클릭하여 내용을 확인하세요.
                 </p>
 
