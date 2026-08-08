@@ -191,7 +191,7 @@ const MiniTaskItem = ({ task, toggleTask, savedAccounts = [], theme, isHighContr
     const isLight = theme?.isLight;
 
     return (
-        <div className={`group p-3 rounded-2xl border transition-all duration-200 animate-in fade-in slide-in-from-bottom-2 hover:scale-[1.01] ${
+        <div className={`group p-3.5 rounded-2xl border transition-all duration-200 animate-in fade-in slide-in-from-bottom-2 hover:scale-[1.01] ${
             task.completed
                 ? isLight
                     ? 'bg-slate-200/50 border-slate-300/60 opacity-60'
@@ -199,12 +199,12 @@ const MiniTaskItem = ({ task, toggleTask, savedAccounts = [], theme, isHighContr
                 : isLight
                     ? theme?.cardClass || 'bg-white border-slate-200 hover:border-blue-400 shadow-sm'
                     : theme?.cardClass || 'bg-white/5 hover:bg-white/10 border-white/5 hover:border-white/10'
-        } ${isHighContrast ? 'border-2 font-bold shadow-md' : ''}`}>
+        } ${isHighContrast ? 'border-2 shadow-md' : ''}`}>
             <div className="flex flex-col gap-1.5">
                 <div className="flex items-start gap-3">
                     <button
                         onClick={() => toggleTask(task.id)}
-                        className={`mt-0.5 w-5 h-5 rounded-lg border-2 flex-shrink-0 transition-all flex items-center justify-center group-active:scale-90 ${
+                        className={`mt-1 w-5.5 h-5.5 rounded-lg border-2 flex-shrink-0 transition-all flex items-center justify-center group-active:scale-90 ${
                             task.completed
                                 ? theme?.checkboxBg || 'bg-blue-600 border-blue-600 text-white shadow-sm'
                                 : isLight
@@ -221,12 +221,12 @@ const MiniTaskItem = ({ task, toggleTask, savedAccounts = [], theme, isHighContr
                         )}
                     </button>
                     <span
-                        className={`text-[13px] leading-snug cursor-default flex-1 transition-all ${
-                            isHighContrast ? 'font-black tracking-tight' : 'font-semibold'
+                        className={`text-[15px] leading-relaxed cursor-default flex-1 transition-all antialiased ${
+                            isHighContrast ? 'font-bold tracking-tight' : 'font-semibold'
                         } ${
                             task.completed
                                 ? isLight ? 'line-through text-slate-400 select-none' : 'line-through text-gray-400/70 select-none'
-                                : isLight ? 'text-slate-900 group-hover:opacity-80' : 'text-gray-100 group-hover:text-white'
+                                : isLight ? 'text-slate-900 group-hover:opacity-85' : 'text-gray-100 group-hover:text-white'
                         }`}
                         title={task.title}
                     >
@@ -965,7 +965,7 @@ export default function MiniWidget() {
                             value={title}
                             onChange={(e) => setTitle(e.target.value)}
                             placeholder={t('addTaskPlaceholder') || '새 작업 추가...'}
-                            className={`w-full pl-3 pr-3 py-2 rounded-xl text-[12px] focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all ${currentTheme.inputBg}`}
+                            className={`w-full pl-3 pr-3 py-2 rounded-xl text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all ${currentTheme.inputBg}`}
                         />
                     </div>
                     <button
