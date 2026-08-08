@@ -3,6 +3,7 @@ import { db } from '../firebase';
 import { collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, doc, orderBy, serverTimestamp } from 'firebase/firestore';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
+import { notify } from '../lib/notify';
 import Swal from 'sweetalert2';
 
 export default function ClientAddressBook({ user }) {
@@ -268,15 +269,13 @@ export default function ClientAddressBook({ user }) {
     };
 
     const handleDelete = async (id) => {
-        const result = await Swal.fire({
+        const isConfirmed = await notify.confirm({
             title: t('confirmDeleteTitle'),
             text: t('confirmDeleteText'),
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: t('yes'),
-            cancelButtonText: t('no')
+            confirmText: t('yes'),
+            cancelText: t('no')
         });
-        if (result.isConfirmed) {
+        if (isConfirmed) {
             try {
                 await supabase.from('partners').delete().eq('id', id);
             } catch (e) {}

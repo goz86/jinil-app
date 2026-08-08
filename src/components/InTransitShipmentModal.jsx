@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { notify } from '../lib/notify';
 import { supabase } from '../lib/supabase';
 import { db } from '../firebase';
 import { collection, getDocs, query as fsQuery, orderBy as fsOrderBy, limit as fsLimit } from 'firebase/firestore';
@@ -181,39 +182,26 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
   const handleCopyTrackingNumber = (number) => {
     if (!number) return;
     navigator.clipboard.writeText(number);
-    Swal.fire({
-      icon: 'success',
-      title: '운송장번호가 복사되었습니다',
-      text: number,
-      toast: true,
-      position: 'top-end',
-      showConfirmButton: false,
-      timer: 2000,
-      target: 'body'
-    });
+    notify.toastSuccess('운송장번호가 복사되었습니다', number);
   };
 
   const handleDeleteShipment = async (id, number) => {
-    const result = await Swal.fire({
+    const isConfirmed = await notify.confirm({
       title: '운송장 내역 삭제',
       text: `운송장번호 ${number || ''} 내역을 목록에서 삭제하시겠습니까?`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: '삭제',
-      cancelButtonText: '취소',
-      confirmButtonColor: '#ef4444',
-      target: 'body'
+      confirmText: '삭제',
+      cancelText: '취소'
     });
 
-    if (result.isConfirmed) {
+    if (isConfirmed) {
       try {
         const { error } = await supabase.from('b2b_shipments').delete().eq('id', id);
         if (error) throw error;
         setShipments((prev) => prev.filter((s) => s.id !== id));
         if (onRefreshCount) onRefreshCount(shipments.length - 1);
-        Swal.fire({ icon: 'success', title: '삭제되었습니다.', toast: true, position: 'top-end', timer: 2000, showConfirmButton: false, target: 'body' });
+        notify.toastSuccess('삭제되었습니다.');
       } catch (err) {
-        Swal.fire({ icon: 'error', title: '삭제 실패', text: err.message, target: 'body' });
+        notify.toastError('삭제 실패', err.message);
       }
     }
   };
@@ -247,12 +235,10 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
 ▶ 실시간 배송조회: https://www.jinil.top/track?q=${trackingNo}`;
 
     navigator.clipboard.writeText(message);
-    Swal.fire({
-      icon: 'info',
+    notify.copyNotice({
       title: '카톡 안내 메시지가 복사되었습니다!',
-      html: `<pre style="text-align: left; background: #f3f4f6; padding: 12px; border-radius: 8px; font-size: 11px; white-space: pre-wrap; font-family: monospace;">${message}</pre><p style="margin-top: 10px; font-size: 12px; color: #666;">카카오톡 채팅창에 Ctrl+V로 붙여넣어 발송하세요.</p>`,
-      confirmButtonText: '확인',
-      target: 'body'
+      content: message,
+      hint: '카카오톡 채팅창에 Ctrl+V로 붙여넣어 발송하세요.'
     });
   };
 

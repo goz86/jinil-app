@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { getAppLockConfig, enableAppLock, disableAppLock, verifyAppLockPin } from '../lib/appLock';
+import { notify } from '../lib/notify';
 import Swal from 'sweetalert2';
 
 export default function AppLockModal({ isOpen, onClose }) {
@@ -46,12 +47,7 @@ export default function AppLockModal({ isOpen, onClose }) {
       setPin('');
       setConfirmPin('');
       setErrorMsg('');
-      Swal.fire({
-        icon: 'success',
-        title: '비밀번호가 설정되었습니다.',
-        timer: 1500,
-        showConfirmButton: false,
-      });
+      notify.alert({ icon: 'success', title: '비밀번호가 설정되었습니다.' });
     } catch {
       setErrorMsg('비밀번호 설정 중 오류가 발생했습니다.');
     } finally {
@@ -74,12 +70,7 @@ export default function AppLockModal({ isOpen, onClose }) {
         setMode('view');
         setCurrentPin('');
         setErrorMsg('');
-        Swal.fire({
-          icon: 'success',
-          title: '비밀번호가 해제되었습니다.',
-          timer: 1500,
-          showConfirmButton: false,
-        });
+        notify.alert({ icon: 'success', title: '비밀번호가 해제되었습니다.' });
       } else {
         setErrorMsg('현재 PIN 번호가 올바르지 않습니다.');
       }
@@ -119,12 +110,7 @@ export default function AppLockModal({ isOpen, onClose }) {
       setConfirmPin('');
       setCurrentPin('');
       setErrorMsg('');
-      Swal.fire({
-        icon: 'success',
-        title: 'PIN 번호가 변경되었습니다.',
-        timer: 1500,
-        showConfirmButton: false,
-      });
+      notify.alert({ icon: 'success', title: 'PIN 번호가 변경되었습니다.' });
     } catch {
       setErrorMsg('PIN 변경 중 오류가 발생했습니다.');
     } finally {

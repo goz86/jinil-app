@@ -4,6 +4,7 @@ import { auth, db, secondaryAuth, secondaryDb, firebaseConfig } from '../firebas
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, getAuth } from 'firebase/auth';
 import { doc, onSnapshot, setDoc, getDoc, getFirestore } from 'firebase/firestore';
 import { useLanguage } from '../contexts/LanguageContext';
+import { notify } from '../lib/notify';
 import Swal from 'sweetalert2';
 
 // 🎨 Taste-Skill Design System Tokens: Harmonized High-Contrast Themes
@@ -611,26 +612,10 @@ export default function MiniWidget() {
                 // Also save to current user's task list so it persists in owner's doc
                 await saveTasks([enhancedTask, ...tasks]);
 
-                Swal.fire({
-                    icon: 'success',
-                    title: '작업 배정 완료',
-                    text: `"${enhancedTask.title}" → ${targetName}`,
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                    timer: 3000
-                });
+                notify.toastSuccess('작업 배정 완료', `"${enhancedTask.title}" → ${targetName}`);
             } catch (error) {
                 console.error("Error assigning task:", error);
-                Swal.fire({
-                    icon: 'error',
-                    title: '오류',
-                    text: '작업 배정에 실패했습니다.',
-                    toast: true,
-                    position: 'top-end',
-                    showConfirmButton: false,
-                    timer: 3000
-                });
+                notify.toastError('오류', '작업 배정에 실패했습니다.');
             }
         } else {
             const newTasks = [newTask, ...tasks];

@@ -101,17 +101,145 @@ html.is-mini body {
 /* Ensure SweetAlert2 popups, toasts & modals float on top of all application modals */
 .swal2-container {
   z-index: 999999 !important;
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif !important;
+}
+
+/* Glassmorphism Modern Center Popups */
+.swal2-popup {
+  border-radius: 1.75rem !important;
+  padding: 1.75rem !important;
+  background: rgba(255, 255, 255, 0.95) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.05) !important;
+  border: 1px solid rgba(226, 232, 240, 0.8) !important;
 }
 
 .dark .swal2-popup {
-  background-color: #1e293b !important;
+  background: rgba(15, 23, 42, 0.93) !important;
   color: #f8fafc !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+}
+
+/* Glassmorphism Modern Floating Toasts */
+.swal2-popup.swal2-toast {
+  border-radius: 1.25rem !important;
+  padding: 0.85rem 1.25rem !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.06) !important;
+  border: 1px solid rgba(226, 232, 240, 0.9) !important;
+}
+
+.dark .swal2-popup.swal2-toast {
+  background: rgba(15, 23, 42, 0.95) !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+}
+
+.swal2-title {
+  font-weight: 800 !important;
+  font-size: 1.15rem !important;
+  letter-spacing: -0.02em !important;
+  color: #0f172a !important;
+  padding-top: 0.5rem !important;
+}
+
+.dark .swal2-title {
+  color: #f8fafc !important;
+}
+
+.swal2-html-container {
+  font-weight: 600 !important;
+  font-size: 0.925rem !important;
+  line-height: 1.6 !important;
+  color: #475569 !important;
+  margin-top: 0.5rem !important;
+}
+
+.dark .swal2-html-container {
+  color: #94a3b8 !important;
+}
+
+/* Modern Action Buttons */
+.swal2-actions {
+  gap: 0.75rem !important;
+  margin-top: 1.5rem !important;
+}
+
+.swal2-confirm {
+  border-radius: 0.875rem !important;
+  font-weight: 800 !important;
+  font-size: 0.875rem !important;
+  padding: 0.65rem 1.5rem !important;
+  background: linear-gradient(135deg, #2563eb, #4f46e5) !important;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35) !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease !important;
+  border: none !important;
+}
+
+.swal2-confirm:active {
+  transform: scale(0.96) !important;
+}
+
+.swal2-cancel {
+  border-radius: 0.875rem !important;
+  font-weight: 700 !important;
+  font-size: 0.875rem !important;
+  padding: 0.65rem 1.25rem !important;
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  transition: transform 0.15s ease !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.swal2-cancel:active {
+  transform: scale(0.96) !important;
+}
+
+.dark .swal2-cancel {
+  background: #334155 !important;
+  color: #e2e8f0 !important;
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-.dark .swal2-title,
-.dark .swal2-html-container {
-  color: #f8fafc !important;
+/* Soft Icon Badges */
+.swal2-icon {
+  border-width: 2.5px !important;
+  transform: scale(0.9);
+  margin-top: 0.5rem !important;
+  margin-bottom: 0.5rem !important;
 }
+
+.swal2-icon.swal2-success {
+  border-color: #10b981 !important;
+  color: #10b981 !important;
+}
+
+.swal2-icon.swal2-success [class^='swal2-success-line'] {
+  background-color: #10b981 !important;
+}
+
+.swal2-icon.swal2-success .swal2-success-ring {
+  border-color: rgba(16, 185, 129, 0.3) !important;
+}
+
+.swal2-icon.swal2-info {
+  border-color: #3b82f6 !important;
+  color: #3b82f6 !important;
+}
+
+.swal2-icon.swal2-warning {
+  border-color: #f59e0b !important;
+  color: #f59e0b !important;
+}
+
+.swal2-icon.swal2-error {
+  border-color: #ef4444 !important;
+  color: #ef4444 !important;
+}
+
 
 
