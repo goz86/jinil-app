@@ -1,7 +1,62 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
+// Helper to determine whether it's currently night time (7 PM - 6 AM)
+const checkIsNight = (isDayParam) => {
+    if (isDayParam !== undefined && isDayParam !== null) {
+        return isDayParam === 0;
+    }
+    const hour = new Date().getHours();
+    return hour >= 19 || hour < 6;
+};
+
 // Weather code to Pure Korean condition, SVG icon & dynamic theme tint mapper
-const getWeatherInfo = (code) => {
+const getWeatherInfo = (code, isNight = false) => {
+    if (isNight) {
+        switch (code) {
+            case 0:
+                return {
+                    label: '맑은 밤',
+                    icon: '🌙',
+                    bgClass: 'bg-slate-900/90 text-slate-100 border-indigo-900/80 dark:bg-slate-950/95 dark:border-indigo-800/80 shadow-md',
+                    bgTint: 'from-indigo-950/90 via-slate-900/90 to-blue-950/80'
+                };
+            case 1:
+            case 2:
+                return {
+                    label: '구름 조금 (밤)',
+                    icon: '🌙',
+                    bgClass: 'bg-slate-900/90 text-slate-100 border-slate-800 dark:bg-slate-950/95 dark:border-slate-800/80 shadow-md',
+                    bgTint: 'from-slate-900/90 via-indigo-950/80 to-slate-900/90'
+                };
+            case 3:
+                return {
+                    label: '흐린 밤',
+                    icon: '☁️',
+                    bgClass: 'bg-slate-900/90 text-slate-100 border-slate-800 dark:bg-slate-950/95 dark:border-slate-800/80 shadow-md',
+                    bgTint: 'from-slate-950/95 via-gray-900/90 to-slate-900/90'
+                };
+            case 51:
+            case 53:
+            case 55:
+            case 61:
+            case 63:
+            case 65:
+                return {
+                    label: '밤비',
+                    icon: '🌧️',
+                    bgClass: 'bg-slate-900/90 text-slate-100 border-blue-900/80 dark:bg-slate-950/95 dark:border-blue-900/80 shadow-md',
+                    bgTint: 'from-slate-950/95 via-blue-950/90 to-indigo-950/80'
+                };
+            default:
+                return {
+                    label: '맑은 밤',
+                    icon: '🌙',
+                    bgClass: 'bg-slate-900/90 text-slate-100 border-indigo-900/80 dark:bg-slate-950/95 dark:border-indigo-800/80 shadow-md',
+                    bgTint: 'from-indigo-950/90 via-slate-900/90 to-blue-950/80'
+                };
+        }
+    }
+
     switch (code) {
         case 0:
             return {
@@ -216,6 +271,8 @@ export default function WeatherWidget() {
                 const humidity = hourly.relativehumidity_2m ? hourly.relativehumidity_2m[currentHourIndex] || 60 : 60;
                 const apparentTemp = hourly.apparent_temperature ? hourly.apparent_temperature[currentHourIndex] : current.temperature;
 
+                const isNight = checkIsNight(current.is_day);
+
                 const weatherObj = {
                     location: koreanLocation,
                     temp: Math.round(current.temperature),
@@ -223,6 +280,7 @@ export default function WeatherWidget() {
                     windSpeed: current.windspeed ? (current.windspeed / 3.6).toFixed(1) : '1.5',
                     humidity: humidity,
                     code: current.weathercode || 0,
+                    isNight: isNight,
                     provider: 'primary'
                 };
 
@@ -245,6 +303,7 @@ export default function WeatherWidget() {
                 if (curr) {
                     const desc = curr.weatherDesc && curr.weatherDesc[0] ? curr.weatherDesc[0].value : '';
                     const parsedCode = parseWttrConditionCode(desc);
+                    const isNight = checkIsNight();
 
                     const weatherObj = {
                         location: koreanLocation,
@@ -253,6 +312,7 @@ export default function WeatherWidget() {
                         windSpeed: (parseFloat(curr.windspeedKmph || 5) / 3.6).toFixed(1),
                         humidity: parseInt(curr.humidity || 60, 10),
                         code: parsedCode,
+                        isNight: isNight,
                         provider: 'secondary'
                     };
 
@@ -303,7 +363,8 @@ export default function WeatherWidget() {
         return () => clearInterval(interval);
     }, [getLocationAndFetch]);
 
-    const weatherInfo = weather ? getWeatherInfo(weather.code) : { label: '불러오는 중', icon: '🌤️', bgClass: 'bg-slate-50/90 dark:bg-slate-900/60 border-slate-200/80 dark:border-slate-700/60', bgTint: 'from-blue-500/15 to-indigo-500/15' };
+    const isNightNow = weather ? (weather.isNight !== undefined ? weather.isNight : checkIsNight()) : checkIsNight();
+    const weatherInfo = weather ? getWeatherInfo(weather.code, isNightNow) : (isNightNow ? { label: '맑은 밤', icon: '🌙', bgClass: 'bg-slate-900/90 text-slate-100 border-indigo-900/80', bgTint: 'from-indigo-950/90 to-slate-900/90' } : { label: '불러오는 중', icon: '🌤️', bgClass: 'bg-slate-50/90 dark:bg-slate-900/60 border-slate-200/80 dark:border-slate-700/60', bgTint: 'from-blue-500/15 to-indigo-500/15' });
 
     return (
         <div className={`relative overflow-hidden rounded-2xl p-4 border transition-all duration-500 shadow-sm backdrop-blur-md w-full ${weatherInfo.bgClass}`}>
