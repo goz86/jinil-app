@@ -87,39 +87,63 @@ export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics, wal
                 {/* Dark Mode Quick Toggle */}
                 <button
                     onClick={toggleTheme}
-                    className="flex items-center justify-center bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 w-9 h-9 rounded-xl transition-colors shrink-0"
-                    title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+                    className="w-10 h-10 rounded-2xl backdrop-blur-md bg-gradient-to-b from-white via-slate-50 to-slate-100/90 dark:from-slate-800 dark:via-slate-850 dark:to-slate-900 border border-white/80 dark:border-slate-700/80 shadow-md shadow-slate-200/80 dark:shadow-slate-950/80 hover:shadow-lg hover:shadow-amber-500/20 dark:hover:shadow-indigo-500/25 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-200 cursor-pointer flex items-center justify-center relative overflow-hidden group shrink-0"
+                    title={theme === 'dark' ? '라이트 모드로 전환' : '다크 모드로 전환'}
                 >
+                    <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/60 dark:from-white/10 to-transparent pointer-events-none rounded-t-2xl"></div>
                     {theme === 'dark' ? (
-                        <svg className="w-5 h-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clipRule="evenodd" />
-                        </svg>
+                        <div className="relative z-10 flex items-center justify-center group-hover:rotate-12 transition-transform duration-300">
+                            {/* 3D Sun Icon */}
+                            <svg className="w-5 h-5 drop-shadow-[0_2px_4px_rgba(245,158,11,0.5)]" viewBox="0 0 24 24" fill="none">
+                                <circle cx="12" cy="12" r="5" className="fill-gradient-to-tr from-amber-400 to-yellow-300 fill-amber-400" />
+                                <path stroke="#FBBF24" strokeWidth="2.2" strokeLinecap="round" d="M12 2v2m0 16v2m10-10h-2M4 12H2m16.071-7.071l-1.414 1.414M7.343 16.657l-1.414 1.414m12.728 0l-1.414-1.414M7.343 7.343L5.929 5.929" />
+                            </svg>
+                        </div>
                     ) : (
-                        <svg className="w-5 h-5 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
-                        </svg>
+                        <div className="relative z-10 flex items-center justify-center group-hover:-rotate-12 transition-transform duration-300">
+                            {/* 3D Crescent Moon Icon */}
+                            <svg className="w-5 h-5 drop-shadow-[0_2px_4px_rgba(30,58,138,0.3)]" viewBox="0 0 24 24" fill="none">
+                                <path fill="url(#moon-grad)" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+                                <defs>
+                                    <linearGradient id="moon-grad" x1="3" y1="3" x2="21" y2="21" gradientUnits="userSpaceOnUse">
+                                        <stop stopColor="#3B82F6" />
+                                        <stop offset="1" stopColor="#1E3A8A" />
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                        </div>
                     )}
                 </button>
 
                 {/* Analytics Toggle Button */}
                 <button
                     onClick={onOpenAnalytics}
-                    className="flex items-center justify-center bg-gray-50 dark:bg-gray-700 hover:bg-blue-50 dark:hover:bg-blue-900 border border-gray-200 dark:border-gray-600 w-9 h-9 rounded-xl transition-colors shrink-0 text-blue-500"
+                    className="w-10 h-10 rounded-2xl backdrop-blur-md bg-gradient-to-b from-white via-slate-50 to-slate-100/90 dark:from-slate-800 dark:via-slate-850 dark:to-slate-900 border border-white/80 dark:border-slate-700/80 shadow-md shadow-slate-200/80 dark:shadow-slate-950/80 hover:shadow-lg hover:shadow-blue-500/20 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-200 cursor-pointer flex items-center justify-center relative overflow-hidden group shrink-0"
                     title={lang === 'vi' ? "Thống kê & Báo cáo" : "통계 및 보고서"}
                 >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
+                    <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/60 dark:from-white/10 to-transparent pointer-events-none rounded-t-2xl"></div>
+                    {/* 3D Multi-color Bar Chart Icon */}
+                    <div className="relative z-10 flex items-end gap-1 h-5 group-hover:scale-110 transition-transform duration-200">
+                        <div className="w-1.5 h-3 rounded-full bg-gradient-to-t from-blue-600 to-cyan-400 shadow-xs"></div>
+                        <div className="w-1.5 h-5 rounded-full bg-gradient-to-t from-indigo-600 to-blue-400 shadow-xs"></div>
+                        <div className="w-1.5 h-3.5 rounded-full bg-gradient-to-t from-emerald-600 to-teal-400 shadow-xs"></div>
+                    </div>
                 </button>
 
                 {/* Mini Widget Toggle (Only visible in Electron) */}
                 {window.electronAPI && (
                     <button
                         onClick={() => window.electronAPI.toggleMiniWidget()}
-                        className="flex items-center justify-center bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 w-9 h-9 rounded-xl transition-colors shrink-0 text-blue-500"
+                        className="w-10 h-10 rounded-2xl backdrop-blur-md bg-gradient-to-b from-white via-slate-50 to-slate-100/90 dark:from-slate-800 dark:via-slate-850 dark:to-slate-900 border border-white/80 dark:border-slate-700/80 shadow-md shadow-slate-200/80 dark:shadow-slate-950/80 hover:shadow-lg hover:shadow-blue-500/20 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 transition-all duration-200 cursor-pointer flex items-center justify-center relative overflow-hidden group shrink-0"
                         title={lang === 'vi' ? "Mở Cửa sổ Mini" : "미니 창 열기"}
                     >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" /></svg>
+                        <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/60 dark:from-white/10 to-transparent pointer-events-none rounded-t-2xl"></div>
+                        {/* 3D Expand Dock Icon */}
+                        <div className="relative z-10 w-5 h-5 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 p-0.5 shadow-sm text-white flex items-center justify-center group-hover:scale-105 transition-transform duration-200">
+                            <svg className="w-3.5 h-3.5 drop-shadow-xs" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                            </svg>
+                        </div>
                     </button>
                 )}
 
@@ -127,14 +151,16 @@ export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics, wal
                 <div className="relative">
                     <button
                         onClick={() => setIsSettingsOpen(prev => !prev)}
-                        className={`flex items-center justify-center border w-9 h-9 rounded-xl transition-all shrink-0 relative ${
+                        className={`w-10 h-10 rounded-2xl backdrop-blur-md transition-all duration-200 shrink-0 relative flex items-center justify-center overflow-hidden cursor-pointer group shadow-md ${
                             isSettingsOpen 
-                                ? 'bg-blue-50 dark:bg-blue-900/40 border-blue-400 text-blue-600 dark:text-blue-400 shadow-sm' 
-                                : 'bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300'
+                                ? 'bg-gradient-to-b from-blue-500 to-indigo-600 border border-blue-400 text-white shadow-blue-500/30' 
+                                : 'bg-gradient-to-b from-white via-slate-50 to-slate-100/90 dark:from-slate-800 dark:via-slate-850 dark:to-slate-900 border border-white/80 dark:border-slate-700/80 shadow-slate-200/80 dark:shadow-slate-950/80 hover:shadow-lg hover:shadow-blue-500/20 hover:-translate-y-0.5 active:translate-y-0 active:scale-95 text-slate-700 dark:text-slate-200'
                         }`}
                         title="시스템 설정"
                     >
-                        <svg className={`w-5 h-5 transition-transform duration-300 ${isSettingsOpen ? 'rotate-90 text-blue-600 dark:text-blue-400' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-white/60 dark:from-white/10 to-transparent pointer-events-none rounded-t-2xl"></div>
+                        {/* 3D Chrome Gear Icon */}
+                        <svg className={`w-5 h-5 relative z-10 transition-transform duration-300 drop-shadow-xs ${isSettingsOpen ? 'rotate-90 text-white' : 'text-slate-700 dark:text-slate-200 group-hover:rotate-45'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
@@ -142,7 +168,7 @@ export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics, wal
                         {/* Status Green Dot for Windows Autostart */}
                         {window.electronAPI && (
                             <div 
-                                className={`absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-gray-800 shadow-sm ${isAutoStart ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}
+                                className={`absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white dark:border-gray-800 shadow-sm z-20 ${isAutoStart ? 'bg-emerald-500' : 'bg-gray-300 dark:bg-gray-600'}`}
                                 title={isAutoStart ? "Windows 시작 시 자동 실행: 켜짐" : "Windows 시작 시 자동 실행: 꺼짐"}
                             />
                         )}
