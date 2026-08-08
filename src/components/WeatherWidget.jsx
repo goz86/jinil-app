@@ -1,45 +1,105 @@
 import React, { useState, useEffect, useCallback } from 'react';
 
-// Weather code to Pure Korean condition & SVG icon mapper
+// Weather code to Pure Korean condition, SVG icon & dynamic theme tint mapper
 const getWeatherInfo = (code) => {
     switch (code) {
         case 0:
-            return { label: '맑음', icon: '☀️', bgTint: 'from-amber-500/15 to-orange-500/15' };
+            return {
+                label: '맑음',
+                icon: '☀️',
+                bgClass: 'bg-amber-50/90 dark:bg-amber-950/50 border-amber-200/80 dark:border-amber-700/60',
+                bgTint: 'from-amber-400/35 via-orange-400/25 to-amber-500/15'
+            };
         case 1:
-            return { label: '대체로 맑음', icon: '🌤️', bgTint: 'from-amber-400/15 to-blue-400/15' };
+            return {
+                label: '대체로 맑음',
+                icon: '🌤️',
+                bgClass: 'bg-amber-50/80 dark:bg-amber-950/40 border-amber-200/70 dark:border-amber-800/50',
+                bgTint: 'from-amber-300/30 via-blue-300/20 to-orange-400/15'
+            };
         case 2:
-            return { label: '구름 조금', icon: '⛅', bgTint: 'from-blue-400/15 to-slate-400/15' };
+            return {
+                label: '구름 조금',
+                icon: '⛅',
+                bgClass: 'bg-slate-50/90 dark:bg-slate-900/60 border-slate-200/80 dark:border-slate-700/60',
+                bgTint: 'from-sky-300/30 via-slate-400/25 to-gray-400/15'
+            };
         case 3:
-            return { label: '흐림', icon: '☁️', bgTint: 'from-slate-500/15 to-gray-500/15' };
+            return {
+                label: '흐림',
+                icon: '☁️',
+                bgClass: 'bg-slate-100/90 dark:bg-slate-900/80 border-slate-300/80 dark:border-slate-700/70',
+                bgTint: 'from-slate-500/35 via-gray-500/30 to-slate-600/20'
+            };
         case 45:
         case 48:
-            return { label: '안개', icon: '🌫️', bgTint: 'from-slate-400/15 to-zinc-500/15' };
+            return {
+                label: '안개',
+                icon: '🌫️',
+                bgClass: 'bg-zinc-100/90 dark:bg-zinc-900/80 border-zinc-300/80 dark:border-zinc-700/70',
+                bgTint: 'from-zinc-400/35 via-slate-400/30 to-gray-500/20'
+            };
         case 51:
         case 53:
         case 55:
-            return { label: '이슬비', icon: '🌧️', bgTint: 'from-blue-500/15 to-cyan-500/15' };
+            return {
+                label: '이슬비',
+                icon: '🌧️',
+                bgClass: 'bg-blue-50/90 dark:bg-blue-950/60 border-blue-200/80 dark:border-blue-700/60',
+                bgTint: 'from-cyan-400/35 via-blue-500/30 to-sky-600/20'
+            };
         case 61:
         case 63:
         case 65:
-            return { label: '비', icon: '🌧️', bgTint: 'from-blue-600/15 to-indigo-600/15' };
+            return {
+                label: '비',
+                icon: '🌧️',
+                bgClass: 'bg-blue-100/90 dark:bg-blue-950/80 border-blue-300/80 dark:border-blue-700/80',
+                bgTint: 'from-blue-600/40 via-indigo-600/35 to-cyan-600/30'
+            };
         case 71:
         case 73:
         case 75:
         case 77:
-            return { label: '눈', icon: '❄️', bgTint: 'from-cyan-300/15 to-blue-300/15' };
+            return {
+                label: '눈',
+                icon: '❄️',
+                bgClass: 'bg-cyan-50/90 dark:bg-cyan-950/60 border-cyan-200/80 dark:border-cyan-700/60',
+                bgTint: 'from-cyan-300/40 via-sky-300/35 to-blue-400/30'
+            };
         case 80:
         case 81:
         case 82:
-            return { label: '소나기', icon: '🌦️', bgTint: 'from-blue-500/15 to-sky-500/15' };
+            return {
+                label: '소나기',
+                icon: '🌦️',
+                bgClass: 'bg-sky-100/90 dark:bg-sky-950/70 border-sky-300/80 dark:border-sky-700/70',
+                bgTint: 'from-sky-500/40 via-blue-500/35 to-indigo-500/30'
+            };
         case 85:
         case 86:
-            return { label: '소나기 눈', icon: '🌨️', bgTint: 'from-sky-300/15 to-indigo-300/15' };
+            return {
+                label: '소나기 눈',
+                icon: '🌨️',
+                bgClass: 'bg-indigo-50/90 dark:bg-indigo-950/60 border-indigo-200/80 dark:border-indigo-700/60',
+                bgTint: 'from-indigo-400/40 via-sky-300/35 to-cyan-300/30'
+            };
         case 95:
         case 96:
         case 99:
-            return { label: '뇌우', icon: '🌩️', bgTint: 'from-purple-600/15 to-indigo-700/15' };
+            return {
+                label: '뇌우',
+                icon: '🌩️',
+                bgClass: 'bg-purple-100/90 dark:bg-purple-950/80 border-purple-300/80 dark:border-purple-700/80',
+                bgTint: 'from-purple-600/40 via-indigo-700/35 to-slate-800/30'
+            };
         default:
-            return { label: '맑음', icon: '🌤️', bgTint: 'from-blue-500/15 to-indigo-500/15' };
+            return {
+                label: '맑음',
+                icon: '☀️',
+                bgClass: 'bg-amber-50/90 dark:bg-amber-950/50 border-amber-200/80 dark:border-amber-700/60',
+                bgTint: 'from-amber-400/35 via-orange-400/25 to-amber-500/15'
+            };
     }
 };
 
@@ -166,22 +226,22 @@ export default function WeatherWidget() {
         return () => clearInterval(interval);
     }, [getLocationAndFetch]);
 
-    const weatherInfo = weather ? getWeatherInfo(weather.code) : { label: '불러오는 중', icon: '🌤️', bgTint: 'from-blue-500/15 to-indigo-500/15' };
+    const weatherInfo = weather ? getWeatherInfo(weather.code) : { label: '불러오는 중', icon: '🌤️', bgClass: 'bg-slate-50/90 dark:bg-slate-900/60 border-slate-200/80 dark:border-slate-700/60', bgTint: 'from-blue-500/15 to-indigo-500/15' };
 
     return (
-        <div className="relative overflow-hidden rounded-2xl p-3.5 border transition-all duration-300 shadow-sm backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border-white/80 dark:border-slate-700/70 shadow-black/5 hover:border-white dark:hover:border-slate-600 w-full">
-            {/* Ambient Background Gradient Tint */}
-            <div className={`absolute -inset-2 bg-gradient-to-br ${weatherInfo.bgTint} pointer-events-none blur-xl opacity-80`}></div>
+        <div className={`relative overflow-hidden rounded-2xl p-4 border transition-all duration-500 shadow-sm backdrop-blur-md w-full ${weatherInfo.bgClass}`}>
+            {/* Ambient Background Gradient Tint (Dynamic by Weather) */}
+            <div className={`absolute -inset-2 bg-gradient-to-br ${weatherInfo.bgTint} pointer-events-none blur-xl opacity-90 transition-all duration-500`}></div>
 
-            <div className="relative z-10 space-y-2.5">
-                {/* Header Row: Location & Live Refresh Status */}
+            <div className="relative z-10 space-y-3">
+                {/* Header Row: Location & Live Status */}
                 <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 min-w-0">
                         <svg className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
-                        <span className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate tracking-tight">
+                        <span className="text-xs font-extrabold text-slate-900 dark:text-slate-100 truncate tracking-tight">
                             {weather ? weather.location : '위치 확인 중...'}
                         </span>
                     </div>
@@ -197,9 +257,9 @@ export default function WeatherWidget() {
                     </button>
                 </div>
 
-                {/* Main Weather Row */}
+                {/* Main Weather Row - Perfectly Aligned 2 Columns */}
                 {loading && !weather ? (
-                    <div className="flex items-center justify-center py-3 text-xs font-semibold text-slate-500 dark:text-slate-400 animate-pulse">
+                    <div className="flex items-center justify-center py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 animate-pulse">
                         날씨 정보 업데이트 중...
                     </div>
                 ) : error ? (
@@ -209,22 +269,22 @@ export default function WeatherWidget() {
                     </div>
                 ) : (
                     <>
-                        <div className="flex items-center justify-between px-0.5">
-                            {/* Temperature & Feels Like */}
-                            <div className="flex flex-col">
+                        <div className="grid grid-cols-2 gap-2 items-center px-1">
+                            {/* Column 1 (Left): Temperature & Feels Like */}
+                            <div className="flex flex-col items-start justify-center">
                                 <div className="flex items-baseline gap-1">
                                     <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">
                                         {weather.temp}°
                                     </span>
-                                    <span className="text-xs font-bold text-slate-700 dark:text-slate-200">C</span>
+                                    <span className="text-xs font-extrabold text-slate-700 dark:text-slate-200">C</span>
                                 </div>
-                                <span className="text-[10.5px] font-semibold text-slate-500 dark:text-slate-400 mt-1 whitespace-nowrap">
+                                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1.5 whitespace-nowrap">
                                     체감 {weather.feelsLike}°C
                                 </span>
                             </div>
 
-                            {/* Weather Icon & Condition Label */}
-                            <div className="flex flex-col items-end shrink-0">
+                            {/* Column 2 (Right): Icon & Weather Condition */}
+                            <div className="flex flex-col items-center justify-center text-center">
                                 <span className="text-3xl drop-shadow-sm select-none leading-none mb-1" role="img" aria-label={weatherInfo.label}>
                                     {weatherInfo.icon}
                                 </span>
@@ -234,21 +294,20 @@ export default function WeatherWidget() {
                             </div>
                         </div>
 
-                        {/* Footer Details Pill: Humidity & Wind */}
-                        <div className="flex items-center justify-around text-[10.5px] font-semibold text-slate-700 dark:text-slate-200 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 bg-white/40 dark:bg-slate-900/30 rounded-xl px-2 py-1.5 shadow-2xs">
-                            <span className="flex items-center gap-1">
-                                <svg className="w-3.5 h-3.5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        {/* Footer Details Pill: Humidity & Wind Speed Centered Grid */}
+                        <div className="grid grid-cols-2 divide-x divide-slate-200/80 dark:divide-slate-700/80 text-[10.5px] font-semibold text-slate-700 dark:text-slate-200 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 bg-white/50 dark:bg-slate-900/40 rounded-xl px-2 py-1.5 shadow-2xs items-center">
+                            <div className="flex items-center justify-center gap-1 pr-1">
+                                <svg className="w-3.5 h-3.5 text-cyan-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707" />
                                 </svg>
-                                습도 {weather.humidity}%
-                            </span>
-                            <span className="text-slate-300 dark:text-slate-600">|</span>
-                            <span className="flex items-center gap-1">
-                                <svg className="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <span>습도 {weather.humidity}%</span>
+                            </div>
+                            <div className="flex items-center justify-center gap-1 pl-1">
+                                <svg className="w-3.5 h-3.5 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                                 </svg>
-                                풍속 {weather.windSpeed}m/s
-                            </span>
+                                <span>풍속 {weather.windSpeed}m/s</span>
+                            </div>
                         </div>
                     </>
                 )}

@@ -191,27 +191,27 @@ export default function CalendarSidebar({ tasks, selectedDate, setSelectedDate }
                     <h3 className="text-xs font-bold text-gray-800 dark:text-slate-200 mb-2.5 flex items-center justify-between">
                         <span>{t('calendarLegend')}</span>
                     </h3>
-                    <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 dark:text-slate-300">
+                    <div className="grid grid-cols-2 gap-y-2.5 gap-x-2 text-xs text-gray-700 dark:text-slate-300 px-1">
                         <div className="flex items-center">
-                            <div className="w-3 h-3 rounded-full bg-blue-500/20 border-2 border-blue-600 dark:border-blue-400 mr-2 flex items-center justify-center shrink-0">
-                                <div className="w-1 h-1 rounded-full bg-blue-600 dark:bg-blue-400"></div>
+                            <div className="w-3.5 h-3.5 rounded-full bg-blue-500/20 border-2 border-blue-600 dark:border-blue-400 mr-2 flex items-center justify-center shrink-0">
+                                <div className="w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-blue-400"></div>
                             </div>
                             <span className="font-bold text-blue-700 dark:text-blue-300 text-[11px] whitespace-nowrap">오늘 (Today)</span>
                         </div>
-                        <div className="flex items-center text-[11px] whitespace-nowrap">
-                            <div className="w-3 h-3 rounded-full bg-red-100 dark:bg-red-950/50 border border-red-300 dark:border-red-700/60 mr-2 flex items-center justify-center shrink-0">
-                                <div className="w-1 h-1 rounded-full bg-red-500 dark:bg-red-400"></div>
+                        <div className="flex items-center text-[11px] font-semibold whitespace-nowrap">
+                            <div className="w-3.5 h-3.5 rounded-full bg-red-100 dark:bg-red-950/50 border border-red-300 dark:border-red-700/60 mr-2 flex items-center justify-center shrink-0">
+                                <div className="w-1.5 h-1.5 rounded-full bg-red-500 dark:bg-red-400"></div>
                             </div>
                             {t('hasActiveTasks')}
                         </div>
-                        <div className="flex items-center text-[11px] whitespace-nowrap">
-                            <div className="w-3 h-3 rounded-full bg-emerald-100 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-700/60 mr-2 flex items-center justify-center shrink-0">
-                                <div className="w-1 h-1 rounded-full bg-emerald-500 dark:bg-emerald-400"></div>
+                        <div className="flex items-center text-[11px] font-semibold whitespace-nowrap">
+                            <div className="w-3.5 h-3.5 rounded-full bg-emerald-100 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-700/60 mr-2 flex items-center justify-center shrink-0">
+                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400"></div>
                             </div>
                             {t('hasCompletedTasks')}
                         </div>
-                        <div className="flex items-center text-[11px] whitespace-nowrap">
-                            <div className="w-3 h-3 rounded-full bg-blue-600 mr-2 shrink-0"></div>
+                        <div className="flex items-center text-[11px] font-semibold whitespace-nowrap">
+                            <div className="w-3.5 h-3.5 rounded-full bg-blue-600 mr-2 shrink-0"></div>
                             {t('selectedDate')}
                         </div>
                     </div>
