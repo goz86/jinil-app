@@ -375,11 +375,11 @@ export default function WeatherWidget() {
                 {/* Header Row: Location & Live Status */}
                 <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-1.5 min-w-0">
-                        <svg className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className={`w-3.5 h-3.5 ${isNightNow ? 'text-blue-400' : 'text-blue-600 dark:text-blue-400'} shrink-0`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                         </svg>
-                        <span className="text-xs font-extrabold text-slate-900 dark:text-slate-100 truncate tracking-tight">
+                        <span className={`text-xs font-extrabold truncate tracking-tight ${isNightNow ? 'text-white' : 'text-slate-900 dark:text-slate-100'}`}>
                             {weather ? weather.location : '위치 확인 중...'}
                         </span>
                     </div>
@@ -388,22 +388,26 @@ export default function WeatherWidget() {
                         type="button"
                         onClick={getLocationAndFetch}
                         title="10분 주기 실시간 갱신"
-                        className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/80 dark:bg-slate-700/70 border border-white dark:border-slate-600/80 text-slate-700 dark:text-slate-200 hover:scale-105 active:scale-95 transition-all flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs"
+                        className={`text-[10px] font-semibold px-2 py-0.5 rounded-full hover:scale-105 active:scale-95 transition-all flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs ${
+                            isNightNow
+                                ? 'bg-white/15 border border-white/20 text-slate-100'
+                                : 'bg-white/80 dark:bg-slate-700/70 border border-white dark:border-slate-600/80 text-slate-700 dark:text-slate-200'
+                        }`}
                     >
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
                         <span className="whitespace-nowrap">{lastUpdated ? `${lastUpdated} 갱신` : '실시간'}</span>
                     </button>
                 </div>
 
                 {/* Main Weather Row - Perfectly Aligned 2 Columns */}
                 {loading && !weather ? (
-                    <div className="flex items-center justify-center py-4 text-xs font-semibold text-slate-500 dark:text-slate-400 animate-pulse">
+                    <div className={`flex items-center justify-center py-4 text-xs font-semibold animate-pulse ${isNightNow ? 'text-slate-300' : 'text-slate-500 dark:text-slate-400'}`}>
                         날씨 정보 업데이트 중...
                     </div>
                 ) : error && !weather ? (
                     <div className="flex items-center justify-between py-2">
-                        <span className="text-xs text-slate-500">날씨 불러오기 실패</span>
-                        <button onClick={getLocationAndFetch} className="text-xs text-blue-600 font-bold underline">재시도</button>
+                        <span className={`text-xs ${isNightNow ? 'text-slate-300' : 'text-slate-500'}`}>날씨 불러오기 실패</span>
+                        <button onClick={getLocationAndFetch} className="text-xs text-blue-400 font-bold underline">재시도</button>
                     </div>
                 ) : (
                     <>
@@ -411,12 +415,12 @@ export default function WeatherWidget() {
                             {/* Column 1 (Left): Temperature & Feels Like */}
                             <div className="flex flex-col items-start justify-center">
                                 <div className="flex items-baseline gap-1">
-                                    <span className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter leading-none">
+                                    <span className={`text-3xl font-black tracking-tighter leading-none ${isNightNow ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
                                         {weather.temp}°
                                     </span>
-                                    <span className="text-xs font-extrabold text-slate-700 dark:text-slate-200">C</span>
+                                    <span className={`text-xs font-extrabold ${isNightNow ? 'text-slate-200' : 'text-slate-700 dark:text-slate-200'}`}>C</span>
                                 </div>
-                                <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 mt-1.5 whitespace-nowrap">
+                                <span className={`text-[11px] font-semibold mt-1.5 whitespace-nowrap ${isNightNow ? 'text-slate-300' : 'text-slate-500 dark:text-slate-400'}`}>
                                     체감 {weather.feelsLike}°C
                                 </span>
                             </div>
@@ -426,22 +430,26 @@ export default function WeatherWidget() {
                                 <span className="text-3xl drop-shadow-sm select-none leading-none mb-1" role="img" aria-label={weatherInfo.label}>
                                     {weatherInfo.icon}
                                 </span>
-                                <span className="text-xs font-bold text-slate-800 dark:text-slate-200 whitespace-nowrap">
+                                <span className={`text-xs font-bold whitespace-nowrap ${isNightNow ? 'text-slate-100' : 'text-slate-800 dark:text-slate-200'}`}>
                                     {weatherInfo.label}
                                 </span>
                             </div>
                         </div>
 
                         {/* Footer Details Pill: Humidity & Wind Speed Centered Grid */}
-                        <div className="grid grid-cols-2 divide-x divide-slate-200/80 dark:divide-slate-700/80 text-[10.5px] font-semibold text-slate-700 dark:text-slate-200 pt-2 border-t border-slate-200/60 dark:border-slate-700/60 bg-white/50 dark:bg-slate-900/40 rounded-xl px-2 py-1.5 shadow-2xs items-center">
+                        <div className={`grid grid-cols-2 text-[10.5px] font-semibold pt-2 border-t rounded-xl px-2 py-1.5 shadow-2xs items-center ${
+                            isNightNow
+                                ? 'bg-white/10 text-slate-100 border-white/15 divide-x divide-white/20'
+                                : 'bg-white/50 dark:bg-slate-900/40 text-slate-700 dark:text-slate-200 border-slate-200/60 dark:border-slate-700/60 divide-x divide-slate-200/80 dark:divide-slate-700/80'
+                        }`}>
                             <div className="flex items-center justify-center gap-1 pr-1">
-                                <svg className="w-3.5 h-3.5 text-cyan-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className={`w-3.5 h-3.5 shrink-0 ${isNightNow ? 'text-cyan-300' : 'text-cyan-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707" />
                                 </svg>
                                 <span>습도 {weather.humidity}%</span>
                             </div>
                             <div className="flex items-center justify-center gap-1 pl-1">
-                                <svg className="w-3.5 h-3.5 text-blue-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className={`w-3.5 h-3.5 shrink-0 ${isNightNow ? 'text-blue-300' : 'text-blue-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
                                 </svg>
                                 <span>풍속 {weather.windSpeed}m/s</span>
