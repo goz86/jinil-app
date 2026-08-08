@@ -17,23 +17,23 @@ const getWeatherInfo = (code, isNight = false) => {
                 return {
                     label: '맑은 밤',
                     icon: '🌙',
-                    bgClass: 'bg-slate-900/90 text-slate-100 border-indigo-900/80 dark:bg-slate-950/95 dark:border-indigo-800/80 shadow-md',
-                    bgTint: 'from-indigo-950/90 via-slate-900/90 to-blue-950/80'
+                    bgClass: 'bg-[#1b365d]/95 text-white border-blue-400/30 dark:bg-[#122543]/95 dark:border-blue-500/30 shadow-lg backdrop-blur-xl',
+                    bgTint: 'from-[#2b528d]/60 via-[#1b365d]/50 to-[#0e1e38]/40'
                 };
             case 1:
             case 2:
                 return {
                     label: '구름 조금 (밤)',
                     icon: '🌙',
-                    bgClass: 'bg-slate-900/90 text-slate-100 border-slate-800 dark:bg-slate-950/95 dark:border-slate-800/80 shadow-md',
-                    bgTint: 'from-slate-900/90 via-indigo-950/80 to-slate-900/90'
+                    bgClass: 'bg-[#1b365d]/90 text-white border-blue-400/25 dark:bg-[#122543]/90 dark:border-blue-500/25 shadow-lg backdrop-blur-xl',
+                    bgTint: 'from-[#284c82]/55 via-[#183154]/45 to-[#0d1a30]/35'
                 };
             case 3:
                 return {
                     label: '흐린 밤',
                     icon: '☁️',
-                    bgClass: 'bg-slate-900/90 text-slate-100 border-slate-800 dark:bg-slate-950/95 dark:border-slate-800/80 shadow-md',
-                    bgTint: 'from-slate-950/95 via-gray-900/90 to-slate-900/90'
+                    bgClass: 'bg-[#192f52]/90 text-white border-blue-400/20 dark:bg-[#101e36]/90 dark:border-blue-500/20 shadow-lg backdrop-blur-xl',
+                    bgTint: 'from-[#203a63]/50 via-[#142642]/40 to-[#0b1424]/30'
                 };
             case 51:
             case 53:
@@ -44,15 +44,15 @@ const getWeatherInfo = (code, isNight = false) => {
                 return {
                     label: '밤비',
                     icon: '🌧️',
-                    bgClass: 'bg-slate-900/90 text-slate-100 border-blue-900/80 dark:bg-slate-950/95 dark:border-blue-900/80 shadow-md',
-                    bgTint: 'from-slate-950/95 via-blue-950/90 to-indigo-950/80'
+                    bgClass: 'bg-[#16335c]/95 text-white border-blue-400/35 dark:bg-[#0e2240]/95 dark:border-blue-500/35 shadow-lg backdrop-blur-xl',
+                    bgTint: 'from-[#1e467d]/65 via-[#122c52]/55 to-[#0a182e]/45'
                 };
             default:
                 return {
                     label: '맑은 밤',
                     icon: '🌙',
-                    bgClass: 'bg-slate-900/90 text-slate-100 border-indigo-900/80 dark:bg-slate-950/95 dark:border-indigo-800/80 shadow-md',
-                    bgTint: 'from-indigo-950/90 via-slate-900/90 to-blue-950/80'
+                    bgClass: 'bg-[#1b365d]/95 text-white border-blue-400/30 dark:bg-[#122543]/95 dark:border-blue-500/30 shadow-lg backdrop-blur-xl',
+                    bgTint: 'from-[#2b528d]/60 via-[#1b365d]/50 to-[#0e1e38]/40'
                 };
         }
     }
