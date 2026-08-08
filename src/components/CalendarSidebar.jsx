@@ -68,6 +68,11 @@ export default function CalendarSidebar({ tasks, selectedDate, setSelectedDate }
 
     return (
         <div className="backdrop-blur-xl bg-white/95 dark:bg-slate-800/95 rounded-3xl shadow-lg border border-white/80 dark:border-slate-700/80 p-6 flex flex-col h-fit sticky top-6 z-30 transition-all duration-300">
+            {/* Glassmorphism Realtime Weather Card (Top Placement) */}
+            <div className="mb-5">
+                <WeatherWidget />
+            </div>
+
             <div className="flex justify-between items-center mb-6">
                 <h2 className="text-xl font-bold text-gray-800 dark:text-slate-100">{monthNames[month]} {year}</h2>
                 <div className="flex space-x-2">
@@ -185,7 +190,7 @@ export default function CalendarSidebar({ tasks, selectedDate, setSelectedDate }
                 })}
             </div>
 
-            <div className="mt-6 pt-5 border-t border-gray-100 dark:border-slate-700/80 space-y-4">
+            <div className="mt-6 pt-5 border-t border-gray-100 dark:border-slate-700/80">
                 {/* 일정 안내 (Schedule Guide) 2x2 Grid */}
                 <div>
                     <h3 className="text-xs font-bold text-gray-800 dark:text-slate-200 mb-2.5 flex items-center justify-between">
@@ -216,9 +221,6 @@ export default function CalendarSidebar({ tasks, selectedDate, setSelectedDate }
                         </div>
                     </div>
                 </div>
-
-                {/* Glassmorphism Realtime Weather Card */}
-                <WeatherWidget />
             </div>
 
         </div>
