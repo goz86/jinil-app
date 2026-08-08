@@ -795,12 +795,20 @@ export default function MiniWidget() {
 
                     {/* Close Window Button */}
                     <button
+                        type="button"
                         onClick={handleClose}
-                        className={`w-7 h-7 rounded-xl hover:bg-red-500 flex items-center justify-center transition-all active:scale-90 ${
-                            currentTheme.id === 'kakao-yellow' ? 'text-[#191919]/70 hover:text-white' : 'text-white/60 hover:text-white'
+                        title="닫기"
+                        className={`w-7 h-7 rounded-xl flex items-center justify-center transition-all active:scale-90 cursor-pointer ${
+                            currentTheme.id === 'kakao-yellow' 
+                                ? 'text-[#191919] hover:bg-red-500 hover:text-white bg-[#191919]/10' 
+                                : currentTheme.isLight
+                                    ? 'text-slate-700 hover:bg-red-500 hover:text-white bg-slate-100/90 hover:border-transparent border border-slate-200/80'
+                                    : 'text-slate-200 hover:bg-red-500 hover:text-white bg-white/10 hover:border-transparent border border-white/10'
                         }`}
                     >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" /></svg>
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
                     </button>
                 </div>
             </div>
@@ -865,39 +873,46 @@ export default function MiniWidget() {
                         onClick={() => togglePrivacyHidden(false)}
                         className={`group rounded-2xl p-6 border flex flex-col items-center justify-center text-center min-h-[220px] animate-in fade-in duration-300 cursor-pointer hover:scale-[1.01] transition-all my-2 relative overflow-hidden ${
                             currentTheme.isLight
-                                ? 'bg-white border-slate-200/90 hover:border-blue-400 shadow-md'
-                                : 'bg-white/5 backdrop-blur-xl border-white/10 hover:border-blue-500/40 hover:bg-white/10'
+                                ? 'bg-white/90 border-slate-200/80 hover:border-slate-300 shadow-sm'
+                                : 'bg-slate-900/80 backdrop-blur-xl border-slate-800 hover:border-slate-700'
                         }`}
                     >
-                        <div className="relative mb-4">
-                            <div className="absolute -inset-2 rounded-2xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 opacity-30 blur-lg group-hover:opacity-60 transition-opacity duration-500"></div>
-                            <div className={`relative w-12 h-12 rounded-xl flex items-center justify-center text-white shadow-lg border group-hover:scale-110 transition-transform duration-300 ${
-                                currentTheme.id === 'kakao-yellow' ? 'bg-[#191919] text-[#FEE500] border-yellow-400/50' : 'bg-gradient-to-br from-blue-500 via-indigo-600 to-purple-600 border-white/30'
+                        <div className="mb-3.5">
+                            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-transform duration-300 group-hover:scale-105 ${
+                                currentTheme.id === 'kakao-yellow'
+                                    ? 'bg-[#191919] text-[#FEE500] border border-yellow-400/50 shadow-sm'
+                                    : currentTheme.isLight
+                                        ? 'bg-slate-100 text-slate-700 border border-slate-200/80 shadow-sm'
+                                        : 'bg-slate-800 text-slate-200 border border-slate-700/80'
                             }`}>
-                                <svg className="w-6 h-6 drop-shadow-md" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                 </svg>
                             </div>
                         </div>
 
-                        <h3 className={`text-xs font-black mb-1 tracking-tight ${currentTheme.isLight ? 'text-slate-900' : 'text-white'}`}>
+                        <h3 className={`text-xs font-bold mb-1 tracking-tight ${currentTheme.isLight ? 'text-slate-900' : 'text-slate-100'}`}>
                             작업 목록이 가려져 있습니다
                         </h3>
-                        <p className={`text-[10px] max-w-[180px] mb-4 leading-relaxed opacity-70`}>
+                        <p className={`text-[10.5px] max-w-[200px] mb-4 leading-relaxed ${currentTheme.isLight ? 'text-slate-500' : 'text-slate-400'}`}>
                             보안을 위해 가려졌습니다. 클릭하여 내용을 확인하세요.
                         </p>
 
                         <button
                             type="button"
                             onClick={(e) => { e.stopPropagation(); togglePrivacyHidden(false); }}
-                            className={`relative group/btn overflow-hidden rounded-xl px-4 py-2 font-bold text-[10px] shadow-lg active:scale-95 transition-all duration-200 cursor-pointer flex items-center gap-2 border ${currentTheme.accentBg}`}
+                            className={`rounded-xl px-4 py-2 font-bold text-[11px] active:scale-95 transition-all duration-200 cursor-pointer flex items-center gap-2 shadow-sm ${
+                                currentTheme.id === 'kakao-yellow' 
+                                    ? 'bg-[#191919] text-[#FEE500] hover:bg-[#2e2e2e]' 
+                                    : currentTheme.isLight
+                                        ? 'bg-slate-900 text-white hover:bg-slate-800'
+                                        : 'bg-blue-600 text-white hover:bg-blue-500'
+                            }`}
                         >
-                            <div className="w-4 h-4 rounded-md bg-white/20 flex items-center justify-center shrink-0 border border-white/30 shadow-inner">
-                                <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
-                                </svg>
-                            </div>
-                            <span className="tracking-wide">작업 목록 보기</span>
+                            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                            </svg>
+                            <span className="tracking-tight">작업 목록 보기</span>
                         </button>
                     </div>
                 ) : sortedTasks.length === 0 ? (

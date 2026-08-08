@@ -304,11 +304,66 @@ if (process.platform === 'win32') {
     app.setAppUserModelId("com.jinil.todos");
 }
 
+function positionMiniNextToMain() {
+    if (!mainWindow || !miniWindow) return;
+    try {
+        if (!mainWindow.isVisible() || mainWindow.isMinimized()) return;
+        const [mainX, mainY] = mainWindow.getPosition();
+        const [mainWidth, mainHeight] = mainWindow.getSize();
+        const primaryDisplay = screen.getPrimaryDisplay();
+        const workArea = primaryDisplay.workArea;
+
+        const miniBounds = miniWindow.getBounds();
+        const miniWidth = miniBounds.width || 300;
+        const miniHeight = Math.min(mainHeight, workArea.height - 40);
+
+        const GAP = 14;
+        const leftLimit = workArea.x + 10;
+        const rightLimit = workArea.x + workArea.width - 10;
+
+        const leftCandidate = mainX - miniWidth - GAP;
+        const rightCandidate = mainX + mainWidth + GAP;
+
+        const fitsOnLeft = leftCandidate >= leftLimit;
+        const fitsOnRight = rightCandidate + miniWidth <= rightLimit;
+
+        let nextX;
+        if (fitsOnLeft) {
+            nextX = leftCandidate;
+        } else if (fitsOnRight) {
+            nextX = rightCandidate;
+        } else {
+            if (!mainWindow.isMaximized()) {
+                const newMainX = Math.min(
+                    rightLimit - mainWidth,
+                    leftLimit + miniWidth + GAP
+                );
+                mainWindow.setPosition(Math.round(newMainX), Math.round(mainY));
+                nextX = newMainX - miniWidth - GAP;
+            } else {
+                nextX = leftLimit;
+            }
+        }
+
+        const nextY = Math.max(workArea.y + 10, Math.min(mainY, workArea.y + workArea.height - miniHeight - 10));
+
+        miniWindow.setBounds({
+            x: Math.round(nextX),
+            y: Math.round(nextY),
+            width: Math.round(miniWidth),
+            height: Math.round(miniHeight)
+        });
+    } catch (err) {
+        console.error("Positioning mini window error:", err);
+    }
+}
+
 function createMiniWindow() {
     if (miniWindow) {
         if (miniWindow.isMinimized()) miniWindow.restore();
         miniWindow.show();
         miniWindow.focus();
+        positionMiniNextToMain();
         return;
     }
     const isDev = !app.isPackaged;
@@ -344,11 +399,29 @@ function createWindow() {
 
     mainWindow.once('ready-to-show', () => {
         mainWindow.show();
+        createMiniWindow();
+        setTimeout(positionMiniNextToMain, 300);
     });
-    mainWindow.on('closed', () => { console.log('[Main] mainWindow closed'); mainWindow = null; });
+
+    mainWindow.on('move', positionMiniNextToMain);
+    mainWindow.on('resize', positionMiniNextToMain);
+    mainWindow.on('show', () => {
+        if (!miniWindow) {
+            createMiniWindow();
+        } else {
+            miniWindow.show();
+        }
+        setTimeout(positionMiniNextToMain, 200);
+    });
+
+    mainWindow.on('closed', () => { console.log('[Main] mainWindow closed'); mainWindow = null; if (miniWindow) { miniWindow.close(); miniWindow = null; } });
     mainWindow.on('close', (event) => {
         console.log('[Main] close event triggered, isQuitting:', isQuitting);
-        if (!isQuitting) { event.preventDefault(); mainWindow.hide(); }
+        if (!isQuitting) {
+            event.preventDefault();
+            mainWindow.hide();
+            if (miniWindow) miniWindow.hide();
+        }
         return false;
     });
 

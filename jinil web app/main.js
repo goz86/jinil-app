@@ -318,14 +318,41 @@ function positionMiniNextToMain() {
         const miniWidth = miniBounds.width || 300;
         const miniHeight = Math.min(mainHeight, workArea.height - 40);
 
-        let nextX = mainX + mainWidth + 12;
-        if (nextX + miniWidth > workArea.x + workArea.width) {
-            nextX = Math.max(workArea.x + 10, mainX - miniWidth - 12);
+        const GAP = 14; // Clean gap between main window and mini window
+        const leftLimit = workArea.x + 10;
+        const rightLimit = workArea.x + workArea.width - 10;
+
+        const leftCandidate = mainX - miniWidth - GAP;
+        const rightCandidate = mainX + mainWidth + GAP;
+
+        const fitsOnLeft = leftCandidate >= leftLimit;
+        const fitsOnRight = rightCandidate + miniWidth <= rightLimit;
+
+        let nextX;
+        if (fitsOnLeft) {
+            nextX = leftCandidate;
+        } else if (fitsOnRight) {
+            nextX = rightCandidate;
+        } else {
+            // Neither side has enough room without overlap or clipping.
+            // On startup or constrained screens, adjust mainWindow slightly to fit miniWindow on the left cleanly
+            if (!mainWindow.isMaximized()) {
+                const newMainX = Math.min(
+                    rightLimit - mainWidth,
+                    leftLimit + miniWidth + GAP
+                );
+                mainWindow.setPosition(Math.round(newMainX), Math.round(mainY));
+                nextX = newMainX - miniWidth - GAP;
+            } else {
+                nextX = leftLimit;
+            }
         }
+
+        const nextY = Math.max(workArea.y + 10, Math.min(mainY, workArea.y + workArea.height - miniHeight - 10));
 
         miniWindow.setBounds({
             x: Math.round(nextX),
-            y: Math.round(mainY),
+            y: Math.round(nextY),
             width: Math.round(miniWidth),
             height: Math.round(miniHeight)
         });
