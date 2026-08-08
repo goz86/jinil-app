@@ -36,10 +36,12 @@ export default defineConfig({
             if (id.includes('recharts') || id.includes('d3')) {
               return 'vendor-charts';
             }
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-is')) {
-              return 'vendor-core';
+            if (id.includes('firebase')) {
+              return 'vendor-firebase';
             }
-            return 'vendor-libs';
+            if (id.includes('sweetalert2')) {
+              return 'vendor-ui';
+            }
           }
         }
       }
