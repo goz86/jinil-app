@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import invoiceHtml from '../../public/invoice-app/index.html?raw';
 import { supabase } from '../lib/supabase';
 import { db } from '../firebase';
@@ -44,56 +45,32 @@ export default function InvoiceModal({ isOpen, onClose }) {
                     }
                 }
             } catch (err) {
-                console.error("Supabase RPC search error:", err);
+                console.error('[InvoiceModal] Supabase RPC fetch error:', err);
             }
 
-            // 2. Supabase partners
+            // 2. Fetch from Firebase Firestore 'clients' collection
             try {
-                const { data: partnersData } = await supabase.from('partners').select('*');
-                if (partnersData) {
-                    partnersData.forEach(p => {
-                        const name = (p.company_name || p.name || '').trim();
-                        if (name) {
-                            const key = name.toLowerCase();
-                            const existing = locationMap.get(key) || {};
-                            locationMap.set(key, {
-                                name: name,
-                                rep: p.representative_name || p.contact_person || existing.rep || '',
-                                tel: p.phone || p.tel || existing.tel || '',
-                                addr: p.address || p.default_address || existing.addr || '',
-                                biz: p.business_number || p.biz || '',
-                                bizType: p.biz_type || '',
-                                itemType: p.item_type || ''
-                            });
-                        }
-                    });
-                }
-            } catch (e) {
-                console.error("Supabase partners fetch error:", e);
-            }
+                const snap = await getDocs(collection(db, 'clients'));
+                snap.forEach((docSnap) => {
+                    const d = docSnap.data();
+                    const locName = (d.name || d.location_name || d.company_name || '').trim();
+                    if (!locName) return;
 
-            // 3. Firestore clients
-            try {
-                const querySnapshot = await getDocs(collection(db, 'clients'));
-                querySnapshot.forEach(doc => {
-                    const data = doc.data();
-                    const name = (data.name || '').trim();
-                    if (name) {
-                        const key = name.toLowerCase();
-                        const existing = locationMap.get(key) || {};
+                    const key = locName.toLowerCase();
+                    if (!locationMap.has(key)) {
                         locationMap.set(key, {
-                            name: name,
-                            rep: data.representative || data.contactName || existing.rep || '',
-                            tel: data.phone || existing.tel || '',
-                            addr: data.address || existing.addr || '',
-                            biz: data.biz || '',
-                            bizType: data.bizType || '',
-                            itemType: data.itemType || ''
+                            name: locName,
+                            rep: d.representative || d.rep || '',
+                            tel: d.tel || d.phone || '',
+                            addr: d.addr || d.address || '',
+                            biz: d.biz || d.bizNumber || '',
+                            bizType: d.bizType || '',
+                            itemType: d.itemType || ''
                         });
                     }
                 });
-            } catch (e) {
-                console.error("Firestore clients fetch error:", e);
+            } catch (err) {
+                console.error('[InvoiceModal] Firebase Firestore fetch error:', err);
             }
 
             const combinedClients = Array.from(locationMap.values());
@@ -101,7 +78,7 @@ export default function InvoiceModal({ isOpen, onClose }) {
             // 4. Send message to iframe
             if (iframeRef.current && iframeRef.current.contentWindow) {
                 iframeRef.current.contentWindow.postMessage({
-                    type: 'SET_CLIENT_ADDRESS_BOOK',
+                    type: 'INIT_CLIENTS',
                     clients: combinedClients
                 }, '*');
             }
@@ -116,9 +93,9 @@ export default function InvoiceModal({ isOpen, onClose }) {
 
     if (!isOpen) return null;
 
-    return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md transition-all duration-300">
-            <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl w-[96%] max-w-7xl h-[92vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-300 border border-gray-100 dark:border-slate-700/80">
+    return createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-md transition-all duration-300 p-2 sm:p-4">
+            <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl w-[98%] max-w-7xl h-[94vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-300 border border-gray-100 dark:border-slate-700/80">
                 {/* Modal Header */}
                 <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-900/80">
                     <div className="flex items-center gap-3">
@@ -171,6 +148,7 @@ export default function InvoiceModal({ isOpen, onClose }) {
                     />
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }

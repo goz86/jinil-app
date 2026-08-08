@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { supabase } from '../lib/supabase';
 import { db } from '../firebase';
 import { collection, getDocs, query as fsQuery, orderBy as fsOrderBy, limit as fsLimit } from 'firebase/firestore';
@@ -255,8 +256,8 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
     });
   };
 
-  return (
-    <div className="fixed inset-0 z-[9000] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
+  return createPortal(
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-100 dark:border-gray-700">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
@@ -413,6 +414,7 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
