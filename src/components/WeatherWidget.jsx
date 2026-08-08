@@ -367,9 +367,9 @@ export default function WeatherWidget() {
     const weatherInfo = weather ? getWeatherInfo(weather.code, isNightNow) : (isNightNow ? { label: '맑은 밤', icon: '🌙', bgClass: 'bg-slate-900/90 text-slate-100 border-indigo-900/80', bgTint: 'from-indigo-950/90 to-slate-900/90' } : { label: '불러오는 중', icon: '🌤️', bgClass: 'bg-slate-50/90 dark:bg-slate-900/60 border-slate-200/80 dark:border-slate-700/60', bgTint: 'from-blue-500/15 to-indigo-500/15' });
 
     return (
-        <div className={`relative overflow-hidden rounded-2xl p-4 border transition-all duration-500 shadow-sm backdrop-blur-md w-full ${weatherInfo.bgClass}`}>
+        <div className={`relative overflow-hidden rounded-2xl p-4 border transition-colors duration-200 shadow-sm backdrop-blur-md w-full ${weatherInfo.bgClass}`}>
             {/* Ambient Background Gradient Tint (Dynamic by Weather) */}
-            <div className={`absolute -inset-2 bg-gradient-to-br ${weatherInfo.bgTint} pointer-events-none blur-xl opacity-90 transition-all duration-500`}></div>
+            <div className={`absolute -inset-2 bg-gradient-to-br ${weatherInfo.bgTint} pointer-events-none blur-xl opacity-90 transition-colors duration-200`}></div>
 
             <div className="relative z-10 space-y-3">
                 {/* Header Row: Location & Live Status */}
