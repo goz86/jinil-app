@@ -44,10 +44,66 @@ export default function AdminDashboardModal({ isOpen, onClose, currentUser }) {
       }
     });
 
-    // Listen for All Users
+    // Load & Combine Saved Local Accounts + Firestore Users
+    const loadMergedUsers = (firestoreDocs = []) => {
+      const map = new Map();
+
+      // 1. Add root admin pc5@gmail.com
+      map.set('pc5@gmail.com', {
+        uid: 'root_pc5',
+        email: 'pc5@gmail.com',
+        alias: 'Root Admin',
+        role: 'admin',
+        isPaid: true,
+        status: 'active'
+      });
+
+      // 2. Add local saved accounts from localStorage
+      try {
+        const localAccs = JSON.parse(localStorage.getItem('jinil_saved_accounts') || '[]');
+        localAccs.forEach(acc => {
+          if (acc.email || acc.alias) {
+            const key = (acc.email || acc.alias).toLowerCase();
+            map.set(key, {
+              uid: acc.uid || key,
+              email: acc.email || acc.alias,
+              alias: acc.alias || '',
+              role: acc.email === 'pc5@gmail.com' ? 'admin' : 'user',
+              isPaid: acc.email === 'pc5@gmail.com' ? true : Boolean(acc.isPaid),
+              status: acc.status || 'active'
+            });
+          }
+        });
+      } catch (e) {
+        console.warn("Error reading local accounts:", e);
+      }
+
+      // 3. Merge Firestore remote snapshot
+      firestoreDocs.forEach(d => {
+        const data = d.data ? d.data() : d;
+        const emailOrKey = (data.email || data.alias || d.id).toLowerCase();
+        const existing = map.get(emailOrKey) || {};
+        map.set(emailOrKey, {
+          uid: d.id || existing.uid,
+          email: data.email || existing.email || emailOrKey,
+          alias: data.alias || existing.alias || '',
+          role: data.role || existing.role || (emailOrKey === 'pc5@gmail.com' ? 'admin' : 'user'),
+          isPaid: data.isPaid !== undefined ? data.isPaid : (emailOrKey === 'pc5@gmail.com' ? true : existing.isPaid || false),
+          status: data.status || existing.status || 'active'
+        });
+      });
+
+      setUsersList(Array.from(map.values()));
+    };
+
+    loadMergedUsers();
+
+    // Listen for Firestore Remote Users
     const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
-      const list = snapshot.docs.map(d => ({ uid: d.id, ...d.data() }));
-      setUsersList(list);
+      loadMergedUsers(snapshot.docs);
+    }, (err) => {
+      console.warn("Firestore users read error:", err);
+      loadMergedUsers();
     });
 
     return () => {
@@ -497,11 +553,18 @@ service cloud.firestore {
                         filteredUsers.map((u) => (
                           <tr key={u.uid} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
                             <td className="px-4 py-3 font-extrabold text-slate-900 dark:text-white">
-                              {u.email}
-                              {u.email === 'pc5@gmail.com' && (
-                                <span className="ml-1.5 px-1.5 py-0.5 bg-red-600 text-white text-[9px] font-black rounded uppercase">
-                                  ROOT
-                                </span>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                <span>{u.email || u.alias || u.name || u.uid || '사용자 계정'}</span>
+                                {(u.email === 'pc5@gmail.com' || u.role === 'admin') && (
+                                  <span className="px-1.5 py-0.5 bg-red-600 text-white text-[9px] font-black rounded uppercase shrink-0">
+                                    ROOT ADMIN
+                                  </span>
+                                )}
+                              </div>
+                              {u.alias && u.email && u.alias !== u.email && (
+                                <div className="text-[10px] text-slate-400 font-semibold mt-0.5">
+                                  별칭: {u.alias}
+                                </div>
                               )}
                             </td>
                             <td className="px-4 py-3">
