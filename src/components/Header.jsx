@@ -248,10 +248,10 @@ export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics, wal
                                 </div>
                                 <div className="mt-2.5">
                                     <label className="flex items-center justify-center gap-1.5 p-2 rounded-xl border border-dashed border-blue-400/50 bg-blue-50/50 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400 text-[11px] font-bold cursor-pointer hover:bg-blue-100/50 dark:hover:bg-blue-900/40 transition-all">
-                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                                         </svg>
-                                        <span>📂 내 컴퓨터에서 이미지 업로드</span>
+                                        <span>내 컴퓨터에서 이미지 업로드</span>
                                         <input
                                             type="file"
                                             accept="image/*"
