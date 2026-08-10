@@ -248,7 +248,7 @@ service cloud.firestore {
   });
 
   return (
-    <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/75 backdrop-blur-md p-4 animate-in fade-in duration-200 select-none">
+    <div className="fixed inset-0 z-[100000] flex items-center justify-center bg-slate-950/75 backdrop-blur-md p-4 animate-in fade-in duration-200 select-none">
       <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden border border-slate-200/80 dark:border-slate-800 flex flex-col text-slate-800 dark:text-slate-100">
         
         {/* Modal Header */}

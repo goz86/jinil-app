@@ -1120,6 +1120,7 @@ function App() {
         lockReason={lockReason}
         message={lockMessage}
         userEmail={user?.email}
+        onOpenAdminDashboard={() => setIsAdminDashboardOpen(true)}
       />
     </div>
   );
