@@ -188,6 +188,16 @@
       background: var(--accent-blue-hover);
     }
 
+    .btn-success {
+      background: #16a34a;
+      color: #ffffff;
+      border-color: #16a34a;
+    }
+
+    .btn-success:hover {
+      background: #15803d;
+    }
+
     /* Table */
     .table-container {
       overflow-x: auto;
@@ -469,6 +479,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="lib/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 </head>
 <body>
 
@@ -671,6 +682,12 @@
         <button class="btn btn-primary" onclick="exportPDF()">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg>
           <span>PDF 저장</span>
+        </button>
+
+        <!-- Excel Button -->
+        <button class="btn btn-success" onclick="exportExcel()" title="엑셀 서식으로 저장">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M8 13h8"/><path d="M8 17h8"/><path d="M10 9h4"/></svg>
+          <span>Excel 저장</span>
         </button>
       </div>
     </header>
@@ -1511,6 +1528,321 @@
     } catch (e) {
       console.error(e);
       showToast('PDF 저장 실패');
+    }
+  }
+
+  // Xuất file Excel 서식 거래명세표 (Dynamic Excel Formulas + Rich Styling)
+  async function exportExcel() {
+    saveCurrentToHistory();
+    if (typeof ExcelJS === 'undefined') {
+      showToast('ExcelJS 라이브러리를 불러오는 중입니다. 잠시 후 다시 시도하세요.');
+      return;
+    }
+
+    const toName = document.getElementById('toName').value.trim() || '공급받는자';
+    const toRep = document.getElementById('toRep').value.trim();
+    const toBiz = document.getElementById('toBiz').value.trim();
+    const toAddr = document.getElementById('toAddr').value.trim();
+    const toTel = document.getElementById('toTel').value.trim();
+    const toBizType = document.getElementById('toBizType').value.trim();
+    const toItemType = document.getElementById('toItemType').value.trim();
+
+    const supplier = {
+      biz: document.getElementById('supBiz').value.trim(),
+      name: document.getElementById('supName').value.trim(),
+      rep: document.getElementById('supRep').value.trim(),
+      tel: document.getElementById('supTel').value.trim(),
+      addr: document.getElementById('supAddr').value.trim(),
+      bizType: document.getElementById('supBizType').value.trim(),
+      itemType: document.getElementById('supItemType').value.trim(),
+      bank: document.getElementById('supBank').value.trim(),
+    };
+
+    const invDate = document.getElementById('invDate').value;
+    const includeTax = document.getElementById('chkTax').checked;
+    const note = document.getElementById('invNote').value.trim();
+
+    showToast('Excel 생성 중...');
+
+    try {
+      const workbook = new ExcelJS.Workbook();
+      const sheet = workbook.addWorksheet('거래명세서');
+
+      // Set column widths
+      sheet.columns = [
+        { key: 'colA', width: 14 }, // 날짜
+        { key: 'colB', width: 28 }, // 품목명
+        { key: 'colC', width: 14 }, // 규격
+        { key: 'colD', width: 10 }, // 수량
+        { key: 'colE', width: 14 }, // 단가
+        { key: 'colF', width: 16 }, // 공급가액
+        { key: 'colG', width: 14 }, // 세액
+        { key: 'colH', width: 18 }  // 비고
+      ];
+
+      // Style definitions
+      const thinBorder = {
+        top: { style: 'thin', color: { argb: 'CBD5E1' } },
+        left: { style: 'thin', color: { argb: 'CBD5E1' } },
+        bottom: { style: 'thin', color: { argb: 'CBD5E1' } },
+        right: { style: 'thin', color: { argb: 'CBD5E1' } }
+      };
+      const headerFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'E8F5E8' } };
+      const labelFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'F9FDF9' } };
+      const titleFill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '1A6B3A' } };
+
+      // 1. Main Title (A1:H2)
+      sheet.mergeCells('A1:H2');
+      const titleCell = sheet.getCell('A1');
+      titleCell.value = '거 래 명 세 표';
+      titleCell.font = { name: '맑은 고딕', size: 18, bold: true, color: { argb: 'FFFFFF' } };
+      titleCell.fill = titleFill;
+      titleCell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+      sheet.getRow(3).height = 10;
+
+      // 2. Supplier & Recipient Headers (Row 4)
+      sheet.mergeCells('A4:D4');
+      const supHeader = sheet.getCell('A4');
+      supHeader.value = '공 급 자';
+      supHeader.font = { name: '맑은 고딕', size: 12, bold: true, color: { argb: '1A6B3A' } };
+      supHeader.fill = headerFill;
+      supHeader.alignment = { vertical: 'middle', horizontal: 'center' };
+
+      sheet.mergeCells('E4:H4');
+      const recHeader = sheet.getCell('E4');
+      recHeader.value = '공급받는자';
+      recHeader.font = { name: '맑은 고딕', size: 12, bold: true, color: { argb: '1A6B3A' } };
+      recHeader.fill = headerFill;
+      recHeader.alignment = { vertical: 'middle', horizontal: 'center' };
+
+      // Info rows data (Rows 5 to 11)
+      const infoRows = [
+        { supLabel: '등록번호', supVal: supplier.biz, recLabel: '등록번호', recVal: toBiz },
+        { supLabel: '상 호', supVal: supplier.name, recLabel: '상 호', recVal: toName },
+        { supLabel: '성 명', supVal: supplier.rep, recLabel: '성 명', recVal: toRep },
+        { supLabel: '주 소', supVal: supplier.addr, recLabel: '주 소', recVal: toAddr },
+        { supLabel: '업 태', supVal: supplier.bizType, recLabel: '업 태', recVal: toBizType },
+        { supLabel: '종 목', supVal: supplier.itemType, recLabel: '종 목', recVal: toItemType },
+        { supLabel: 'Tel', supVal: supplier.tel, recLabel: 'Tel', recVal: toTel }
+      ];
+
+      infoRows.forEach((item, idx) => {
+        const rNum = 5 + idx;
+        const row = sheet.getRow(rNum);
+        row.height = 20;
+
+        // Supplier Label & Val
+        row.getCell(1).value = item.supLabel;
+        row.getCell(1).font = { name: '맑은 고딕', size: 10, bold: true, color: { argb: '444444' } };
+        row.getCell(1).fill = labelFill;
+        row.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+        sheet.mergeCells(`B${rNum}:D${rNum}`);
+        const supValCell = row.getCell(2);
+        supValCell.value = item.supVal;
+        supValCell.font = { name: '맑은 고딕', size: 10, bold: item.supLabel === '상 호' };
+        supValCell.alignment = { vertical: 'middle', horizontal: 'left' };
+
+        // Recipient Label & Val
+        row.getCell(5).value = item.recLabel;
+        row.getCell(5).font = { name: '맑은 고딕', size: 10, bold: true, color: { argb: '444444' } };
+        row.getCell(5).fill = labelFill;
+        row.getCell(5).alignment = { vertical: 'middle', horizontal: 'center' };
+
+        sheet.mergeCells(`F${rNum}:H${rNum}`);
+        const recValCell = row.getCell(6);
+        recValCell.value = item.recVal;
+        recValCell.font = { name: '맑은 고딕', size: 10, bold: item.recLabel === '상 호' };
+        recValCell.alignment = { vertical: 'middle', horizontal: 'left' };
+      });
+
+      // Apply borders to Info Rows (4 to 11)
+      for (let r = 4; r <= 11; r++) {
+        for (let c = 1; c <= 8; c++) {
+          sheet.getCell(r, c).border = thinBorder;
+        }
+      }
+
+      // Bank Account Row (Row 12)
+      sheet.getRow(12).height = 22;
+      sheet.getCell('A12').value = '입금 계좌';
+      sheet.getCell('A12').font = { name: '맑은 고딕', size: 10, bold: true, color: { argb: '1A6B3A' } };
+      sheet.getCell('A12').fill = headerFill;
+      sheet.getCell('A12').alignment = { vertical: 'middle', horizontal: 'center' };
+
+      sheet.mergeCells('B12:H12');
+      const bankCell = sheet.getCell('B12');
+      bankCell.value = supplier.bank;
+      bankCell.font = { name: '맑은 고딕', size: 10, bold: true };
+      bankCell.alignment = { vertical: 'middle', horizontal: 'left' };
+
+      for (let c = 1; c <= 8; c++) sheet.getCell(12, c).border = thinBorder;
+
+      sheet.getRow(13).height = 10;
+
+      // 3. Item Table Headers (Row 14)
+      const tableHeaderRow = sheet.getRow(14);
+      tableHeaderRow.height = 24;
+      const tableHeaders = ['날짜', '품목명', '규격', '수량', '단가', '공급가액', '세액', '비고'];
+      tableHeaders.forEach((h, i) => {
+        const cell = tableHeaderRow.getCell(i + 1);
+        cell.value = h;
+        cell.font = { name: '맑은 고딕', size: 11, bold: true, color: { argb: '1A6B3A' } };
+        cell.fill = headerFill;
+        cell.alignment = { vertical: 'middle', horizontal: 'center' };
+        cell.border = thinBorder;
+      });
+
+      // 4. Item Rows (Starting Row 15)
+      const startRow = 15;
+      const itemRowsCount = Math.max(items.length, 10); // Minimum 10 rows for clean presentation
+
+      for (let i = 0; i < itemRowsCount; i++) {
+        const rNum = startRow + i;
+        const row = sheet.getRow(rNum);
+        row.height = 20;
+        const itemData = items[i] || { date: '', name: '', spec: '', qty: 0, price: 0, sub: 0, note: '' };
+
+        row.getCell(1).value = itemData.date || (i === 0 ? invDate : '');
+        row.getCell(1).alignment = { vertical: 'middle', horizontal: 'center' };
+
+        row.getCell(2).value = itemData.name || '';
+        row.getCell(2).alignment = { vertical: 'middle', horizontal: 'left' };
+
+        row.getCell(3).value = itemData.spec || '';
+        row.getCell(3).alignment = { vertical: 'middle', horizontal: 'center' };
+
+        // 수량 (Col D)
+        const qtyNum = Number(itemData.qty) || 0;
+        row.getCell(4).value = qtyNum;
+        row.getCell(4).numFmt = '#,##0';
+        row.getCell(4).alignment = { vertical: 'middle', horizontal: 'right' };
+
+        // 단가 (Col E)
+        const priceNum = Number(itemData.price) || 0;
+        row.getCell(5).value = priceNum;
+        row.getCell(5).numFmt = '#,##0';
+        row.getCell(5).alignment = { vertical: 'middle', horizontal: 'right' };
+
+        // 공급가액 (Col F) - Excel Formula `=D{rNum}*E{rNum}`
+        const subCalc = itemData.sub !== undefined && itemData.sub !== null && itemData.sub !== ''
+          ? Number(itemData.sub)
+          : qtyNum * priceNum;
+        row.getCell(6).value = { formula: `D${rNum}*E${rNum}`, result: subCalc };
+        row.getCell(6).numFmt = '#,##0';
+        row.getCell(6).alignment = { vertical: 'middle', horizontal: 'right' };
+
+        // 세액 (Col G) - Excel Formula `=IF(${includeTax}, ROUND(F{rNum}*0.1, 0), 0)`
+        const taxCalc = includeTax ? Math.round(subCalc * 0.1) : 0;
+        row.getCell(7).value = {
+          formula: includeTax ? `ROUND(F${rNum}*0.1, 0)` : '0',
+          result: taxCalc
+        };
+        row.getCell(7).numFmt = '#,##0';
+        row.getCell(7).alignment = { vertical: 'middle', horizontal: 'right' };
+
+        row.getCell(8).value = itemData.note || '';
+        row.getCell(8).alignment = { vertical: 'middle', horizontal: 'left' };
+
+        for (let c = 1; c <= 8; c++) {
+          const cell = row.getCell(c);
+          cell.font = { name: '맑은 고딕', size: 10 };
+          cell.border = thinBorder;
+        }
+      }
+
+      const endRow = startRow + itemRowsCount - 1;
+
+      // 5. Totals & Summary Rows
+      // Subtotal Row
+      const subtotalRowNum = endRow + 1;
+      sheet.getRow(subtotalRowNum).height = 22;
+      sheet.mergeCells(`A${subtotalRowNum}:E${subtotalRowNum}`);
+      const subtotalLabel = sheet.getCell(`A${subtotalRowNum}`);
+      subtotalLabel.value = '공급가액 합계';
+      subtotalLabel.font = { name: '맑은 고딕', size: 11, bold: true, color: { argb: '1A6B3A' } };
+      subtotalLabel.alignment = { vertical: 'middle', horizontal: 'right' };
+
+      const subtotalVal = sheet.getCell(`F${subtotalRowNum}`);
+      subtotalVal.value = { formula: `SUM(F${startRow}:F${endRow})` };
+      subtotalVal.numFmt = '#,##0';
+      subtotalVal.font = { name: '맑은 고딕', size: 11, bold: true };
+      subtotalVal.alignment = { vertical: 'middle', horizontal: 'right' };
+
+      sheet.mergeCells(`G${subtotalRowNum}:H${subtotalRowNum}`);
+      for (let c = 1; c <= 8; c++) sheet.getCell(subtotalRowNum, c).border = thinBorder;
+
+      let grandTotalRowNum = subtotalRowNum + 1;
+
+      if (includeTax) {
+        sheet.getRow(grandTotalRowNum).height = 22;
+        sheet.mergeCells(`A${grandTotalRowNum}:E${grandTotalRowNum}`);
+        const taxLabel = sheet.getCell(`A${grandTotalRowNum}`);
+        taxLabel.value = '세액 합계 (10%)';
+        taxLabel.font = { name: '맑은 고딕', size: 11, bold: true, color: { argb: '1A6B3A' } };
+        taxLabel.alignment = { vertical: 'middle', horizontal: 'right' };
+
+        const taxVal = sheet.getCell(`F${grandTotalRowNum}`);
+        taxVal.value = { formula: `SUM(G${startRow}:G${endRow})` };
+        taxVal.numFmt = '#,##0';
+        taxVal.font = { name: '맑은 고딕', size: 11, bold: true };
+        taxVal.alignment = { vertical: 'middle', horizontal: 'right' };
+
+        sheet.mergeCells(`G${grandTotalRowNum}:H${grandTotalRowNum}`);
+        for (let c = 1; c <= 8; c++) sheet.getCell(grandTotalRowNum, c).border = thinBorder;
+
+        grandTotalRowNum++;
+      }
+
+      // Grand Total Row
+      sheet.getRow(grandTotalRowNum).height = 26;
+      sheet.mergeCells(`A${grandTotalRowNum}:E${grandTotalRowNum}`);
+      const grandLabel = sheet.getCell(`A${grandTotalRowNum}`);
+      grandLabel.value = '합 계';
+      grandLabel.font = { name: '맑은 고딕', size: 12, bold: true, color: { argb: '1A6B3A' } };
+      grandLabel.fill = headerFill;
+      grandLabel.alignment = { vertical: 'middle', horizontal: 'right' };
+
+      sheet.mergeCells(`F${grandTotalRowNum}:H${grandTotalRowNum}`);
+      const grandVal = sheet.getCell(`F${grandTotalRowNum}`);
+      grandVal.value = includeTax
+        ? { formula: `F${subtotalRowNum}+F${subtotalRowNum + 1}` }
+        : { formula: `F${subtotalRowNum}` };
+      grandVal.numFmt = '#,##0 "원"';
+      grandVal.font = { name: '맑은 고딕', size: 13, bold: true, color: { argb: '1A6B3A' } };
+      grandVal.fill = headerFill;
+      grandVal.alignment = { vertical: 'middle', horizontal: 'right' };
+
+      for (let c = 1; c <= 8; c++) {
+        const cell = sheet.getCell(grandTotalRowNum, c);
+        cell.border = {
+          top: { style: 'thin', color: { argb: '1A6B3A' } },
+          bottom: { style: 'double', color: { argb: '1A6B3A' } },
+          left: { style: 'thin', color: { argb: 'CBD5E1' } },
+          right: { style: 'thin', color: { argb: 'CBD5E1' } }
+        };
+      }
+
+      // Special Note
+      if (note) {
+        const noteRow = grandTotalRowNum + 1;
+        sheet.getRow(noteRow).height = 24;
+        sheet.getCell(`A${noteRow}`).value = '비고: ' + note;
+        sheet.getCell(`A${noteRow}`).font = { name: '맑은 고딕', size: 10, italic: true };
+        sheet.mergeCells(`A${noteRow}:H${noteRow}`);
+      }
+
+      // Generate Blob & Save
+      const buffer = await workbook.xlsx.writeBuffer();
+      const dateStr = invDate || new Date().toISOString().split('T')[0];
+      const filename = `거래명세서_${toName}_${dateStr}.xlsx`;
+      const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+      await saveFileLocally(blob, filename);
+    } catch (e) {
+      console.error(e);
+      showToast('Excel 저장 실패');
     }
   }
 
