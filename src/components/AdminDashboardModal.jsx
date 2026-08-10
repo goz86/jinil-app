@@ -58,21 +58,72 @@ export default function AdminDashboardModal({ isOpen, onClose, currentUser }) {
 
   if (!isOpen) return null;
 
+  const showPermissionRulesModal = (errorMsg) => {
+    const rulesSnippet = `rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}`;
+
+    Swal.fire({
+      icon: 'warning',
+      title: 'Firebase Console 권한 설정 필요',
+      html: `
+        <div style="text-align: left; font-size: 12.5px; line-height: 1.5; color: #334155;">
+          <p style="margin-bottom: 8px;">Firebase Security Rules에 <strong>system_config</strong> 또는 <strong>users</strong> 컬렉션 쓰기 권한이 허용되어 있지 않습니다.</p>
+          <p style="margin-bottom: 8px; font-weight: 800; color: #d97706;">현재 PC 로컬 설정에는 즉시 적용되었습니다.</p>
+          <p style="margin-bottom: 6px;">원격 전체 기기 실시간 연동을 위해 <a href="https://console.firebase.google.com/project/gozkr-6d7ac/firestore/rules" target="_blank" rel="noreferrer" style="color: #2563eb; text-decoration: underline; font-weight: bold;">Firebase Console Firestore Rules</a> 페이지에 아래 규칙을 붙여넣고 <strong>[게시(Publish)]</strong>하세요:</p>
+          <pre style="background: #0f172a; color: #f8fafc; padding: 12px; border-radius: 10px; font-size: 11px; overflow-x: auto; margin-top: 6px; font-family: monospace;">${rulesSnippet}</pre>
+        </div>
+      `,
+      confirmButtonText: '보안 규칙 복사하기',
+      showCancelButton: true,
+      cancelButtonText: '닫기'
+    }).then((result) => {
+      if (result.isConfirmed) {
+        navigator.clipboard.writeText(rulesSnippet);
+        Swal.fire({
+          icon: 'success',
+          title: '보안 규칙이 클립보드에 복사되었습니다!',
+          text: 'Firebase Console Rules 페이지에 붙여넣고 게시하세요.',
+          timer: 2000,
+          showConfirmButton: false,
+          toast: true,
+          position: 'top-end'
+        });
+      }
+    });
+  };
+
   // Save Security Settings to Firestore
   const handleSaveSecurity = async () => {
     setLoading(true);
+    const securityData = {
+      globalLock,
+      globalLockMessage,
+      requirePaidAccess,
+      updatedAt: new Date().toISOString(),
+      updatedBy: currentUser?.email || 'pc5@gmail.com'
+    };
+
+    // Save to Local Storage Fallback
     try {
-      await setDoc(doc(db, "system_config", "app_control"), {
-        globalLock,
-        globalLockMessage,
-        requirePaidAccess,
-        updatedAt: new Date().toISOString(),
-        updatedBy: currentUser?.email || 'pc5@gmail.com'
-      }, { merge: true });
+      const localConfig = JSON.parse(localStorage.getItem('jinil_app_control') || '{}');
+      localStorage.setItem('jinil_app_control', JSON.stringify({ ...localConfig, ...securityData }));
+      window.dispatchEvent(new Event('jinil_config_updated'));
+    } catch (e) {
+      console.warn("Local storage fallback error:", e);
+    }
+
+    try {
+      await setDoc(doc(db, "system_config", "app_control"), securityData, { merge: true });
 
       Swal.fire({
         icon: 'success',
-        title: '보안 설정이 저장되었습니다.',
+        title: '보안 설정이 원격 서버에 저장되었습니다.',
         timer: 1500,
         showConfirmButton: false,
         toast: true,
@@ -80,7 +131,11 @@ export default function AdminDashboardModal({ isOpen, onClose, currentUser }) {
       });
     } catch (e) {
       console.error("Save security error:", e);
-      Swal.fire({ icon: 'error', title: '저장 실패', text: e.message });
+      if (e.code === 'permission-denied' || e.message?.includes('permission') || e.message?.includes('Missing')) {
+        showPermissionRulesModal(e.message);
+      } else {
+        Swal.fire({ icon: 'error', title: '저장 실패', text: e.message });
+      }
     } finally {
       setLoading(false);
     }
@@ -89,15 +144,27 @@ export default function AdminDashboardModal({ isOpen, onClose, currentUser }) {
   // Save Announcement Settings to Firestore
   const handleSaveAnnouncement = async () => {
     setLoading(true);
+    const annData = {
+      active: annActive,
+      title: annTitle,
+      content: annContent,
+      type: annType,
+      updatedAt: new Date().toISOString()
+    };
+
+    // Save to Local Storage Fallback
+    try {
+      const localConfig = JSON.parse(localStorage.getItem('jinil_app_control') || '{}');
+      localConfig.announcement = annData;
+      localStorage.setItem('jinil_app_control', JSON.stringify(localConfig));
+      window.dispatchEvent(new Event('jinil_config_updated'));
+    } catch (e) {
+      console.warn("Local storage fallback error:", e);
+    }
+
     try {
       await setDoc(doc(db, "system_config", "app_control"), {
-        announcement: {
-          active: annActive,
-          title: annTitle,
-          content: annContent,
-          type: annType,
-          updatedAt: new Date().toISOString()
-        }
+        announcement: annData
       }, { merge: true });
 
       Swal.fire({
@@ -110,7 +177,11 @@ export default function AdminDashboardModal({ isOpen, onClose, currentUser }) {
       });
     } catch (e) {
       console.error("Save announcement error:", e);
-      Swal.fire({ icon: 'error', title: '발송 실패', text: e.message });
+      if (e.code === 'permission-denied' || e.message?.includes('permission') || e.message?.includes('Missing')) {
+        showPermissionRulesModal(e.message);
+      } else {
+        Swal.fire({ icon: 'error', title: '발송 실패', text: e.message });
+      }
     } finally {
       setLoading(false);
     }
@@ -132,7 +203,11 @@ export default function AdminDashboardModal({ isOpen, onClose, currentUser }) {
         position: 'top-end'
       });
     } catch (e) {
-      Swal.fire({ icon: 'error', title: '변경 실패', text: e.message });
+      if (e.code === 'permission-denied' || e.message?.includes('permission') || e.message?.includes('Missing')) {
+        showPermissionRulesModal(e.message);
+      } else {
+        Swal.fire({ icon: 'error', title: '변경 실패', text: e.message });
+      }
     }
   };
 
@@ -152,7 +227,11 @@ export default function AdminDashboardModal({ isOpen, onClose, currentUser }) {
         position: 'top-end'
       });
     } catch (e) {
-      Swal.fire({ icon: 'error', title: '변경 실패', text: e.message });
+      if (e.code === 'permission-denied' || e.message?.includes('permission') || e.message?.includes('Missing')) {
+        showPermissionRulesModal(e.message);
+      } else {
+        Swal.fire({ icon: 'error', title: '변경 실패', text: e.message });
+      }
     }
   };
 

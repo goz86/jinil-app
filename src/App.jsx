@@ -62,8 +62,27 @@ function App() {
   const [isTasksHidden, setIsTasksHidden] = useState(true);
   const [wallpaper, setWallpaperState] = useState(() => localStorage.getItem('app_wallpaper') || 'default');
 
-  // Realtime System Config Listener (Global Remote Lock & Announcements)
+  // Realtime System Config Listener (Global Remote Lock & Announcements) + Local Fallback
   useEffect(() => {
+    const syncLocalConfig = () => {
+      try {
+        const saved = localStorage.getItem('jinil_app_control');
+        if (saved) {
+          const data = JSON.parse(saved);
+          setSystemConfig(prev => ({ ...prev, ...data }));
+          if (data.announcement && data.announcement.active) {
+            setIsAnnouncementOpen(true);
+          }
+        }
+      } catch (e) {
+        console.warn("Local config sync error:", e);
+      }
+    };
+
+    syncLocalConfig();
+    window.addEventListener('jinil_config_updated', syncLocalConfig);
+    window.addEventListener('storage', syncLocalConfig);
+
     const unsubConfig = onSnapshot(doc(db, "system_config", "app_control"), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -74,7 +93,11 @@ function App() {
       }
     }, (err) => console.error("System config error:", err));
 
-    return () => unsubConfig();
+    return () => {
+      window.removeEventListener('jinil_config_updated', syncLocalConfig);
+      window.removeEventListener('storage', syncLocalConfig);
+      unsubConfig();
+    };
   }, []);
 
   // Realtime User Profile Listener & Sync
