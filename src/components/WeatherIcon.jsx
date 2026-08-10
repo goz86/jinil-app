@@ -6,22 +6,42 @@ export default function WeatherIcon({ type, className = "w-10 h-10" }) {
       return (
         <svg viewBox="0 0 64 64" className={`${className} transition-transform duration-300 hover:scale-110 shrink-0`}>
           <defs>
-            <radialGradient id="sun-grad-cd" cx="40%" cy="40%" r="60%">
-              <stop offset="0%" stopColor="#FFF176" />
-              <stop offset="55%" stopColor="#FBC02D" />
+            <linearGradient id="sun-ray-grad-cd" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#FFF59D" />
+              <stop offset="50%" stopColor="#FFCA28" />
               <stop offset="100%" stopColor="#F57F17" />
+            </linearGradient>
+            <radialGradient id="sun-core-grad-cd" cx="40%" cy="40%" r="60%">
+              <stop offset="0%" stopColor="#FFF59D" />
+              <stop offset="50%" stopColor="#FBC02D" />
+              <stop offset="100%" stopColor="#E65100" />
             </radialGradient>
             <radialGradient id="sun-aura-cd" cx="50%" cy="50%" r="50%">
-              <stop offset="0%" stopColor="#FFE082" stopOpacity="0.45" />
+              <stop offset="0%" stopColor="#FFE082" stopOpacity="0.5" />
               <stop offset="100%" stopColor="#FFB300" stopOpacity="0" />
             </radialGradient>
             <filter id="sun-shadow-cd" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#F57F17" floodOpacity="0.35" />
+              <feDropShadow dx="0" dy="3" stdDeviation="3" floodColor="#E65100" floodOpacity="0.35" />
             </filter>
           </defs>
-          <circle cx="32" cy="32" r="26" fill="url(#sun-aura-cd)" />
-          <circle cx="32" cy="32" r="19" fill="url(#sun-grad-cd)" filter="url(#sun-shadow-cd)" />
-          <circle cx="26" cy="26" r="13" fill="#FFF9C4" opacity="0.35" />
+          {/* Soft outer glow */}
+          <circle cx="32" cy="32" r="30" fill="url(#sun-aura-cd)" />
+
+          {/* Radiating Sun Rays (12 Flame Petals) */}
+          <g fill="url(#sun-ray-grad-cd)">
+            {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((angle) => (
+              <path
+                key={angle}
+                d="M 32 2.5 Q 35.5 14.5 32 17.5 Q 28.5 14.5 32 2.5 Z"
+                transform={`rotate(${angle} 32 32)`}
+              />
+            ))}
+          </g>
+
+          {/* Main Sun Core */}
+          <circle cx="32" cy="32" r="16.5" fill="url(#sun-core-grad-cd)" filter="url(#sun-shadow-cd)" />
+          {/* Top Gloss Highlight */}
+          <circle cx="27" cy="27" r="11" fill="#FFFDE7" opacity="0.35" />
         </svg>
       );
 
@@ -53,10 +73,15 @@ export default function WeatherIcon({ type, className = "w-10 h-10" }) {
       return (
         <svg viewBox="0 0 64 64" className={`${className} transition-transform duration-300 hover:scale-110 shrink-0`}>
           <defs>
+            <linearGradient id="sun-ray-pcd" x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor="#FFF59D" />
+              <stop offset="60%" stopColor="#FFCA28" />
+              <stop offset="100%" stopColor="#F57F17" />
+            </linearGradient>
             <linearGradient id="sun-pcd" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#FFF176" />
               <stop offset="60%" stopColor="#FBC02D" />
-              <stop offset="100%" stopColor="#F57F17" />
+              <stop offset="100%" stopColor="#E65100" />
             </linearGradient>
             <linearGradient id="cloud-pcd" x1="0%" y1="0%" x2="0%" y2="100%">
               <stop offset="0%" stopColor="#FFFFFF" />
@@ -67,8 +92,23 @@ export default function WeatherIcon({ type, className = "w-10 h-10" }) {
               <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#0F172A" floodOpacity="0.18" />
             </filter>
           </defs>
-          <circle cx="44" cy="22" r="14" fill="url(#sun-pcd)" />
-          <circle cx="41" cy="19" r="10" fill="#FFF9C4" opacity="0.3" />
+
+          {/* Radiating Sun Rays around (44, 22) */}
+          <g fill="url(#sun-ray-pcd)">
+            {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((angle) => (
+              <path
+                key={angle}
+                d="M 44 2 Q 47 11 44 14 Q 41 11 44 2 Z"
+                transform={`rotate(${angle} 44 22)`}
+              />
+            ))}
+          </g>
+
+          {/* Sun Core */}
+          <circle cx="44" cy="22" r="12" fill="url(#sun-pcd)" />
+          <circle cx="41" cy="19" r="8" fill="#FFFDE7" opacity="0.3" />
+
+          {/* Front Cloud */}
           <g filter="url(#cloud-shadow-pcd)">
             <path
               d="M 18,46 L 46,46 C 51.5,46 55,42 55,36.5 C 55,31.5 51.5,27.5 46.5,27.5 C 45.5,21.5 40.5,17 34,17 C 28.5,17 24,20.5 22.5,25.5 C 16.5,26 12,31 12,36.5 C 12,42 16,46 18,46 Z"
