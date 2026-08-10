@@ -17,6 +17,9 @@ import LabelPrinter from './components/LabelPrinter';
 import StockTicker from './components/StockTicker';
 import AppLockModal from './components/AppLockModal';
 import PinVerifyModal from './components/PinVerifyModal';
+import AdminDashboardModal from './components/AdminDashboardModal';
+import RealtimeLockOverlay from './components/RealtimeLockOverlay';
+import SystemAnnouncementModal from './components/SystemAnnouncementModal';
 import { hasAppLockPin } from './lib/appLock';
 import { initializeApp } from 'firebase/app';
 import { auth, db, secondaryAuth, secondaryDb, firebaseConfig } from './firebase';
@@ -52,8 +55,93 @@ function App() {
   const [isLabelPrintOpen, setIsLabelPrintOpen] = useState(false);
   const [isAppLockModalOpen, setIsAppLockModalOpen] = useState(false);
   const [isPinVerifyModalOpen, setIsPinVerifyModalOpen] = useState(false);
+  const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
+  const [isAnnouncementOpen, setIsAnnouncementOpen] = useState(false);
+  const [systemConfig, setSystemConfig] = useState(null);
+  const [userProfile, setUserProfile] = useState(null);
   const [isTasksHidden, setIsTasksHidden] = useState(true);
   const [wallpaper, setWallpaperState] = useState(() => localStorage.getItem('app_wallpaper') || 'default');
+
+  // Realtime System Config Listener (Global Remote Lock & Announcements)
+  useEffect(() => {
+    const unsubConfig = onSnapshot(doc(db, "system_config", "app_control"), (docSnap) => {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setSystemConfig(data);
+        if (data.announcement && data.announcement.active) {
+          setIsAnnouncementOpen(true);
+        }
+      }
+    }, (err) => console.error("System config error:", err));
+
+    return () => unsubConfig();
+  }, []);
+
+  // Realtime User Profile Listener & Sync
+  useEffect(() => {
+    if (!user) {
+      setUserProfile(null);
+      return;
+    }
+
+    const isPc5Admin = user.email === 'pc5@gmail.com';
+    const userDocRef = doc(db, "users", user.uid);
+
+    const syncProfile = async () => {
+      try {
+        const snap = await getDoc(userDocRef);
+        if (!snap.exists()) {
+          await setDoc(userDocRef, {
+            email: user.email,
+            role: isPc5Admin ? 'admin' : 'user',
+            isPaid: isPc5Admin ? true : false,
+            status: 'active',
+            createdAt: new Date().toISOString(),
+            lastLogin: new Date().toISOString()
+          });
+        } else {
+          const updates = { lastLogin: new Date().toISOString() };
+          if (isPc5Admin) {
+            updates.role = 'admin';
+            updates.isPaid = true;
+          }
+          await setDoc(userDocRef, updates, { merge: true });
+        }
+      } catch (e) {
+        console.error("Sync profile error:", e);
+      }
+    };
+    syncProfile();
+
+    const unsubProfile = onSnapshot(userDocRef, (docSnap) => {
+      if (docSnap.exists()) {
+        setUserProfile(docSnap.data());
+      }
+    });
+
+    return () => unsubProfile();
+  }, [user]);
+
+  // Compute Lock State
+  const isPc5Admin = user?.email === 'pc5@gmail.com' || userProfile?.role === 'admin';
+  
+  let isAppLocked = false;
+  let lockReason = '';
+  let lockMessage = '';
+
+  if (systemConfig?.globalLock) {
+    isAppLocked = true;
+    lockReason = '원격 실시간 시스템 차단';
+    lockMessage = systemConfig.globalLockMessage || '원격 실시간 차단 모드가 활성화되었습니다. 관리자에게 문의하세요.';
+  } else if (userProfile && userProfile.status === 'blocked') {
+    isAppLocked = true;
+    lockReason = '계정 차단됨';
+    lockMessage = '해당 계정은 관리자에 의해 원격 차단되었습니다. pc5@gmail.com 관리자에게 문의하세요.';
+  } else if (systemConfig?.requirePaidAccess && userProfile && !userProfile.isPaid && !isPc5Admin) {
+    isAppLocked = true;
+    lockReason = '유료 회원 승인 필요';
+    lockMessage = '유료 회원 전용 서비스입니다. 이용 승인을 위해 pc5@gmail.com 관리자에게 문의하세요.';
+  }
 
   const setWallpaper = (newWp) => {
     setWallpaperState(newWp);
@@ -860,6 +948,9 @@ function App() {
             wallpaper={wallpaper}
             setWallpaper={setWallpaper}
             onOpenAppLock={() => setIsAppLockModalOpen(true)}
+            user={user}
+            userRole={userProfile?.role}
+            onOpenAdminDashboard={() => setIsAdminDashboardOpen(true)}
           />
 
           <div className="mb-4 flex items-center justify-between">
@@ -984,6 +1075,28 @@ function App() {
           setIsPinVerifyModalOpen(false);
           performPrivacyToggle(false);
         }}
+      />
+
+      {/* Admin Dashboard Modal */}
+      <AdminDashboardModal
+        isOpen={isAdminDashboardOpen}
+        onClose={() => setIsAdminDashboardOpen(false)}
+        currentUser={user}
+      />
+
+      {/* Broadcast Popup Announcement Modal */}
+      <SystemAnnouncementModal
+        isOpen={isAnnouncementOpen}
+        announcement={systemConfig?.announcement}
+        onClose={() => setIsAnnouncementOpen(false)}
+      />
+
+      {/* Realtime App Lock / Remote Ban Overlay */}
+      <RealtimeLockOverlay
+        isLocked={isAppLocked}
+        lockReason={lockReason}
+        message={lockMessage}
+        userEmail={user?.email}
       />
     </div>
   );
