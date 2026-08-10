@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import WeatherIcon from './WeatherIcon';
 
 // Helper to determine whether it's currently night time (7 PM - 6 AM)
 const checkIsNight = (isDayParam) => {
@@ -9,14 +10,14 @@ const checkIsNight = (isDayParam) => {
     return hour >= 19 || hour < 6;
 };
 
-// Weather code to Pure Korean condition, SVG icon & dynamic theme tint mapper
+// Weather code to Pure Korean condition, SVG icon type & dynamic theme tint mapper
 const getWeatherInfo = (code, isNight = false) => {
     if (isNight) {
         switch (code) {
             case 0:
                 return {
                     label: '맑은 밤',
-                    icon: '🌙',
+                    iconType: 'clear-night',
                     bgClass: 'bg-[#1b365d]/95 text-white border-blue-400/30 dark:bg-[#122543]/95 dark:border-blue-500/30 shadow-lg backdrop-blur-xl',
                     bgTint: 'from-[#2b528d]/60 via-[#1b365d]/50 to-[#0e1e38]/40'
                 };
@@ -24,14 +25,14 @@ const getWeatherInfo = (code, isNight = false) => {
             case 2:
                 return {
                     label: '구름 조금 (밤)',
-                    icon: '🌙',
+                    iconType: 'partly-cloudy-night',
                     bgClass: 'bg-[#1b365d]/90 text-white border-blue-400/25 dark:bg-[#122543]/90 dark:border-blue-500/25 shadow-lg backdrop-blur-xl',
                     bgTint: 'from-[#284c82]/55 via-[#183154]/45 to-[#0d1a30]/35'
                 };
             case 3:
                 return {
                     label: '흐린 밤',
-                    icon: '☁️',
+                    iconType: 'cloudy',
                     bgClass: 'bg-[#192f52]/90 text-white border-blue-400/20 dark:bg-[#101e36]/90 dark:border-blue-500/20 shadow-lg backdrop-blur-xl',
                     bgTint: 'from-[#203a63]/50 via-[#142642]/40 to-[#0b1424]/30'
                 };
@@ -43,14 +44,14 @@ const getWeatherInfo = (code, isNight = false) => {
             case 65:
                 return {
                     label: '밤비',
-                    icon: '🌧️',
+                    iconType: 'rain',
                     bgClass: 'bg-[#16335c]/95 text-white border-blue-400/35 dark:bg-[#0e2240]/95 dark:border-blue-500/35 shadow-lg backdrop-blur-xl',
                     bgTint: 'from-[#1e467d]/65 via-[#122c52]/55 to-[#0a182e]/45'
                 };
             default:
                 return {
                     label: '맑은 밤',
-                    icon: '🌙',
+                    iconType: 'clear-night',
                     bgClass: 'bg-[#1b365d]/95 text-white border-blue-400/30 dark:bg-[#122543]/95 dark:border-blue-500/30 shadow-lg backdrop-blur-xl',
                     bgTint: 'from-[#2b528d]/60 via-[#1b365d]/50 to-[#0e1e38]/40'
                 };
@@ -61,28 +62,28 @@ const getWeatherInfo = (code, isNight = false) => {
         case 0:
             return {
                 label: '맑음',
-                icon: '☀️',
+                iconType: 'clear-day',
                 bgClass: 'bg-amber-50/90 dark:bg-amber-950/50 border-amber-200/80 dark:border-amber-700/60',
                 bgTint: 'from-amber-400/35 via-orange-400/25 to-amber-500/15'
             };
         case 1:
             return {
                 label: '대체로 맑음',
-                icon: '🌤️',
+                iconType: 'partly-cloudy-day',
                 bgClass: 'bg-amber-50/80 dark:bg-amber-950/40 border-amber-200/70 dark:border-amber-800/50',
                 bgTint: 'from-amber-300/30 via-blue-300/20 to-orange-400/15'
             };
         case 2:
             return {
                 label: '구름 조금',
-                icon: '⛅',
+                iconType: 'partly-cloudy-day',
                 bgClass: 'bg-slate-50/90 dark:bg-slate-900/60 border-slate-200/80 dark:border-slate-700/60',
                 bgTint: 'from-sky-300/30 via-slate-400/25 to-gray-400/15'
             };
         case 3:
             return {
                 label: '흐림',
-                icon: '☁️',
+                iconType: 'cloudy',
                 bgClass: 'bg-slate-100/90 dark:bg-slate-900/80 border-slate-300/80 dark:border-slate-700/70',
                 bgTint: 'from-slate-500/35 via-gray-500/30 to-slate-600/20'
             };
@@ -90,7 +91,7 @@ const getWeatherInfo = (code, isNight = false) => {
         case 48:
             return {
                 label: '안개',
-                icon: '🌫️',
+                iconType: 'fog',
                 bgClass: 'bg-zinc-100/90 dark:bg-zinc-900/80 border-zinc-300/80 dark:border-zinc-700/70',
                 bgTint: 'from-zinc-400/35 via-slate-400/30 to-gray-500/20'
             };
@@ -99,7 +100,7 @@ const getWeatherInfo = (code, isNight = false) => {
         case 55:
             return {
                 label: '이슬비',
-                icon: '🌧️',
+                iconType: 'rain',
                 bgClass: 'bg-blue-50/90 dark:bg-blue-950/60 border-blue-200/80 dark:border-blue-700/60',
                 bgTint: 'from-cyan-400/35 via-blue-500/30 to-sky-600/20'
             };
@@ -108,7 +109,7 @@ const getWeatherInfo = (code, isNight = false) => {
         case 65:
             return {
                 label: '비',
-                icon: '🌧️',
+                iconType: 'rain',
                 bgClass: 'bg-blue-100/90 dark:bg-blue-950/80 border-blue-300/80 dark:border-blue-700/80',
                 bgTint: 'from-blue-600/40 via-indigo-600/35 to-cyan-600/30'
             };
@@ -118,7 +119,7 @@ const getWeatherInfo = (code, isNight = false) => {
         case 77:
             return {
                 label: '눈',
-                icon: '❄️',
+                iconType: 'snow',
                 bgClass: 'bg-cyan-50/90 dark:bg-cyan-950/60 border-cyan-200/80 dark:border-cyan-700/60',
                 bgTint: 'from-cyan-300/40 via-sky-300/35 to-blue-400/30'
             };
@@ -127,7 +128,7 @@ const getWeatherInfo = (code, isNight = false) => {
         case 82:
             return {
                 label: '소나기',
-                icon: '🌦️',
+                iconType: 'rain',
                 bgClass: 'bg-sky-100/90 dark:bg-sky-950/70 border-sky-300/80 dark:border-sky-700/70',
                 bgTint: 'from-sky-500/40 via-blue-500/35 to-indigo-500/30'
             };
@@ -135,7 +136,7 @@ const getWeatherInfo = (code, isNight = false) => {
         case 86:
             return {
                 label: '소나기 눈',
-                icon: '🌨️',
+                iconType: 'snow',
                 bgClass: 'bg-indigo-50/90 dark:bg-indigo-950/60 border-indigo-200/80 dark:border-indigo-700/60',
                 bgTint: 'from-indigo-400/40 via-sky-300/35 to-cyan-300/30'
             };
@@ -144,14 +145,14 @@ const getWeatherInfo = (code, isNight = false) => {
         case 99:
             return {
                 label: '뇌우',
-                icon: '🌩️',
+                iconType: 'thunder',
                 bgClass: 'bg-purple-100/90 dark:bg-purple-950/80 border-purple-300/80 dark:border-purple-700/80',
                 bgTint: 'from-purple-600/40 via-indigo-700/35 to-slate-800/30'
             };
         default:
             return {
                 label: '맑음',
-                icon: '☀️',
+                iconType: 'clear-day',
                 bgClass: 'bg-amber-50/90 dark:bg-amber-950/50 border-amber-200/80 dark:border-amber-700/60',
                 bgTint: 'from-amber-400/35 via-orange-400/25 to-amber-500/15'
             };
@@ -320,7 +321,7 @@ export default function WeatherWidget() {
                             maxTemp,
                             minTemp,
                             code,
-                            icon: iconInfo.icon
+                            iconType: iconInfo.iconType
                         });
                     }
                 }
@@ -383,10 +384,10 @@ export default function WeatherWidget() {
                         code: parsedCode,
                         isNight: isNight,
                         dailyForecast: [
-                            { dayLabel: '토', icon: '☀️', maxTemp: 35, minTemp: 26 },
-                            { dayLabel: '일', icon: '☁️', maxTemp: 33, minTemp: 24 },
-                            { dayLabel: '월', icon: '⛅', maxTemp: 34, minTemp: 25 },
-                            { dayLabel: '화', icon: '☀️', maxTemp: 35, minTemp: 25 }
+                            { dayLabel: '토', iconType: 'clear-day', maxTemp: 35, minTemp: 26 },
+                            { dayLabel: '일', iconType: 'cloudy', maxTemp: 33, minTemp: 24 },
+                            { dayLabel: '월', iconType: 'partly-cloudy-day', maxTemp: 34, minTemp: 25 },
+                            { dayLabel: '화', iconType: 'clear-day', maxTemp: 35, minTemp: 25 }
                         ],
                         tempNotice: '내일 기온은 오늘보다 낮습니다',
                         provider: 'secondary'
@@ -440,13 +441,13 @@ export default function WeatherWidget() {
     }, [getLocationAndFetch]);
 
     const isNightNow = weather ? (weather.isNight !== undefined ? weather.isNight : checkIsNight()) : checkIsNight();
-    const weatherInfo = weather ? getWeatherInfo(weather.code, isNightNow) : (isNightNow ? { label: '맑은 밤', icon: '🌙', bgClass: 'bg-slate-900/90 text-slate-100 border-indigo-900/80', bgTint: 'from-indigo-950/90 to-slate-900/90' } : { label: '불러오는 중', icon: '🌤️', bgClass: 'bg-slate-50/90 dark:bg-slate-900/60 border-slate-200/80 dark:border-slate-700/60', bgTint: 'from-blue-500/15 to-indigo-500/15' });
+    const weatherInfo = weather ? getWeatherInfo(weather.code, isNightNow) : (isNightNow ? { label: '맑은 밤', iconType: 'clear-night', bgClass: 'bg-slate-900/90 text-slate-100 border-indigo-900/80', bgTint: 'from-indigo-950/90 to-slate-900/90' } : { label: '불러오는 중', iconType: 'partly-cloudy-day', bgClass: 'bg-slate-50/90 dark:bg-slate-900/60 border-slate-200/80 dark:border-slate-700/60', bgTint: 'from-blue-500/15 to-indigo-500/15' });
 
     const fallbackForecast = [
-        { dayLabel: '토', icon: '☀️', maxTemp: 35, minTemp: 26 },
-        { dayLabel: '일', icon: '☁️', maxTemp: 33, minTemp: 24 },
-        { dayLabel: '월', icon: '⛅', maxTemp: 34, minTemp: 25 },
-        { dayLabel: '화', icon: '☀️', maxTemp: 35, minTemp: 25 }
+        { dayLabel: '토', iconType: 'clear-day', maxTemp: 35, minTemp: 26 },
+        { dayLabel: '일', iconType: 'cloudy', maxTemp: 33, minTemp: 24 },
+        { dayLabel: '월', iconType: 'partly-cloudy-day', maxTemp: 34, minTemp: 25 },
+        { dayLabel: '화', iconType: 'clear-day', maxTemp: 35, minTemp: 25 }
     ];
 
     const forecastList = (weather && weather.dailyForecast && weather.dailyForecast.length > 0)
@@ -519,11 +520,11 @@ export default function WeatherWidget() {
                                 </span>
                             </div>
 
-                            {/* Column 2 (Right): Icon & Weather Condition */}
+                            {/* Column 2 (Right): Samsung One UI Vector Weather Icon */}
                             <div className="flex flex-col items-center justify-center text-center">
-                                <span className="text-3xl drop-shadow-sm select-none leading-none mb-1" role="img" aria-label={weatherInfo.label}>
-                                    {weatherInfo.icon}
-                                </span>
+                                <div className="mb-0.5 select-none flex items-center justify-center">
+                                    <WeatherIcon type={weatherInfo.iconType} className="w-12 h-12" />
+                                </div>
                                 <span className={`text-xs font-bold whitespace-nowrap ${isNightNow ? 'text-slate-100' : 'text-slate-800 dark:text-slate-200'}`}>
                                     {weatherInfo.label}
                                 </span>
@@ -556,9 +557,9 @@ export default function WeatherWidget() {
                         {/* Left Side: Moon/Sun Icon, Big Temp, Temp Comparison Text */}
                         <div className="col-span-5 flex flex-col justify-between h-full pr-1">
                             <div>
-                                <span className="text-3xl drop-shadow-sm select-none leading-none mb-1 block" role="img" aria-label={weatherInfo.label}>
-                                    {weatherInfo.icon}
-                                </span>
+                                <div className="mb-0.5 select-none flex items-start justify-start">
+                                    <WeatherIcon type={weatherInfo.iconType} className="w-10 h-10" />
+                                </div>
                                 <div className="flex items-baseline gap-1 mt-0.5">
                                     <span className={`text-2xl font-black tracking-tighter leading-none ${isNightNow ? 'text-white' : 'text-slate-900 dark:text-white'}`}>
                                         {weather.temp}°
@@ -580,7 +581,9 @@ export default function WeatherWidget() {
                             {forecastList.slice(0, 4).map((item, idx) => (
                                 <div key={idx} className="flex items-center justify-between py-1 px-1">
                                     <span className="w-4 text-left font-bold">{item.dayLabel}</span>
-                                    <span className="text-xs select-none">{item.icon}</span>
+                                    <div className="w-5 h-5 flex items-center justify-center select-none">
+                                        <WeatherIcon type={item.iconType || getWeatherInfo(item.code, false).iconType} className="w-5 h-5" />
+                                    </div>
                                     <span className="text-[11px] font-bold tracking-tight text-right">
                                         {item.maxTemp}° <span className="opacity-60">{item.minTemp}°</span>
                                     </span>
