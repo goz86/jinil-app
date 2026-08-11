@@ -167,14 +167,19 @@ function App() {
     }
 
     const isPc5Admin = user.email === 'pc5@gmail.com';
-    const userDocRef = doc(db, "users", user.uid);
+    const userKey = user.email ? user.email.toLowerCase().trim() : user.uid;
+    const userDocRef = doc(db, "users", userKey);
 
     const syncProfile = async () => {
       try {
         const snap = await getDoc(userDocRef);
+        const emailVal = user.email || `${userKey}`;
+        const aliasVal = user.displayName || (user.email ? user.email.split('@')[0] : 'User');
+
         if (!snap.exists()) {
           await setDoc(userDocRef, {
-            email: user.email,
+            email: emailVal,
+            alias: aliasVal,
             role: isPc5Admin ? 'admin' : 'user',
             isPaid: isPc5Admin ? true : false,
             status: 'active',
@@ -182,7 +187,10 @@ function App() {
             lastLogin: new Date().toISOString()
           });
         } else {
-          const updates = { lastLogin: new Date().toISOString() };
+          const updates = { 
+            email: emailVal,
+            lastLogin: new Date().toISOString() 
+          };
           if (isPc5Admin) {
             updates.role = 'admin';
             updates.isPaid = true;
