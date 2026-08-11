@@ -106,16 +106,22 @@ export default function AdminDashboardModal({ isOpen, onClose, currentUser }) {
       // 3. Remote Firestore users
       firestoreDocs.forEach(d => {
         const data = d.data ? d.data() : d;
-        const emailOrKey = (data.email || data.alias || d.id).toLowerCase();
-        const existing = map.get(emailOrKey) || {};
-        map.set(emailOrKey, {
-          uid: d.id || existing.uid,
-          email: data.email || existing.email || emailOrKey,
-          alias: data.alias || existing.alias || '',
-          role: data.role || existing.role || (emailOrKey === 'pc5@gmail.com' ? 'admin' : 'user'),
-          isPaid: data.isPaid !== undefined ? data.isPaid : (emailOrKey === 'pc5@gmail.com' ? true : existing.isPaid || false),
-          status: data.status || existing.status || 'active'
-        });
+        const validEmail = data.email && typeof data.email === 'string' && data.email.includes('@') ? data.email.trim().toLowerCase() : null;
+        const validAlias = data.alias && typeof data.alias === 'string' && data.alias.trim() && !data.alias.includes(' ') && data.alias.length < 30 ? data.alias.trim() : null;
+
+        // Only include if there is a valid email or valid human alias (ignore raw 28-char Firestore UIDs)
+        if (validEmail || validAlias) {
+          const key = validEmail || validAlias.toLowerCase();
+          const existing = map.get(key) || {};
+          map.set(key, {
+            uid: d.id || existing.uid,
+            email: validEmail || existing.email || validAlias,
+            alias: validAlias || existing.alias || '',
+            role: key === 'pc5@gmail.com' ? 'admin' : (data.role || existing.role || 'user'),
+            isPaid: data.isPaid !== undefined ? Boolean(data.isPaid) : (key === 'pc5@gmail.com' ? true : Boolean(existing.isPaid)),
+            status: data.status || existing.status || 'active'
+          });
+        }
       });
 
       setUsersList(Array.from(map.values()));
@@ -638,8 +644,8 @@ service cloud.firestore {
                           <tr key={u.uid} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/50 transition-colors">
                             <td className="px-4 py-3 font-extrabold text-slate-900 dark:text-white">
                               <div className="flex items-center gap-1.5 flex-wrap">
-                                <span>{u.email || u.alias || u.name || u.uid || '사용자 계정'}</span>
-                                {(u.email === 'pc5@gmail.com' || u.role === 'admin') && (
+                                <span>{u.email || u.alias || u.name || '사용자 계정'}</span>
+                                {u.email === 'pc5@gmail.com' && (
                                   <span className="px-1.5 py-0.5 bg-red-600 text-white text-[9px] font-black rounded uppercase shrink-0">
                                     ROOT ADMIN
                                   </span>
