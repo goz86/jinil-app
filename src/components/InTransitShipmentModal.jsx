@@ -361,7 +361,7 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
 
   return createPortal(
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-fade-in">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-100 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-100 dark:border-gray-700">
         {/* Header */}
         <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700 flex items-center justify-between bg-gray-50/50 dark:bg-gray-800/50">
           <h2 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2.5">
@@ -434,43 +434,43 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
             </div>
           ) : (
             <div className="overflow-x-auto rounded-xl border border-gray-100 dark:border-gray-700">
-              <table className="w-full text-left text-[13px]">
+              <table className="w-full text-left text-xs">
                 <thead className="bg-gray-50 dark:bg-gray-700/50 text-gray-800 dark:text-gray-200 font-extrabold border-b border-gray-100 dark:border-gray-700">
                   <tr>
-                    <th className="py-3 px-4 font-extrabold">집하일자</th>
-                    <th className="py-3 px-4 font-extrabold">거래처</th>
-                    <th className="py-3 px-4 font-extrabold">수하인/출고처</th>
-                    <th className="py-3 px-4 font-extrabold">운송장번호</th>
-                    <th className="py-3 px-4 font-extrabold">배송기사</th>
-                    <th className="py-3 px-4 font-extrabold">배송상태</th>
-                    <th className="py-3 px-4 text-center font-extrabold">카톡 안내</th>
-                    <th className="py-3 px-4 text-center font-extrabold">삭제</th>
+                    <th className="py-3 px-3.5 font-extrabold whitespace-nowrap">집하일자</th>
+                    <th className="py-3 px-3.5 font-extrabold whitespace-nowrap">거래처</th>
+                    <th className="py-3 px-3.5 font-extrabold whitespace-nowrap">수하인/출고처</th>
+                    <th className="py-3 px-3.5 font-extrabold whitespace-nowrap">운송장번호</th>
+                    <th className="py-3 px-3.5 font-extrabold whitespace-nowrap">배송기사</th>
+                    <th className="py-3 px-3.5 font-extrabold whitespace-nowrap">배송상태</th>
+                    <th className="py-3 px-3.5 text-center font-extrabold whitespace-nowrap">카톡 안내</th>
+                    <th className="py-3 px-3.5 text-center font-extrabold whitespace-nowrap">삭제</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100 dark:divide-gray-700 text-gray-900 dark:text-gray-100 font-medium">
                   {filteredShipments.map((s) => (
                     <tr key={s.id} className="hover:bg-blue-50/30 dark:hover:bg-blue-900/10 transition">
-                      <td className="py-3 px-4 font-mono text-gray-800 dark:text-gray-200 font-bold">{s.shipment_date || '-'}</td>
-                      <td className="py-3 px-4 font-bold text-gray-900 dark:text-white">
+                      <td className="py-3 px-3.5 font-mono text-gray-800 dark:text-gray-200 font-bold whitespace-nowrap text-xs">{s.shipment_date || '-'}</td>
+                      <td className="py-3 px-3.5 font-bold text-gray-900 dark:text-white whitespace-nowrap text-xs">
                         {s.partner_name || s.partner_code || '미지정'}
                       </td>
-                      <td className="py-3 px-4 text-gray-900 dark:text-white font-bold">
+                      <td className="py-3 px-3.5 text-gray-900 dark:text-white font-bold whitespace-nowrap text-xs max-w-[200px] truncate" title={s.customer_name || s.recipient_name || '-'}>
                         {s.customer_name || s.recipient_name || '-'}
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="py-3 px-3.5 whitespace-nowrap">
                         <button
                           type="button"
                           onClick={() => handleCopyTrackingNumber(s.tracking_number)}
-                          className="font-mono font-extrabold text-blue-700 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 flex items-center gap-1.5 group cursor-pointer text-[14px]"
+                          className="font-mono font-extrabold text-blue-700 dark:text-blue-400 hover:text-blue-900 dark:hover:text-blue-300 flex items-center gap-1.5 group cursor-pointer text-xs whitespace-nowrap"
                           title="클릭하여 운송장번호 복사"
                         >
                           <span>{s.tracking_number}</span>
-                          <svg className="w-3.5 h-3.5 opacity-40 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-3.5 h-3.5 opacity-40 group-hover:opacity-100 transition-opacity shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                           </svg>
                         </button>
                       </td>
-                      <td className="py-3 px-4 text-xs font-bold">
+                      <td className="py-3 px-3.5 text-xs font-bold whitespace-nowrap">
                         {editingDriverId === s.id ? (
                           <div className="flex items-center gap-1">
                             <input
@@ -479,7 +479,7 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
                               onChange={(e) => setTempDriverText(e.target.value)}
                               placeholder="이충섭 010-4810-2409"
                               autoFocus
-                              className="w-36 px-2 py-1 bg-white dark:bg-gray-700 border border-blue-400 rounded text-xs text-gray-900 dark:text-white outline-none font-bold"
+                              className="w-40 px-2 py-1 bg-white dark:bg-gray-700 border border-blue-400 rounded text-xs text-gray-900 dark:text-white outline-none font-bold"
                               onKeyDown={(e) => {
                                 if (e.key === 'Enter') handleSaveDriverInfo(s.id, s.tracking_number, tempDriverText);
                                 if (e.key === 'Escape') setEditingDriverId(null);
@@ -488,7 +488,7 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
                             <button
                               type="button"
                               onClick={() => handleSaveDriverInfo(s.id, s.tracking_number, tempDriverText)}
-                              className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[11px] font-bold cursor-pointer"
+                              className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[11px] font-bold cursor-pointer shrink-0"
                             >
                               저장
                             </button>
@@ -500,38 +500,38 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
                               const current = getDriverInfo(s);
                               setTempDriverText(current !== '-' ? current : '');
                             }}
-                            className="group flex items-center gap-1.5 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition"
+                            className="group flex items-center gap-1.5 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition whitespace-nowrap"
                             title="클릭하여 배송기사 정보 직접 입력/수정"
                           >
                             <span className={getDriverInfo(s) === '-' ? 'text-gray-400 font-normal italic' : 'text-gray-900 dark:text-white font-extrabold'}>
                               {getDriverInfo(s)}
                             </span>
-                            <span className="text-[11px] text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">✏️</span>
+                            <span className="text-[11px] text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">✏️</span>
                           </div>
                         )}
                       </td>
-                      <td className="py-3 px-4">
-                        <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 border border-blue-200">
+                      <td className="py-3 px-3.5 whitespace-nowrap">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 border border-blue-200 shrink-0 whitespace-nowrap">
                           {s.tracking_status_label || s.tracking_status || '배송 시작'}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-center">
+                      <td className="py-3 px-3.5 text-center whitespace-nowrap">
                         <button
                           type="button"
                           onClick={() => handleSendKakaoNotice(s)}
-                          className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#FEE500] hover:bg-[#FDD800] text-black font-extrabold rounded-xl text-xs transition shadow-sm border border-yellow-500 cursor-pointer active:scale-95"
+                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#FEE500] hover:bg-[#FDD800] text-black font-extrabold rounded-xl text-xs transition shadow-sm border border-yellow-500 cursor-pointer active:scale-95 whitespace-nowrap shrink-0"
                         >
-                          <svg className="w-3.5 h-3.5 fill-[#191919]" viewBox="0 0 24 24">
+                          <svg className="w-3.5 h-3.5 fill-[#191919] shrink-0" viewBox="0 0 24 24">
                             <path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.557 1.707 4.8 4.27 6.054-.188.702-.682 2.545-.78 2.94-.122.49.18.484.378.352.157-.104 2.5-1.7 3.513-2.393.535.08 1.077.12 1.619.12 4.97 0 9-3.186 9-7.116S16.97 3 12 3z"/>
                           </svg>
                           <span>카톡 안내</span>
                         </button>
                       </td>
-                      <td className="py-3 px-4 text-center">
+                      <td className="py-3 px-3.5 text-center whitespace-nowrap">
                         <button
                           type="button"
                           onClick={() => handleDeleteShipment(s.id, s.tracking_number)}
-                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition active:scale-95 cursor-pointer"
+                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg transition active:scale-95 cursor-pointer shrink-0"
                           title="삭제"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
