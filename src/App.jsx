@@ -62,6 +62,38 @@ function App() {
   const [isTasksHidden, setIsTasksHidden] = useState(true);
   const [wallpaper, setWallpaperState] = useState(() => localStorage.getItem('app_wallpaper') || 'default');
 
+  const checkShouldShowAnnouncement = (ann) => {
+    if (!ann || !ann.active) return false;
+
+    // 1. Check TTL: 24 Hours (86,400,000 ms)
+    const createdAtTime = ann.createdAt ? new Date(ann.createdAt).getTime() : (ann.updatedAt ? new Date(ann.updatedAt).getTime() : 0);
+    if (createdAtTime > 0) {
+      const hoursPassed = (Date.now() - createdAtTime) / (1000 * 60 * 60);
+      if (hoursPassed > 24) {
+        return false; // Expired after 24 hours
+      }
+    }
+
+    // 2. Check Single-Show Dismissal
+    const annKey = ann.id || ann.updatedAt || ann.title;
+    try {
+      const dismissed = JSON.parse(localStorage.getItem('jinil_dismissed_announcements') || '[]');
+      if (dismissed.includes(annKey)) {
+        return false; // Already dismissed by user
+      }
+    } catch (e) {
+      console.warn("Read dismissed announcements error:", e);
+    }
+
+    return true;
+  };
+
+  const DEFAULT_DAILY_ALARMS = [
+    { id: 'alarm_12', time: '12:00', title: '점심 식사 시간입니다! 🍱', active: true },
+    { id: 'alarm_17', time: '17:00', title: '택배 발송 시간입니다! 📦', active: true }
+  ];
+  const [dailyAlarms, setDailyAlarms] = useState(DEFAULT_DAILY_ALARMS);
+
   // Realtime System Config Listener (Global Remote Lock & Announcements) + Local Fallback
   useEffect(() => {
     const syncLocalConfig = () => {
@@ -70,7 +102,7 @@ function App() {
         if (saved) {
           const data = JSON.parse(saved);
           setSystemConfig(prev => ({ ...prev, ...data }));
-          if (data.announcement && data.announcement.active) {
+          if (data.announcement && checkShouldShowAnnouncement(data.announcement)) {
             setIsAnnouncementOpen(true);
           }
         }
@@ -87,7 +119,7 @@ function App() {
       if (docSnap.exists()) {
         const data = docSnap.data();
         setSystemConfig(data);
-        if (data.announcement && data.announcement.active) {
+        if (data.announcement && checkShouldShowAnnouncement(data.announcement)) {
           setIsAnnouncementOpen(true);
         }
       }
@@ -97,6 +129,33 @@ function App() {
       window.removeEventListener('jinil_config_updated', syncLocalConfig);
       window.removeEventListener('storage', syncLocalConfig);
       unsubConfig();
+    };
+  }, []);
+
+  // Listen for Dynamic Daily Alarms from Firestore & Local Storage
+  useEffect(() => {
+    const syncLocalAlarms = () => {
+      try {
+        const saved = localStorage.getItem('jinil_daily_alarms');
+        if (saved) {
+          setDailyAlarms(JSON.parse(saved));
+        }
+      } catch (e) {
+        console.warn("Local alarms sync error:", e);
+      }
+    };
+    syncLocalAlarms();
+    window.addEventListener('jinil_alarms_updated', syncLocalAlarms);
+
+    const unsubAlarms = onSnapshot(doc(db, "system_config", "daily_alarms"), (docSnap) => {
+      if (docSnap.exists() && Array.isArray(docSnap.data().alarms)) {
+        setDailyAlarms(docSnap.data().alarms);
+      }
+    }, (err) => console.warn("Daily alarms firestore error:", err));
+
+    return () => {
+      window.removeEventListener('jinil_alarms_updated', syncLocalAlarms);
+      unsubAlarms();
     };
   }, []);
 
@@ -877,10 +936,6 @@ function App() {
   const completedTasks = todayMergedTasks.filter(t => t.completed).length;
 
   const lastFiredAlarm = React.useRef(null);
-  const DAILY_ALARMS = [
-    { time: '12:00', title: '점심 식사 시간입니다! 🍱' },
-    { time: '17:00', title: '택배 발송 시간입니다! 📦' }
-  ];
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -890,8 +945,9 @@ function App() {
       const currentMinutes = String(now.getMinutes()).padStart(2, '0');
       const currentTimeStr = `${currentHours}:${currentMinutes}`;
 
-      // 1. Kiểm tra Daily Alarms cố định
-      const alarmToFire = DAILY_ALARMS.find(a => a.time === currentTimeStr);
+      // 1. Kiểm tra Daily Alarms động từ Admin Dashboard
+      const activeAlarms = dailyAlarms.filter(a => a.active);
+      const alarmToFire = activeAlarms.find(a => a.time === currentTimeStr);
       if (alarmToFire && lastFiredAlarm.current !== currentTimeStr) {
         if (window.electronAPI && window.electronAPI.showNotification) {
           window.electronAPI.showNotification('진일 알리미', alarmToFire.title);

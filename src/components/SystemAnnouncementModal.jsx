@@ -28,6 +28,22 @@ export default function SystemAnnouncementModal({ isOpen, announcement, onClose 
 
   const styles = getTypeStyles(announcement.type);
 
+  const handleClose = () => {
+    if (announcement) {
+      const annKey = announcement.id || announcement.updatedAt || announcement.title;
+      try {
+        const dismissed = JSON.parse(localStorage.getItem('jinil_dismissed_announcements') || '[]');
+        if (!dismissed.includes(annKey)) {
+          dismissed.push(annKey);
+          localStorage.setItem('jinil_dismissed_announcements', JSON.stringify(dismissed));
+        }
+      } catch (e) {
+        console.warn("Save dismissed announcement error:", e);
+      }
+    }
+    if (onClose) onClose();
+  };
+
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-200">
       <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-100 dark:border-slate-800 p-6 flex flex-col gap-5 text-gray-800 dark:text-slate-100">
@@ -49,7 +65,7 @@ export default function SystemAnnouncementModal({ isOpen, announcement, onClose 
             </div>
           </div>
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-xl text-gray-400 hover:text-gray-600 dark:hover:text-slate-200 transition-colors cursor-pointer"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -67,7 +83,7 @@ export default function SystemAnnouncementModal({ isOpen, announcement, onClose 
 
         {/* Confirm Button */}
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="w-full py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm rounded-xl transition-all shadow-md cursor-pointer"
         >
           확인

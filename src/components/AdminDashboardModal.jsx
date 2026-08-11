@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../firebase';
-import { doc, setDoc, collection, onSnapshot, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, onSnapshot, updateDoc } from 'firebase/firestore';
 import Swal from 'sweetalert2';
 
 export default function AdminDashboardModal({ isOpen, onClose, currentUser }) {
-  const [activeTab, setActiveTab] = useState('security'); // 'security' | 'users' | 'announcements'
+  const [activeTab, setActiveTab] = useState('security'); // 'security' | 'users' | 'announcements' | 'alarms'
   const [loading, setLoading] = useState(false);
 
   // Security Controls State
@@ -22,12 +22,22 @@ export default function AdminDashboardModal({ isOpen, onClose, currentUser }) {
   const [annTitle, setAnnTitle] = useState('');
   const [annContent, setAnnContent] = useState('');
   const [annType, setAnnType] = useState('info'); // 'info' | 'warning' | 'alert'
+  const [annId, setAnnId] = useState('');
 
-  // Load Security & Announcement Config from Firestore
+  // Daily Alarms State
+  const DEFAULT_ALARMS = [
+    { id: 'alarm_12', time: '12:00', title: '점심 식사 시간입니다! 🍱', active: true },
+    { id: 'alarm_17', time: '17:00', title: '택배 발송 시간입니다! 📦', active: true }
+  ];
+  const [alarmsList, setAlarmsList] = useState(DEFAULT_ALARMS);
+  const [newAlarmTime, setNewAlarmTime] = useState('12:00');
+  const [newAlarmTitle, setNewAlarmTitle] = useState('');
+
+  // Load Configs from Firestore & Local Storage
   useEffect(() => {
     if (!isOpen) return;
 
-    // Listen for System Config
+    // Listen for System Control & Announcement Config
     const unsubConfig = onSnapshot(doc(db, "system_config", "app_control"), (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
@@ -40,6 +50,21 @@ export default function AdminDashboardModal({ isOpen, onClose, currentUser }) {
           setAnnTitle(data.announcement.title || '');
           setAnnContent(data.announcement.content || '');
           setAnnType(data.announcement.type || 'info');
+          setAnnId(data.announcement.id || '');
+        }
+      }
+    });
+
+    // Listen for Daily Scheduled Alarms
+    const unsubAlarms = onSnapshot(doc(db, "system_config", "daily_alarms"), (docSnap) => {
+      if (docSnap.exists() && Array.isArray(docSnap.data().alarms)) {
+        setAlarmsList(docSnap.data().alarms);
+      } else {
+        try {
+          const saved = localStorage.getItem('jinil_daily_alarms');
+          if (saved) setAlarmsList(JSON.parse(saved));
+        } catch (e) {
+          setAlarmsList(DEFAULT_ALARMS);
         }
       }
     });
@@ -48,7 +73,7 @@ export default function AdminDashboardModal({ isOpen, onClose, currentUser }) {
     const loadMergedUsers = (firestoreDocs = []) => {
       const map = new Map();
 
-      // 1. Add root admin pc5@gmail.com
+      // 1. Root admin
       map.set('pc5@gmail.com', {
         uid: 'root_pc5',
         email: 'pc5@gmail.com',
@@ -58,7 +83,7 @@ export default function AdminDashboardModal({ isOpen, onClose, currentUser }) {
         status: 'active'
       });
 
-      // 2. Add local saved accounts from localStorage
+      // 2. Local saved accounts
       try {
         const localAccs = JSON.parse(localStorage.getItem('jinil_saved_accounts') || '[]');
         localAccs.forEach(acc => {
@@ -78,7 +103,7 @@ export default function AdminDashboardModal({ isOpen, onClose, currentUser }) {
         console.warn("Error reading local accounts:", e);
       }
 
-      // 3. Merge Firestore remote snapshot
+      // 3. Remote Firestore users
       firestoreDocs.forEach(d => {
         const data = d.data ? d.data() : d;
         const emailOrKey = (data.email || data.alias || d.id).toLowerCase();
@@ -98,7 +123,6 @@ export default function AdminDashboardModal({ isOpen, onClose, currentUser }) {
 
     loadMergedUsers();
 
-    // Listen for Firestore Remote Users
     const unsubUsers = onSnapshot(collection(db, "users"), (snapshot) => {
       loadMergedUsers(snapshot.docs);
     }, (err) => {
@@ -108,13 +132,14 @@ export default function AdminDashboardModal({ isOpen, onClose, currentUser }) {
 
     return () => {
       unsubConfig();
+      unsubAlarms();
       unsubUsers();
     };
   }, [isOpen]);
 
   if (!isOpen) return null;
 
-  const showPermissionRulesModal = (errorMsg) => {
+  const showPermissionRulesModal = () => {
     const rulesSnippet = `rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
@@ -129,10 +154,10 @@ service cloud.firestore {
       title: 'Firebase Console 권한 설정 필요',
       html: `
         <div style="text-align: left; font-size: 12.5px; line-height: 1.5; color: #334155;">
-          <p style="margin-bottom: 8px;">Firebase Security Rules에 <strong>system_config</strong> 또는 <strong>users</strong> 컬렉션 쓰기 권한이 허용되어 있지 않습니다.</p>
+          <p style="margin-bottom: 8px;">Firebase Security Rules에 컬렉션 쓰기 권한이 허용되어 있지 않습니다.</p>
           <p style="margin-bottom: 8px; font-weight: 800; color: #d97706;">현재 PC 로컬 설정에는 즉시 적용되었습니다.</p>
-          <p style="margin-bottom: 6px;">원격 전체 기기 실시간 연동을 위해 <a href="https://console.firebase.google.com/project/gozkr-6d7ac/firestore/rules" target="_blank" rel="noreferrer" style="color: #2563eb; text-decoration: underline; font-weight: bold;">Firebase Console Firestore Rules</a> 페이지에 아래 규칙을 붙여넣고 <strong>[게시(Publish)]</strong>하세요:</p>
-          <pre style="background: #0f172a; color: #f8fafc; padding: 12px; border-radius: 10px; font-size: 11px; overflow-x: auto; margin-top: 6px; font-family: monospace;">${rulesSnippet}</pre>
+          <p style="margin-bottom: 6px;">원격 전체 기기 연동을 위해 <a href="https://console.firebase.google.com/project/gozkr-6d7ac/firestore/rules" target="_blank" rel="noreferrer" style="color: #2563eb; text-decoration: underline; font-weight: bold;">Firebase Console Rules</a>에 아래 규칙을 붙여넣고 <strong>[게시(Publish)]</strong>하세요:</p>
+          <pre style="background: #0f172a; color: #f8fafc; padding: 12px; border-radius: 10px; font-size: 11px; overflow-x: auto; margin-top: 6px;">${rulesSnippet}</pre>
         </div>
       `,
       confirmButtonText: '보안 규칙 복사하기',
@@ -144,8 +169,7 @@ service cloud.firestore {
         Swal.fire({
           icon: 'success',
           title: '보안 규칙이 클립보드에 복사되었습니다!',
-          text: 'Firebase Console Rules 페이지에 붙여넣고 게시하세요.',
-          timer: 2000,
+          timer: 1500,
           showConfirmButton: false,
           toast: true,
           position: 'top-end'
@@ -154,7 +178,7 @@ service cloud.firestore {
     });
   };
 
-  // Save Security Settings to Firestore
+  // Save Security Settings
   const handleSaveSecurity = async () => {
     setLoading(true);
     const securityData = {
@@ -165,30 +189,25 @@ service cloud.firestore {
       updatedBy: currentUser?.email || 'pc5@gmail.com'
     };
 
-    // Save to Local Storage Fallback
     try {
       const localConfig = JSON.parse(localStorage.getItem('jinil_app_control') || '{}');
       localStorage.setItem('jinil_app_control', JSON.stringify({ ...localConfig, ...securityData }));
       window.dispatchEvent(new Event('jinil_config_updated'));
-    } catch (e) {
-      console.warn("Local storage fallback error:", e);
-    }
+    } catch (e) {}
 
     try {
       await setDoc(doc(db, "system_config", "app_control"), securityData, { merge: true });
-
       Swal.fire({
         icon: 'success',
-        title: '보안 설정이 원격 서버에 저장되었습니다.',
+        title: '보안 설정이 저장되었습니다.',
         timer: 1500,
         showConfirmButton: false,
         toast: true,
         position: 'top-end'
       });
     } catch (e) {
-      console.error("Save security error:", e);
       if (e.code === 'permission-denied' || e.message?.includes('permission') || e.message?.includes('Missing')) {
-        showPermissionRulesModal(e.message);
+        showPermissionRulesModal();
       } else {
         Swal.fire({ icon: 'error', title: '저장 실패', text: e.message });
       }
@@ -197,44 +216,50 @@ service cloud.firestore {
     }
   };
 
-  // Save Announcement Settings to Firestore
+  // Save Announcement Settings with Unique ID & 24h TTL Timestamp
   const handleSaveAnnouncement = async () => {
     setLoading(true);
+
+    // Generate fresh announcement ID & 24h creation timestamp
+    const nowIso = new Date().toISOString();
+    const newAnnId = 'ann_' + Date.now();
+
     const annData = {
+      id: newAnnId,
       active: annActive,
       title: annTitle,
       content: annContent,
       type: annType,
-      updatedAt: new Date().toISOString()
+      createdAt: nowIso,
+      updatedAt: nowIso
     };
 
-    // Save to Local Storage Fallback
     try {
       const localConfig = JSON.parse(localStorage.getItem('jinil_app_control') || '{}');
       localConfig.announcement = annData;
       localStorage.setItem('jinil_app_control', JSON.stringify(localConfig));
       window.dispatchEvent(new Event('jinil_config_updated'));
-    } catch (e) {
-      console.warn("Local storage fallback error:", e);
-    }
+    } catch (e) {}
 
     try {
       await setDoc(doc(db, "system_config", "app_control"), {
         announcement: annData
       }, { merge: true });
 
+      setAnnId(newAnnId);
+
       Swal.fire({
         icon: 'success',
-        title: '공지사항이 발송/저장되었습니다.',
-        timer: 1500,
+        title: '공지사항이 발송되었습니다.',
+        text: '유효기간: 24시간 | 1회 수신 후 자동 숨김 처리됩니다.',
+        timer: 2000,
         showConfirmButton: false,
         toast: true,
         position: 'top-end'
       });
     } catch (e) {
-      console.error("Save announcement error:", e);
       if (e.code === 'permission-denied' || e.message?.includes('permission') || e.message?.includes('Missing')) {
-        showPermissionRulesModal(e.message);
+        showPermissionRulesModal();
       } else {
         Swal.fire({ icon: 'error', title: '발송 실패', text: e.message });
       }
@@ -243,13 +268,60 @@ service cloud.firestore {
     }
   };
 
+  // Handle Daily Alarms Management
+  const handleAddAlarm = () => {
+    if (!newAlarmTitle.trim()) {
+      Swal.fire({ icon: 'warning', title: '알림 내용을 입력하세요.', toast: true, position: 'top-end', timer: 1500, showConfirmButton: false });
+      return;
+    }
+    const newAlarm = {
+      id: 'alarm_' + Date.now(),
+      time: newAlarmTime,
+      title: newAlarmTitle.trim(),
+      active: true
+    };
+    const updated = [...alarmsList, newAlarm];
+    setAlarmsList(updated);
+    setNewAlarmTitle('');
+    saveAlarmsToStore(updated);
+  };
+
+  const handleDeleteAlarm = (id) => {
+    const updated = alarmsList.filter(a => a.id !== id);
+    setAlarmsList(updated);
+    saveAlarmsToStore(updated);
+  };
+
+  const handleToggleAlarm = (id) => {
+    const updated = alarmsList.map(a => a.id === id ? { ...a, active: !a.active } : a);
+    setAlarmsList(updated);
+    saveAlarmsToStore(updated);
+  };
+
+  const saveAlarmsToStore = async (list) => {
+    try {
+      localStorage.setItem('jinil_daily_alarms', JSON.stringify(list));
+      window.dispatchEvent(new Event('jinil_alarms_updated'));
+    } catch (e) {}
+
+    try {
+      await setDoc(doc(db, "system_config", "daily_alarms"), {
+        alarms: list,
+        updatedAt: new Date().toISOString(),
+        updatedBy: currentUser?.email || 'pc5@gmail.com'
+      }, { merge: true });
+    } catch (e) {
+      if (e.code === 'permission-denied' || e.message?.includes('permission') || e.message?.includes('Missing')) {
+        showPermissionRulesModal();
+      }
+    }
+  };
+
   // Toggle User Paid Status
   const handleToggleUserPaid = async (targetUser) => {
     try {
       const nextState = !targetUser.isPaid;
-      await updateDoc(doc(db, "users", targetUser.uid), {
-        isPaid: nextState
-      });
+      await updateDoc(doc(db, "users", targetUser.uid), { isPaid: nextState });
       Swal.fire({
         icon: 'success',
         title: nextState ? '유료 회원으로 승인되었습니다.' : '무료 회원으로 변경되었습니다.',
@@ -260,7 +332,7 @@ service cloud.firestore {
       });
     } catch (e) {
       if (e.code === 'permission-denied' || e.message?.includes('permission') || e.message?.includes('Missing')) {
-        showPermissionRulesModal(e.message);
+        showPermissionRulesModal();
       } else {
         Swal.fire({ icon: 'error', title: '변경 실패', text: e.message });
       }
@@ -271,9 +343,7 @@ service cloud.firestore {
   const handleToggleUserBlock = async (targetUser) => {
     try {
       const nextStatus = targetUser.status === 'blocked' ? 'active' : 'blocked';
-      await updateDoc(doc(db, "users", targetUser.uid), {
-        status: nextStatus
-      });
+      await updateDoc(doc(db, "users", targetUser.uid), { status: nextStatus });
       Swal.fire({
         icon: nextStatus === 'blocked' ? 'warning' : 'success',
         title: nextStatus === 'blocked' ? '해당 계정이 차단되었습니다.' : '차단이 해제되었습니다.',
@@ -284,7 +354,7 @@ service cloud.firestore {
       });
     } catch (e) {
       if (e.code === 'permission-denied' || e.message?.includes('permission') || e.message?.includes('Missing')) {
-        showPermissionRulesModal(e.message);
+        showPermissionRulesModal();
       } else {
         Swal.fire({ icon: 'error', title: '변경 실패', text: e.message });
       }
@@ -325,7 +395,7 @@ service cloud.firestore {
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 font-medium">
-                원격 실시간 앱 차단, 유료 사용자 접근 승인 및 팝업 공지 관리
+                원격 실시간 차단, 회원 승인, 팝업 공지 및 정기 일일 알림 설정
               </p>
             </div>
           </div>
@@ -340,12 +410,12 @@ service cloud.firestore {
           </button>
         </div>
 
-        {/* Tab Navigation - Pure Minimalist Segmented Pill Control */}
+        {/* Tab Navigation - 4 Clean Segmented Controls */}
         <div className="px-6 pt-4 pb-2 bg-slate-50/30 dark:bg-slate-900/30 border-b border-slate-100 dark:border-slate-800">
-          <div className="grid grid-cols-3 gap-2 bg-slate-100 dark:bg-slate-800/70 p-1.5 rounded-2xl border border-slate-200/60 dark:border-slate-700/50">
+          <div className="grid grid-cols-4 gap-2 bg-slate-100 dark:bg-slate-800/70 p-1.5 rounded-2xl border border-slate-200/60 dark:border-slate-700/50 text-xs">
             <button
               onClick={() => setActiveTab('security')}
-              className={`py-2.5 px-4 font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 ${
+              className={`py-2.5 px-3 font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 activeTab === 'security'
                   ? 'bg-white dark:bg-slate-900 text-red-600 dark:text-red-400 shadow-sm border border-slate-200/50 dark:border-slate-700/50'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -354,12 +424,12 @@ service cloud.firestore {
               <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
               </svg>
-              <span>실시간 차단 & 보안</span>
+              <span>차단 & 보안</span>
             </button>
 
             <button
               onClick={() => setActiveTab('users')}
-              className={`py-2.5 px-4 font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 ${
+              className={`py-2.5 px-3 font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 activeTab === 'users'
                   ? 'bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-sm border border-slate-200/50 dark:border-slate-700/50'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -368,12 +438,12 @@ service cloud.firestore {
               <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
-              <span>회원 승인 & 권한 ({usersList.length})</span>
+              <span>회원 관리 ({usersList.length})</span>
             </button>
 
             <button
               onClick={() => setActiveTab('announcements')}
-              className={`py-2.5 px-4 font-bold text-xs rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 ${
+              className={`py-2.5 px-3 font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                 activeTab === 'announcements'
                   ? 'bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-sm border border-slate-200/50 dark:border-slate-700/50'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -382,7 +452,21 @@ service cloud.firestore {
               <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 58h2m-1-5v5m0-40A10 10 0 002 18v8l-2 4v2h24v-2l-2-4v-8a10 10 0 00-10-10z" />
               </svg>
-              <span>팝업 공지 관리</span>
+              <span>팝업 공지</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab('alarms')}
+              className={`py-2.5 px-3 font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                activeTab === 'alarms'
+                  ? 'bg-white dark:bg-slate-900 text-emerald-600 dark:text-emerald-400 shadow-sm border border-slate-200/50 dark:border-slate-700/50'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
+              }`}
+            >
+              <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span>정기 알림 ({alarmsList.length})</span>
             </button>
           </div>
         </div>
@@ -629,20 +713,25 @@ service cloud.firestore {
             </div>
           )}
 
-          {/* TAB 3: System Announcements */}
+          {/* TAB 3: System Announcements (Single-Show & 24h TTL) */}
           {activeTab === 'announcements' && (
             <div className="space-y-5">
               
               <div className="p-4 rounded-2xl bg-amber-500/10 dark:bg-amber-950/30 border border-amber-500/30 flex items-center justify-between">
                 <div>
-                  <h3 className="text-sm font-extrabold text-amber-900 dark:text-amber-200">
-                    실시간 팝업 공지사항 켜기 / 끄기
-                  </h3>
-                  <p className="text-xs text-amber-700 dark:text-amber-400 mt-0.5">
-                    활성화 시 앱에 접속 중인 모든 사용자에게 공지사항 팝업이 즉시 노출됩니다.
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-sm font-extrabold text-amber-900 dark:text-amber-200">
+                      실시간 팝업 공지사항 켜기 / 끄기
+                    </h3>
+                    <span className="px-2 py-0.5 bg-amber-600 text-white text-[9px] font-black rounded-md">
+                      1회 수신 & 24시간 후 자동 발만
+                    </span>
+                  </div>
+                  <p className="text-xs text-amber-700 dark:text-amber-400 mt-1">
+                    사용자가 팝업을 확인하면 1회만 표시되며, 발송 24시간 후 자동으로 완전히 소멸됩니다.
                   </p>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
+                <label className="relative inline-flex items-center cursor-pointer shrink-0">
                   <input
                     type="checkbox"
                     checked={annActive}
@@ -716,8 +805,108 @@ service cloud.firestore {
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 58h2m-1-5v5m0-40A10 10 0 002 18v8l-2 4v2h24v-2l-2-4v-8a10 10 0 00-10-10z" />
                   </svg>
-                  <span>{loading ? '저장 중...' : '공지사항 저장 및 즉시 발송'}</span>
+                  <span>{loading ? '발송 중...' : '새 팝업 공지 발송 (24시간 유효)'}</span>
                 </button>
+              </div>
+
+            </div>
+          )}
+
+          {/* TAB 4: Daily Scheduled Alarms Management */}
+          {activeTab === 'alarms' && (
+            <div className="space-y-6">
+
+              <div className="p-4 rounded-2xl bg-emerald-500/10 dark:bg-emerald-950/30 border border-emerald-500/30">
+                <h3 className="text-sm font-extrabold text-emerald-900 dark:text-emerald-200">
+                  정기 일일 알림 시간 및 내용 설정
+                </h3>
+                <p className="text-xs text-emerald-700 dark:text-emerald-400 mt-1">
+                  원하는 시간에 자동으로 시스템 및 데스크톱 Notification 알림이 발송되도록 설정합니다.
+                </p>
+              </div>
+
+              {/* Add New Alarm Form */}
+              <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 space-y-3">
+                <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  새 정기 알림 추가
+                </h4>
+                <div className="flex flex-wrap items-center gap-3">
+                  <input
+                    type="time"
+                    value={newAlarmTime}
+                    onChange={(e) => setNewAlarmTime(e.target.value)}
+                    className="px-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-extrabold text-slate-800 dark:text-slate-100 outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                  <input
+                    type="text"
+                    placeholder="알림 문구 입력 (예: 점심 식사 시간입니다! 🍱)"
+                    value={newAlarmTitle}
+                    onChange={(e) => setNewAlarmTitle(e.target.value)}
+                    className="flex-1 min-w-[200px] px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                  <button
+                    onClick={handleAddAlarm}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs rounded-xl transition-all shadow-xs cursor-pointer flex items-center gap-1.5"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>추가</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Alarms List */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                  등록된 정기 알림 목록 ({alarmsList.length})
+                </h4>
+
+                {alarmsList.length === 0 ? (
+                  <div className="p-8 text-center text-slate-400 font-semibold text-xs border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">
+                    등록된 정기 알림이 없습니다.
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {alarmsList.map((alarm) => (
+                      <div
+                        key={alarm.id}
+                        className="p-3.5 bg-white dark:bg-slate-800/80 rounded-2xl border border-slate-200/80 dark:border-slate-700/60 flex items-center justify-between gap-3 hover:border-emerald-500/40 transition-all shadow-2xs"
+                      >
+                        <div className="flex items-center gap-3">
+                          <span className="px-3 py-1 bg-emerald-500/15 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-300 font-black text-sm rounded-xl border border-emerald-500/30">
+                            ⏰ {alarm.time}
+                          </span>
+                          <span className="text-xs font-extrabold text-slate-800 dark:text-slate-100">
+                            {alarm.title}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(alarm.active)}
+                              onChange={() => handleToggleAlarm(alarm.id)}
+                              className="sr-only peer"
+                            />
+                            <div className="w-10 h-5.5 bg-slate-300 peer-focus:outline-none rounded-full peer dark:bg-slate-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4.5 after:w-4.5 after:transition-all peer-checked:bg-emerald-600"></div>
+                          </label>
+
+                          <button
+                            onClick={() => handleDeleteAlarm(alarm.id)}
+                            className="p-1.5 hover:bg-red-50 dark:hover:bg-red-950/40 text-slate-400 hover:text-red-500 rounded-xl transition-colors cursor-pointer"
+                            title="삭제"
+                          >
+                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
             </div>
