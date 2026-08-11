@@ -8,13 +8,107 @@ import Swal from 'sweetalert2';
 
 const getDriverInfo = (item) => {
   if (!item) return '-';
-  const name = item.driver_name || item.driver || item.delivery_driver || item.delivery_person || item.courier_driver || item.carrier_name || item.carrier || item.transporter || item.transporter_name || item.driver_info || item.courier_person || item.deliverer || '';
-  const phone = item.driver_phone || item.carrier_phone || item.driver_tel || item.phone_number || item.tel || item.contact || item.driver_contact || '';
 
-  let cleanName = (name && name !== '-' && name !== '미지정') ? String(name).trim() : '';
-  let cleanPhone = (phone && phone !== '-' && phone !== '미지정') ? String(phone).trim() : '';
+  // 1. Check local storage saved custom driver info for this tracking number
+  const trackingNum = item.tracking_number || item.barcode;
+  if (trackingNum) {
+    try {
+      const savedCustom = localStorage.getItem('custom_driver_' + trackingNum);
+      if (savedCustom && savedCustom.trim()) {
+        return savedCustom.trim();
+      }
+    } catch (e) {}
+  }
 
-  if (cleanName && cleanPhone && !cleanName.includes(cleanPhone)) {
+  if (item.custom_driver_info && item.custom_driver_info.trim() && item.custom_driver_info !== '-') {
+    return item.custom_driver_info.trim();
+  }
+
+  let driverName = '';
+  let driverPhone = '';
+
+  const isCourierCompany = (str) => {
+    if (!str || typeof str !== 'string') return true;
+    const lower = str.toLowerCase().trim();
+    return (
+      lower === '-' || lower === '미지정' ||
+      lower.includes('롯데') || lower.includes('대한통운') || lower.includes('cj') ||
+      lower.includes('한진') || lower.includes('우체국') || lower.includes('로젠') ||
+      lower.includes('경동') || lower.includes('합동') || lower.includes('택배')
+    );
+  };
+
+  // 2. Scan tracking_events array (where manName & telno are stored in B2B landing page / Edge Function)
+  const events = Array.isArray(item.tracking_events) ? item.tracking_events : (Array.isArray(item.events) ? item.events : []);
+  if (events.length > 0) {
+    for (let i = events.length - 1; i >= 0; i--) {
+      const ev = events[i];
+      if (!ev) continue;
+
+      const eName = ev.manName || ev.man_name || ev.driver || ev.driverName || ev.deliverer || '';
+      const eTel = ev.telno || ev.tel || ev.phone || ev.manTel || ev.driverPhone || '';
+
+      if (eName && !isCourierCompany(eName)) {
+        driverName = String(eName).trim();
+      }
+      if (eTel && eTel !== '-' && eTel !== '미지정') {
+        driverPhone = String(eTel).trim();
+      }
+
+      if (driverName || driverPhone) break;
+    }
+  }
+
+  // 3. Direct fields search across common provider key names
+  if (!driverName) {
+    const nameCandidate = item.driver_name || item.driverName || item.driver || item.delivery_driver || item.delivery_person || item.courier_driver || item.manName || item.man_name || item.transporter;
+    if (nameCandidate && typeof nameCandidate === 'string' && !isCourierCompany(nameCandidate)) {
+      driverName = nameCandidate.trim();
+    }
+  }
+
+  if (!driverPhone) {
+    const phoneCandidate = item.driver_phone || item.driverPhone || item.driver_mobile || item.driverMobile || item.driver_tel || item.driverTel || item.courier_phone || item.courierPhone || item.phone_number || item.tel || item.telno || item.contact || item.driver_contact;
+    if (phoneCandidate && typeof phoneCandidate === 'string' && phoneCandidate !== '-' && phoneCandidate !== '미지정') {
+      driverPhone = phoneCandidate.trim();
+    }
+  }
+
+  // 4. Scan string fields & raw payloads for name and phone patterns
+  if (!driverName || !driverPhone) {
+    const textSources = [
+      item.latest_description, item.driver_info, item.driverInfo, item.status_detail,
+      item.statusDetail, item.description, item.remark, item.memo, item.tracking_status_label,
+      typeof item.raw_payload === 'string' ? item.raw_payload : (item.raw_payload ? JSON.stringify(item.raw_payload) : '')
+    ];
+
+    const namePhoneRegex = /([가-힣]{2,4})\s*\(?(01[016789]-?\d{3,4}-?\d{4})\)?/;
+    const phoneRegex = /(01[016789]-?\d{3,4}-?\d{4})/;
+
+    for (const text of textSources) {
+      if (!text || typeof text !== 'string') continue;
+
+      const matchNP = namePhoneRegex.exec(text);
+      if (matchNP) {
+        if (!driverName) driverName = matchNP[1];
+        if (!driverPhone) driverPhone = matchNP[2];
+        break;
+      }
+
+      if (!driverPhone) {
+        const matchP = phoneRegex.exec(text);
+        if (matchP) {
+          driverPhone = matchP[1];
+        }
+      }
+    }
+  }
+
+  let cleanName = (driverName && !isCourierCompany(driverName)) ? String(driverName).trim() : '';
+  let cleanPhone = (driverPhone && driverPhone !== '-' && driverPhone !== '미지정') ? String(driverPhone).trim() : '';
+
+  if (cleanName && cleanPhone) {
+    if (cleanName.includes(cleanPhone)) return cleanName;
     return `${cleanName} ${cleanPhone}`;
   }
   return cleanName || cleanPhone || '-';
@@ -25,6 +119,29 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [hideCancelledAndPreparing, setHideCancelledAndPreparing] = useState(true);
+
+  // Driver Edit State
+  const [editingDriverId, setEditingDriverId] = useState(null);
+  const [tempDriverText, setTempDriverText] = useState('');
+
+  const handleSaveDriverInfo = (shipmentId, trackingNumber, newDriverInfo) => {
+    const trimmed = (newDriverInfo || '').trim();
+    if (trackingNumber) {
+      try {
+        localStorage.setItem('custom_driver_' + trackingNumber, trimmed);
+      } catch (e) {}
+    }
+
+    setShipments(prev => prev.map(s => {
+      if (s.id === shipmentId || s.tracking_number === trackingNumber) {
+        return { ...s, custom_driver_info: trimmed };
+      }
+      return s;
+    }));
+
+    setEditingDriverId(null);
+    notify.toastSuccess('배송기사 정보가 저장되었습니다.', trimmed || '-');
+  };
 
   const fetchInTransitShipments = useCallback(async () => {
     setLoading(true);
@@ -324,6 +441,7 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
                     <th className="py-3 px-4 font-extrabold">거래처</th>
                     <th className="py-3 px-4 font-extrabold">수하인/출고처</th>
                     <th className="py-3 px-4 font-extrabold">운송장번호</th>
+                    <th className="py-3 px-4 font-extrabold">배송기사</th>
                     <th className="py-3 px-4 font-extrabold">배송상태</th>
                     <th className="py-3 px-4 text-center font-extrabold">카톡 안내</th>
                     <th className="py-3 px-4 text-center font-extrabold">삭제</th>
@@ -351,6 +469,46 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                           </svg>
                         </button>
+                      </td>
+                      <td className="py-3 px-4 text-xs font-bold">
+                        {editingDriverId === s.id ? (
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="text"
+                              value={tempDriverText}
+                              onChange={(e) => setTempDriverText(e.target.value)}
+                              placeholder="이충섭 010-4810-2409"
+                              autoFocus
+                              className="w-36 px-2 py-1 bg-white dark:bg-gray-700 border border-blue-400 rounded text-xs text-gray-900 dark:text-white outline-none font-bold"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') handleSaveDriverInfo(s.id, s.tracking_number, tempDriverText);
+                                if (e.key === 'Escape') setEditingDriverId(null);
+                              }}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleSaveDriverInfo(s.id, s.tracking_number, tempDriverText)}
+                              className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded text-[11px] font-bold cursor-pointer"
+                            >
+                              저장
+                            </button>
+                          </div>
+                        ) : (
+                          <div
+                            onClick={() => {
+                              setEditingDriverId(s.id);
+                              const current = getDriverInfo(s);
+                              setTempDriverText(current !== '-' ? current : '');
+                            }}
+                            className="group flex items-center gap-1.5 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition"
+                            title="클릭하여 배송기사 정보 직접 입력/수정"
+                          >
+                            <span className={getDriverInfo(s) === '-' ? 'text-gray-400 font-normal italic' : 'text-gray-900 dark:text-white font-extrabold'}>
+                              {getDriverInfo(s)}
+                            </span>
+                            <span className="text-[11px] text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity">✏️</span>
+                          </div>
+                        )}
                       </td>
                       <td className="py-3 px-4">
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 border border-blue-200">
