@@ -65,7 +65,7 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
         },
         {
             key: 'invoice',
-            label: t('invoice') || '거래명세서',
+            label: t('invoiceStatement') || '거래명세서',
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -128,7 +128,7 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
     ];
 
     return (
-        <div className="backdrop-blur-md bg-white/75 dark:bg-slate-800/75 rounded-3xl shadow-sm border border-white/80 dark:border-slate-700/70 transition-all duration-300 overflow-hidden">
+        <div className="backdrop-blur-md bg-white/75 dark:bg-slate-800/75 rounded-3xl shadow-sm border border-white/80 dark:border-slate-700/70 transition-all duration-300 overflow-hidden font-['Pretendard',_'Noto_Sans_KR',_sans-serif]">
             {/* Row 1: Market, Delivery, Invoice & Notes (Inline Tabs - 4 cols) */}
             <div className="grid grid-cols-4">
                 {inlineTabs.map((tab) => (
@@ -150,7 +150,7 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
                                 setActiveTab(tab.key);
                             }
                         }}
-                        className={`flex flex-col items-center justify-center gap-1.5 py-3.5 px-1 text-[11px] font-bold transition-all duration-300 border-b border-r last:border-r-0 border-gray-100 dark:border-slate-700/80 relative cursor-pointer
+                        className={`flex flex-col items-center justify-center gap-1.5 py-3.5 px-1 text-xs md:text-[13px] font-bold tracking-tight transition-all duration-300 border-b border-r last:border-r-0 border-gray-100 dark:border-slate-700/80 relative cursor-pointer
                             ${activeTab === tab.key
                                 ? 'text-blue-600 dark:text-blue-400 bg-blue-50/60 dark:bg-blue-950/40 font-black'
                                 : 'text-gray-500 dark:text-slate-300 hover:text-gray-800 dark:hover:text-white dark:hover:bg-slate-700/40'
@@ -171,7 +171,7 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
                     <button
                         key={tab.key}
                         onClick={tab.onClick}
-                        className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 text-[11px] font-bold text-gray-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-300 hover:bg-gray-100 dark:hover:bg-slate-700/60 transition-all duration-200 border-r last:border-r-0 border-gray-100 dark:border-slate-700/80 cursor-pointer"
+                        className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 text-xs md:text-[13px] font-bold tracking-tight text-gray-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-300 hover:bg-gray-100 dark:hover:bg-slate-700/60 transition-all duration-200 border-r last:border-r-0 border-gray-100 dark:border-slate-700/80 cursor-pointer"
                     >
                         {tab.icon}
                         <span className="whitespace-nowrap">{tab.label}</span>
