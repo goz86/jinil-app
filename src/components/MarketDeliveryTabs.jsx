@@ -4,14 +4,16 @@ import DeliveryWidget from './DeliveryWidget';
 import InvoiceWidget from './InvoiceWidget';
 import InvoiceModal from './InvoiceModal';
 import InTransitShipmentModal from './InTransitShipmentModal';
+import NotesModal from './NotesModal';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
 
-export default function MarketDeliveryTabs({ selectedDate, deliveryCount, deliveries, onOpenClients, onOpenInventory, onOpenLabelPrint }) {
+export default function MarketDeliveryTabs({ selectedDate, deliveryCount, deliveries, onOpenClients, onOpenInventory, onOpenLabelPrint, user }) {
     const { t } = useLanguage();
-    const [activeTab, setActiveTab] = useState('market'); // Only for market, delivery, and invoice
+    const [activeTab, setActiveTab] = useState('market'); // Only for market and delivery inline
     const [isInTransitModalOpen, setIsInTransitModalOpen] = useState(false);
     const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+    const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
     const [liveActiveCount, setLiveActiveCount] = useState(null);
 
     useEffect(() => {
@@ -69,6 +71,15 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
             )
+        },
+        {
+            key: 'notes',
+            label: t('notes') || '노트',
+            icon: (
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+            )
         }
     ];
 
@@ -117,8 +128,8 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
 
     return (
         <div className="backdrop-blur-md bg-white/75 dark:bg-slate-800/75 rounded-3xl shadow-sm border border-white/80 dark:border-slate-700/70 transition-all duration-300 overflow-hidden">
-            {/* Row 1: Market, Delivery & Invoice (Inline) */}
-            <div className="grid grid-cols-3">
+            {/* Row 1: Market, Delivery, Invoice & Notes (Inline Tabs - 4 cols) */}
+            <div className="grid grid-cols-4">
                 {inlineTabs.map((tab) => (
                     <button
                         key={tab.key}
@@ -127,20 +138,22 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
                                 setIsInTransitModalOpen(true);
                             } else if (tab.key === 'invoice') {
                                 setIsInvoiceModalOpen(true);
+                            } else if (tab.key === 'notes') {
+                                setIsNotesModalOpen(true);
                             } else {
                                 setActiveTab(tab.key);
                             }
                         }}
-                        className={`flex flex-col items-center justify-center gap-1.5 py-3.5 px-2 text-[12px] font-bold transition-all duration-300 border-b border-r last:border-r-0 border-gray-100 dark:border-slate-700/80 relative
+                        className={`flex flex-col items-center justify-center gap-1.5 py-3.5 px-1 text-[11px] font-bold transition-all duration-300 border-b border-r last:border-r-0 border-gray-100 dark:border-slate-700/80 relative cursor-pointer
                             ${activeTab === tab.key
                                 ? 'text-blue-600 dark:text-blue-400 bg-blue-50/60 dark:bg-blue-950/40 font-black'
                                 : 'text-gray-500 dark:text-slate-300 hover:text-gray-800 dark:hover:text-white dark:hover:bg-slate-700/40'
                             }`}
                     >
                         {tab.icon}
-                        <span>{tab.label}</span>
+                        <span className="whitespace-nowrap truncate max-w-full px-0.5">{tab.label}</span>
                         {activeTab === tab.key && (
-                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 rounded-full mx-8 shadow-xs" />
+                            <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-500 rounded-full mx-4 shadow-xs" />
                         )}
                     </button>
                 ))}
@@ -152,7 +165,7 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
                     <button
                         key={tab.key}
                         onClick={tab.onClick}
-                        className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 text-[11px] font-bold text-gray-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-300 hover:bg-gray-100 dark:hover:bg-slate-700/60 transition-all duration-200 border-r last:border-r-0 border-gray-100 dark:border-slate-700/80"
+                        className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 text-[11px] font-bold text-gray-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-300 hover:bg-gray-100 dark:hover:bg-slate-700/60 transition-all duration-200 border-r last:border-r-0 border-gray-100 dark:border-slate-700/80 cursor-pointer"
                     >
                         {tab.icon}
                         <span className="whitespace-nowrap">{tab.label}</span>
@@ -185,6 +198,14 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
                 isOpen={isInvoiceModalOpen}
                 onClose={() => setIsInvoiceModalOpen(false)}
             />
+
+            {/* Notion-Style Shared Notes Modal */}
+            <NotesModal
+                isOpen={isNotesModalOpen}
+                onClose={() => setIsNotesModalOpen(false)}
+                user={user}
+            />
         </div>
     );
 }
+

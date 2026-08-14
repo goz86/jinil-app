@@ -1115,6 +1115,7 @@ function App() {
             onSwitchAccount={handleSwitchAccount}
           />
           <MarketDeliveryTabs
+            user={user}
             selectedDate={selectedDate}
             deliveryCount={deliveryCount}
             deliveries={deliveryData}
