@@ -8,7 +8,7 @@ import NotesModal from './NotesModal';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
 
-export default function MarketDeliveryTabs({ selectedDate, deliveryCount, deliveries, onOpenClients, onOpenInventory, onOpenLabelPrint, user }) {
+export default function MarketDeliveryTabs({ selectedDate, deliveryCount, deliveries, onOpenClients, onOpenInventory, onOpenLabelPrint, onOpenNotes, user }) {
     const { t } = useLanguage();
     const [activeTab, setActiveTab] = useState('market'); // Only for market and delivery inline
     const [isInTransitModalOpen, setIsInTransitModalOpen] = useState(false);
@@ -65,7 +65,7 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
         },
         {
             key: 'invoice',
-            label: '거래명세서',
+            label: t('invoice') || '거래명세서',
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -75,6 +75,7 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
         {
             key: 'notes',
             label: t('notes') || '노트',
+            title: '노트 (Alt + N)',
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -90,7 +91,7 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
             onClick: onOpenClients,
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2m3.22-11.08a4 4 0 117.56 0" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
             )
         },
@@ -100,13 +101,13 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
             onClick: onOpenInventory,
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7M4 7c0-2 1-3 3-3h10c2 0 3 1 3 3M4 7h16m-8 4v6m-3-3h6" />
                 </svg>
             )
         },
         {
-            key: 'homepage',
-            label: '홈페이지',
+            key: 'orders',
+            label: '주문관리',
             onClick: () => window.electronAPI?.openExternal('https://www.jinil.top/') ?? window.open('https://www.jinil.top/', '_blank'),
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -133,13 +134,18 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
                 {inlineTabs.map((tab) => (
                     <button
                         key={tab.key}
+                        title={tab.title || tab.label}
                         onClick={() => {
                             if (tab.key === 'delivery') {
                                 setIsInTransitModalOpen(true);
                             } else if (tab.key === 'invoice') {
                                 setIsInvoiceModalOpen(true);
                             } else if (tab.key === 'notes') {
-                                setIsNotesModalOpen(true);
+                                if (onOpenNotes) {
+                                    onOpenNotes();
+                                } else {
+                                    setIsNotesModalOpen(true);
+                                }
                             } else {
                                 setActiveTab(tab.key);
                             }

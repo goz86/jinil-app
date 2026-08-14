@@ -153,7 +153,17 @@ const translations = {
         confirmDeleteNote: "Bạn có chắc muốn xóa ghi chú này?",
         addChecklistItem: "Thêm việc cần làm...",
         saveChanges: "Lưu thay đổi",
-        quickCopy: "Sao chép nhanh"
+        quickCopy: "Sao chép nhanh",
+        trashCategory: "Thùng rác",
+        restoreNote: "Khôi phục",
+        permanentDelete: "Xóa vĩnh viễn",
+        emptyTrash: "Dọn sạch thùng rác",
+        moveToTrash: "Chuyển vào thùng rác",
+        noteRestored: "Đã khôi phục ghi chú thành công!",
+        noteMovedToTrash: "Đã chuyển ghi chú vào thùng rác.",
+        emptyTrashConfirmTitle: "Dọn sạch thùng rác?",
+        emptyTrashConfirmText: "Tất cả ghi chú trong thùng rác sẽ bị xóa vĩnh viễn và không thể khôi phục!",
+        noteColor: "Màu nhãn"
     },
     ko: {
         appTitle: "진일 라벨",
@@ -307,7 +317,17 @@ const translations = {
         confirmDeleteNote: "이 노트를 삭제하시겠습니까?",
         addChecklistItem: "할 일 추가...",
         saveChanges: "변경사항 저장",
-        quickCopy: "빠른 복사"
+        quickCopy: "빠른 복사",
+        trashCategory: "휴지통",
+        restoreNote: "복원",
+        permanentDelete: "영구 삭제",
+        emptyTrash: "휴지통 비우기",
+        moveToTrash: "휴지통으로 이동",
+        noteRestored: "노트가 성공적으로 복원되었습니다!",
+        noteMovedToTrash: "노트가 휴지통으로 이동되었습니다.",
+        emptyTrashConfirmTitle: "휴지통을 비우시겠습니까?",
+        emptyTrashConfirmText: "휴지통의 모든 노트가 영구적으로 삭제되며 복구할 수 없습니다!",
+        noteColor: "색상 라벨"
     },
     en: {
         appTitle: "Jinil Label",

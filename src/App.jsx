@@ -20,6 +20,7 @@ import PinVerifyModal from './components/PinVerifyModal';
 import AdminDashboardModal from './components/AdminDashboardModal';
 import RealtimeLockOverlay from './components/RealtimeLockOverlay';
 import SystemAnnouncementModal from './components/SystemAnnouncementModal';
+import NotesModal from './components/NotesModal';
 import { hasAppLockPin } from './lib/appLock';
 import { initializeApp } from 'firebase/app';
 import { auth, db, secondaryAuth, secondaryDb, firebaseConfig } from './firebase';
@@ -53,6 +54,7 @@ function App() {
   const [isClientsOpen, setIsClientsOpen] = useState(false);
   const [isInventoryOpen, setIsInventoryOpen] = useState(false);
   const [isLabelPrintOpen, setIsLabelPrintOpen] = useState(false);
+  const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [isAppLockModalOpen, setIsAppLockModalOpen] = useState(false);
   const [isPinVerifyModalOpen, setIsPinVerifyModalOpen] = useState(false);
   const [isAdminDashboardOpen, setIsAdminDashboardOpen] = useState(false);
@@ -237,6 +239,22 @@ function App() {
     setWallpaperState(newWp);
     localStorage.setItem('app_wallpaper', newWp);
   };
+
+  // Global Keyboard Shortcut: Alt + N or Ctrl + Shift + N to Toggle Notes Modal
+  useEffect(() => {
+    const handleGlobalShortcuts = (e) => {
+      const isAltN = e.altKey && (e.key === 'n' || e.key === 'N' || e.code === 'KeyN');
+      const isCtrlShiftN = (e.ctrlKey || e.metaKey) && e.shiftKey && (e.key === 'n' || e.key === 'N' || e.code === 'KeyN');
+
+      if (isAltN || isCtrlShiftN) {
+        e.preventDefault();
+        setIsNotesOpen(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalShortcuts);
+    return () => window.removeEventListener('keydown', handleGlobalShortcuts);
+  }, []);
 
   const getWallpaperStyle = () => {
     const isDark = theme === 'dark';
@@ -1122,10 +1140,17 @@ function App() {
             onOpenClients={() => setIsClientsOpen(true)}
             onOpenInventory={() => setIsInventoryOpen(true)}
             onOpenLabelPrint={() => setIsLabelPrintOpen(true)}
+            onOpenNotes={() => setIsNotesOpen(true)}
           />
         </div>
       </div>
       </div>
+
+      <NotesModal
+        isOpen={isNotesOpen}
+        onClose={() => setIsNotesOpen(false)}
+        user={user}
+      />
 
       <GenericModal 
         isOpen={isClientsOpen} 

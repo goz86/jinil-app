@@ -10,7 +10,8 @@ import {
     deleteDoc, 
     doc, 
     serverTimestamp,
-    orderBy 
+    orderBy,
+    writeBatch
 } from 'firebase/firestore';
 import { useLanguage } from '../contexts/LanguageContext';
 import Swal from 'sweetalert2';
@@ -47,6 +48,16 @@ const Icons = {
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
         </svg>
     ),
+    trash: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+        </svg>
+    ),
+    restore: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+        </svg>
+    ),
     copy: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -67,11 +78,6 @@ const Icons = {
             <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
     ),
-    trash: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-        </svg>
-    ),
     externalLink: (
         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
@@ -86,8 +92,23 @@ const Icons = {
         <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
         </svg>
+    ),
+    palette: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M7 21a4 4 0 01-4-4 5 5 0 013-4.5V11a5 5 0 0110 0v1.5c0 1.25.75 2.5 2 2.5a2 2 0 002-2V11A9 9 0 004.1 8.5" />
+        </svg>
     )
 };
+
+// Color Presets for Notion-Style Color Cards
+const COLOR_PRESETS = [
+    { id: 'default', label: '기본', dotBg: 'bg-slate-400', cardBg: 'bg-white/80 dark:bg-slate-800/50', border: 'border-gray-100 dark:border-slate-800' },
+    { id: 'blue', label: '파랑', dotBg: 'bg-blue-500', cardBg: 'bg-blue-50/60 dark:bg-blue-950/30', border: 'border-blue-200/80 dark:border-blue-800/50' },
+    { id: 'amber', label: '노랑', dotBg: 'bg-amber-500', cardBg: 'bg-amber-50/60 dark:bg-amber-950/30', border: 'border-amber-200/80 dark:border-amber-800/50' },
+    { id: 'emerald', label: '초록', dotBg: 'bg-emerald-500', cardBg: 'bg-emerald-50/60 dark:bg-emerald-950/30', border: 'border-emerald-200/80 dark:border-emerald-800/50' },
+    { id: 'purple', label: '보라', dotBg: 'bg-purple-500', cardBg: 'bg-purple-50/60 dark:bg-purple-950/30', border: 'border-purple-200/80 dark:border-purple-800/50' },
+    { id: 'rose', label: '분홍', dotBg: 'bg-rose-500', cardBg: 'bg-rose-50/60 dark:bg-rose-950/30', border: 'border-rose-200/80 dark:border-rose-800/50' }
+];
 
 export default function NotesModal({ isOpen, onClose, user }) {
     const { t } = useLanguage();
@@ -99,11 +120,12 @@ export default function NotesModal({ isOpen, onClose, user }) {
     
     // Filters & Search
     const [searchQuery, setSearchQuery] = useState('');
-    const [activeCategory, setActiveCategory] = useState('all');
+    const [activeCategory, setActiveCategory] = useState('all'); // 'all', 'pinned', 'client', 'account', 'general', 'todo', 'trash'
     
     // Active Note Form State
     const [title, setTitle] = useState('');
     const [category, setCategory] = useState('general');
+    const [color, setColor] = useState('default');
     const [isPinned, setIsPinned] = useState(false);
     const [clientName, setClientName] = useState('');
     const [clientPhone, setClientPhone] = useState('');
@@ -123,18 +145,23 @@ export default function NotesModal({ isOpen, onClose, user }) {
     const [saveStatus, setSaveStatus] = useState(''); // 'saving', 'saved', ''
     const [isSaving, setIsSaving] = useState(false);
     const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
+    const [isColorDropdownOpen, setIsColorDropdownOpen] = useState(false);
     
     const categoryDropdownRef = useRef(null);
+    const colorDropdownRef = useRef(null);
     const autoSaveTimerRef = useRef(null);
     const isInitialLoadRef = useRef(true);
 
     const currentUserEmail = user?.email || auth?.currentUser?.email || 'Jinil Team';
 
-    // Close category dropdown on outside click
+    // Close dropdowns on outside click
     useEffect(() => {
         const handleClickOutside = (e) => {
             if (categoryDropdownRef.current && !categoryDropdownRef.current.contains(e.target)) {
                 setIsCategoryDropdownOpen(false);
+            }
+            if (colorDropdownRef.current && !colorDropdownRef.current.contains(e.target)) {
+                setIsColorDropdownOpen(false);
             }
         };
         document.addEventListener('mousedown', handleClickOutside);
@@ -187,6 +214,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
         if (!selectedNoteId) {
             setTitle('');
             setCategory('general');
+            setColor('default');
             setIsPinned(false);
             setClientName('');
             setClientPhone('');
@@ -206,6 +234,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
             isInitialLoadRef.current = true;
             setTitle(note.title || '');
             setCategory(note.category || 'general');
+            setColor(note.color || 'default');
             setIsPinned(!!note.isPinned);
             setClientName(note.clientName || '');
             setClientPhone(note.clientPhone || '');
@@ -224,12 +253,18 @@ export default function NotesModal({ isOpen, onClose, user }) {
         }
     }, [selectedNoteId, notes]);
 
-    // 3. Filter notes based on activeCategory & searchQuery
+    // 3. Filter notes based on activeCategory & searchQuery & isDeleted
     const filteredNotes = useMemo(() => {
         return notes.filter((note) => {
-            if (activeCategory === 'pinned' && !note.isPinned) return false;
-            if (activeCategory !== 'all' && activeCategory !== 'pinned' && note.category !== activeCategory) {
-                return false;
+            // Trash filter logic
+            if (activeCategory === 'trash') {
+                if (!note.isDeleted) return false;
+            } else {
+                if (note.isDeleted) return false;
+                if (activeCategory === 'pinned' && !note.isPinned) return false;
+                if (activeCategory !== 'all' && activeCategory !== 'pinned' && note.category !== activeCategory) {
+                    return false;
+                }
             }
 
             if (searchQuery.trim()) {
@@ -251,11 +286,13 @@ export default function NotesModal({ isOpen, onClose, user }) {
     // 4. Create New Note
     const handleCreateNewNote = async () => {
         try {
-            const defaultCategory = activeCategory !== 'all' && activeCategory !== 'pinned' ? activeCategory : 'general';
+            const defaultCategory = activeCategory !== 'all' && activeCategory !== 'pinned' && activeCategory !== 'trash' ? activeCategory : 'general';
             const newDoc = {
                 title: '',
                 category: defaultCategory,
+                color: 'default',
                 isPinned: false,
+                isDeleted: false,
                 clientName: '',
                 clientPhone: '',
                 clientAddress: '',
@@ -272,6 +309,9 @@ export default function NotesModal({ isOpen, onClose, user }) {
             };
 
             const docRef = await addDoc(collection(db, 'shared_notes'), newDoc);
+            if (activeCategory === 'trash') {
+                setActiveCategory('all');
+            }
             setSelectedNoteId(docRef.id);
         } catch (err) {
             console.error("Failed to create note:", err);
@@ -297,6 +337,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
             const updatePayload = {
                 title: overrideValues.title !== undefined ? overrideValues.title : title,
                 category: overrideValues.category !== undefined ? overrideValues.category : category,
+                color: overrideValues.color !== undefined ? overrideValues.color : color,
                 isPinned: overrideValues.isPinned !== undefined ? overrideValues.isPinned : isPinned,
                 clientName: overrideValues.clientName !== undefined ? overrideValues.clientName : clientName,
                 clientPhone: overrideValues.clientPhone !== undefined ? overrideValues.clientPhone : clientPhone,
@@ -336,14 +377,71 @@ export default function NotesModal({ isOpen, onClose, user }) {
         }, 600);
     };
 
-    // 6. Delete Note with Confirmation
-    const handleDeleteNote = async (noteIdToDelete) => {
-        const targetId = noteIdToDelete || selectedNoteId;
+    // 6. Soft Delete Note (Move to Trash)
+    const handleMoveToTrash = async (targetNoteId) => {
+        const targetId = targetNoteId || selectedNoteId;
+        if (!targetId) return;
+
+        try {
+            const noteRef = doc(db, 'shared_notes', targetId);
+            await updateDoc(noteRef, {
+                isDeleted: true,
+                deletedAt: serverTimestamp(),
+                deletedBy: currentUserEmail
+            });
+
+            Swal.fire({
+                icon: 'success',
+                title: t('noteMovedToTrash') || '노트가 휴지통으로 이동되었습니다.',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 2500
+            });
+
+            const remaining = filteredNotes.filter(n => n.id !== targetId);
+            setSelectedNoteId(remaining.length > 0 ? remaining[0].id : null);
+        } catch (err) {
+            console.error("Failed to move note to trash:", err);
+        }
+    };
+
+    // 7. Restore Note from Trash
+    const handleRestoreNote = async (targetNoteId) => {
+        const targetId = targetNoteId || selectedNoteId;
+        if (!targetId) return;
+
+        try {
+            const noteRef = doc(db, 'shared_notes', targetId);
+            await updateDoc(noteRef, {
+                isDeleted: false,
+                deletedAt: null,
+                deletedBy: null,
+                updatedAt: serverTimestamp(),
+                updatedBy: currentUserEmail
+            });
+
+            Swal.fire({
+                icon: 'success',
+                title: t('noteRestored') || '노트가 복원되었습니다!',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 2000
+            });
+        } catch (err) {
+            console.error("Failed to restore note:", err);
+        }
+    };
+
+    // 8. Permanent Delete Note
+    const handlePermanentDelete = async (targetNoteId) => {
+        const targetId = targetNoteId || selectedNoteId;
         if (!targetId) return;
 
         const result = await Swal.fire({
-            title: t('confirmDeleteTitle') || '노트 삭제',
-            text: t('confirmDeleteNote') || '정말 이 노트를 삭제하시겠습니까?',
+            title: t('permanentDelete') || '영구 삭제',
+            text: t('confirmDeleteNote') || '정말 이 노트를 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다!',
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#ef4444',
@@ -359,17 +457,57 @@ export default function NotesModal({ isOpen, onClose, user }) {
         if (result.isConfirmed) {
             try {
                 await deleteDoc(doc(db, 'shared_notes', targetId));
-                if (targetId === selectedNoteId) {
-                    const remaining = notes.filter(n => n.id !== targetId);
-                    setSelectedNoteId(remaining.length > 0 ? remaining[0].id : null);
-                }
+                const remaining = filteredNotes.filter(n => n.id !== targetId);
+                setSelectedNoteId(remaining.length > 0 ? remaining[0].id : null);
             } catch (err) {
-                console.error("Failed to delete note:", err);
+                console.error("Failed to permanently delete note:", err);
             }
         }
     };
 
-    // 7. Clipboard Copy Helper
+    // 9. Empty Entire Trash
+    const handleEmptyTrash = async () => {
+        const trashedNotes = notes.filter(n => n.isDeleted);
+        if (trashedNotes.length === 0) return;
+
+        const result = await Swal.fire({
+            title: t('emptyTrashConfirmTitle') || '휴지통을 비우시겠습니까?',
+            text: t('emptyTrashConfirmText') || '휴지통의 모든 노트가 영구적으로 삭제됩니다!',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: t('emptyTrash') || '비우기',
+            cancelButtonText: t('cancel') || '취소',
+            reverseButtons: true,
+            customClass: {
+                popup: 'rounded-2xl dark:bg-slate-900 dark:text-white',
+            }
+        });
+
+        if (result.isConfirmed) {
+            try {
+                const batch = writeBatch(db);
+                trashedNotes.forEach(n => {
+                    batch.delete(doc(db, 'shared_notes', n.id));
+                });
+                await batch.commit();
+                setSelectedNoteId(null);
+                Swal.fire({
+                    icon: 'success',
+                    title: '휴지통이 비워졌습니다.',
+                    toast: true,
+                    position: 'top-end',
+                    showConfirmButton: false,
+                    timer: 2000
+                });
+            } catch (err) {
+                console.error("Failed to empty trash:", err);
+            }
+        }
+    };
+
+    // 10. Clipboard Copy Helper
     const copyToClipboard = (text, fieldName) => {
         if (!text) return;
         navigator.clipboard.writeText(text);
@@ -377,7 +515,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
         setTimeout(() => setCopiedField(null), 2000);
     };
 
-    // 8. Checklist Handlers
+    // 11. Checklist Handlers
     const handleToggleTodo = (index) => {
         const updated = checklist.map((item, idx) => 
             idx === index ? { ...item, done: !item.done } : item
@@ -403,7 +541,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
         triggerAutoSave({ checklist: updated });
     };
 
-    // 9. Tag Handlers
+    // 12. Tag Handlers
     const handleAddTag = (e) => {
         if ((e.key === 'Enter' || e.key === ',') && tagInput.trim()) {
             e.preventDefault();
@@ -437,6 +575,10 @@ export default function NotesModal({ isOpen, onClose, user }) {
     if (!isOpen) return null;
 
     const selectedNote = notes.find(n => n.id === selectedNoteId);
+    const isSelectedNoteTrashed = selectedNote?.isDeleted;
+
+    const trashedCount = notes.filter(n => n.isDeleted).length;
+    const activeNotesCount = notes.filter(n => !n.isDeleted).length;
 
     const categories = [
         { id: 'all', label: t('allNotes') || '전체', icon: Icons.all },
@@ -444,10 +586,12 @@ export default function NotesModal({ isOpen, onClose, user }) {
         { id: 'client', label: t('clientCategory') || '거래처 & 주소', icon: Icons.client },
         { id: 'account', label: t('accountCategory') || '계정 & 비밀번호', icon: Icons.account },
         { id: 'general', label: t('generalCategory') || '일반 메모', icon: Icons.general },
-        { id: 'todo', label: t('todoCategory') || '체크리스트', icon: Icons.todo }
+        { id: 'todo', label: t('todoCategory') || '체크리스트', icon: Icons.todo },
+        { id: 'trash', label: t('trashCategory') || '휴지통', icon: Icons.trash }
     ];
 
     const currentCategoryInfo = categories.find(c => c.id === category) || categories[4];
+    const currentColorPreset = COLOR_PRESETS.find(c => c.id === color) || COLOR_PRESETS[0];
 
     return createPortal(
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-md transition-all duration-300 p-2 sm:p-4 md:p-6 font-['Pretendard',_'Noto_Sans_KR',_'Apple_SD_Gothic_Neo',_'Malgun_Gothic',_sans-serif]">
@@ -464,6 +608,9 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                 <span>{t('notesModalTitle') || '업무 노트 & 계정 관리'}</span>
                                 <span className="text-xs px-2.5 py-0.5 font-bold uppercase tracking-wider bg-emerald-50 text-emerald-600 dark:bg-emerald-950/60 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 rounded-full">
                                     Realtime Sync
+                                </span>
+                                <span className="text-[11px] px-2 py-0.5 font-bold bg-gray-100 text-gray-600 dark:bg-slate-800 dark:text-slate-400 rounded-md border border-gray-200 dark:border-slate-700">
+                                    Alt + N
                                 </span>
                             </h2>
                             <p className="text-xs md:text-sm text-gray-400 dark:text-slate-400 font-medium">
@@ -526,13 +673,25 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                 )}
                             </div>
 
-                            <button
-                                onClick={handleCreateNewNote}
-                                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white rounded-xl text-sm font-bold shadow-sm shadow-blue-500/20 transition-all duration-200 cursor-pointer"
-                            >
-                                {Icons.plus}
-                                <span>{t('newNote') || '새 노트 작성'}</span>
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={handleCreateNewNote}
+                                    className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white rounded-xl text-sm font-bold shadow-sm shadow-blue-500/20 transition-all duration-200 cursor-pointer"
+                                >
+                                    {Icons.plus}
+                                    <span>{t('newNote') || '새 노트 작성'}</span>
+                                </button>
+                                {activeCategory === 'trash' && trashedCount > 0 && (
+                                    <button
+                                        onClick={handleEmptyTrash}
+                                        className="flex items-center gap-1.5 py-2.5 px-3 bg-red-50 hover:bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/40 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                        title={t('emptyTrash') || '휴지통 비우기'}
+                                    >
+                                        {Icons.trash}
+                                        <span>비우기</span>
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         {/* Category Filter Pills (Minimalist Vector Icons) */}
@@ -543,7 +702,9 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                     onClick={() => setActiveCategory(cat.id)}
                                     className={`px-3 py-1.5 rounded-lg text-xs md:text-sm font-bold whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer ${
                                         activeCategory === cat.id
-                                            ? 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50'
+                                            ? cat.id === 'trash'
+                                                ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800/50'
+                                                : 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/50'
                                             : 'text-gray-500 dark:text-slate-400 hover:text-gray-800 dark:hover:text-slate-200 hover:bg-gray-100/70 dark:hover:bg-slate-800/60 border border-transparent'
                                     }`}
                                 >
@@ -551,7 +712,12 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                     <span>{cat.label}</span>
                                     {cat.id === 'pinned' && (
                                         <span className="ml-0.5 text-xs px-1.5 py-0.2 bg-amber-100 text-amber-700 dark:bg-amber-950 dark:text-amber-300 rounded-md font-black">
-                                            {notes.filter(n => n.isPinned).length}
+                                            {notes.filter(n => !n.isDeleted && n.isPinned).length}
+                                        </span>
+                                    )}
+                                    {cat.id === 'trash' && trashedCount > 0 && (
+                                        <span className="ml-0.5 text-xs px-1.5 py-0.2 bg-red-100 text-red-700 dark:bg-red-950 dark:text-red-300 rounded-md font-black">
+                                            {trashedCount}
                                         </span>
                                     )}
                                 </button>
@@ -568,29 +734,36 @@ export default function NotesModal({ isOpen, onClose, user }) {
                             ) : filteredNotes.length === 0 ? (
                                 <div className="py-16 text-center text-gray-400 dark:text-slate-500">
                                     <div className="w-12 h-12 mx-auto mb-2.5 opacity-30 flex items-center justify-center">
-                                        {Icons.general}
+                                        {activeCategory === 'trash' ? Icons.trash : Icons.general}
                                     </div>
-                                    <p className="text-sm font-medium">{t('noNotesFound') || '등록된 노트가 없습니다'}</p>
-                                    <button
-                                        onClick={handleCreateNewNote}
-                                        className="mt-3 text-sm text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer"
-                                    >
-                                        + 첫 노트 작성하기
-                                    </button>
+                                    <p className="text-sm font-medium">
+                                        {activeCategory === 'trash' 
+                                            ? '휴지통이 비어 있습니다' 
+                                            : (t('noNotesFound') || '등록된 노트가 없습니다')}
+                                    </p>
+                                    {activeCategory !== 'trash' && (
+                                        <button
+                                            onClick={handleCreateNewNote}
+                                            className="mt-3 text-sm text-blue-600 dark:text-blue-400 font-bold hover:underline cursor-pointer"
+                                        >
+                                            + 첫 노트 작성하기
+                                        </button>
+                                    )}
                                 </div>
                             ) : (
                                 filteredNotes.map((note) => {
                                     const isSelected = note.id === selectedNoteId;
                                     const categoryInfo = categories.find(c => c.id === note.category) || categories[4];
+                                    const cardColorPreset = COLOR_PRESETS.find(c => c.id === note.color) || COLOR_PRESETS[0];
 
                                     return (
                                         <div
                                             key={note.id}
                                             onClick={() => setSelectedNoteId(note.id)}
-                                            className={`p-3.5 rounded-2xl cursor-pointer transition-all duration-200 border text-left relative group ${
+                                            className={`p-3.5 rounded-2xl cursor-pointer transition-all duration-200 border text-left relative group ${cardColorPreset.cardBg} ${
                                                 isSelected
-                                                    ? 'bg-white dark:bg-slate-800 border-blue-500/40 shadow-sm ring-1 ring-blue-500/20'
-                                                    : 'bg-white/70 dark:bg-slate-800/40 border-gray-100 dark:border-slate-800 hover:bg-white dark:hover:bg-slate-800/80 hover:border-gray-200 dark:hover:border-slate-700'
+                                                    ? 'border-blue-500/60 shadow-md ring-1 ring-blue-500/30'
+                                                    : `${cardColorPreset.border} hover:border-gray-300 dark:hover:border-slate-600 hover:shadow-xs`
                                             }`}
                                         >
                                             {/* Top: Title & Pin status */}
@@ -600,9 +773,14 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                                 }`}>
                                                     {note.title ? note.title : '제목 없는 노트'}
                                                 </h3>
-                                                {note.isPinned && (
+                                                {note.isPinned && !note.isDeleted && (
                                                     <span className="text-amber-500 flex-shrink-0" title="고정됨">
                                                         {Icons.pinned}
+                                                    </span>
+                                                )}
+                                                {note.isDeleted && (
+                                                    <span className="text-red-500 text-xs font-bold px-1.5 py-0.5 bg-red-100 dark:bg-red-950/60 rounded">
+                                                        삭제됨
                                                     </span>
                                                 )}
                                             </div>
@@ -629,11 +807,16 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                             </div>
 
                                             {/* Bottom: Badges & Timestamp */}
-                                            <div className="flex items-center justify-between text-xs text-gray-400 dark:text-slate-500 pt-1.5 border-t border-gray-50 dark:border-slate-700/40">
-                                                <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-gray-100 dark:bg-slate-700/60 font-bold text-gray-600 dark:text-slate-300">
-                                                    {categoryInfo.icon}
-                                                    <span>{categoryInfo.label}</span>
-                                                </span>
+                                            <div className="flex items-center justify-between text-xs text-gray-400 dark:text-slate-500 pt-1.5 border-t border-gray-100/60 dark:border-slate-700/40">
+                                                <div className="flex items-center gap-1.5">
+                                                    <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-gray-100 dark:bg-slate-700/60 font-bold text-gray-600 dark:text-slate-300">
+                                                        {categoryInfo.icon}
+                                                        <span>{categoryInfo.label}</span>
+                                                    </span>
+                                                    {note.color && note.color !== 'default' && (
+                                                        <span className={`w-2 h-2 rounded-full ${cardColorPreset.dotBg}`} />
+                                                    )}
+                                                </div>
                                                 <span className="font-medium">{formatTimestamp(note.updatedAt)}</span>
                                             </div>
                                         </div>
@@ -648,16 +831,45 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         {selectedNote ? (
                             <div className="p-6 md:p-10 max-w-4xl mx-auto w-full space-y-7">
                                 
-                                {/* Action Bar: Custom Minimalist Category Selector, Pin, Delete */}
+                                {/* Trashed Banner (If note is in trash) */}
+                                {isSelectedNoteTrashed && (
+                                    <div className="p-4 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800/60 rounded-2xl flex items-center justify-between gap-4">
+                                        <div className="flex items-center gap-3 text-amber-800 dark:text-amber-300 text-sm font-semibold">
+                                            {Icons.trash}
+                                            <span>이 노트는 휴지통에 보관되어 있습니다. 복원하거나 영구 삭제할 수 있습니다.</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRestoreNote(selectedNoteId)}
+                                                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs md:text-sm font-bold shadow-xs transition-all cursor-pointer"
+                                            >
+                                                {Icons.restore}
+                                                <span>{t('restoreNote') || '복원'}</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handlePermanentDelete(selectedNoteId)}
+                                                className="flex items-center gap-1.5 px-3.5 py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs md:text-sm font-bold shadow-xs transition-all cursor-pointer"
+                                            >
+                                                {Icons.trash}
+                                                <span>{t('permanentDelete') || '영구 삭제'}</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Action Bar: Custom Minimalist Category Selector, Color Picker, Pin, Delete */}
                                 <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-gray-100 dark:border-slate-800">
                                     <div className="flex items-center gap-2.5">
                                         
-                                        {/* Custom Notion-Style Category Dropdown (NO EMOJIS, PURE CLEAN SVG) */}
+                                        {/* Custom Notion-Style Category Dropdown */}
                                         <div className="relative" ref={categoryDropdownRef}>
                                             <button
                                                 type="button"
+                                                disabled={isSelectedNoteTrashed}
                                                 onClick={() => setIsCategoryDropdownOpen(!isCategoryDropdownOpen)}
-                                                className="flex items-center gap-2 px-3.5 py-2 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700/80 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-bold text-gray-700 dark:text-slate-200 transition-all cursor-pointer shadow-2xs"
+                                                className="flex items-center gap-2 px-3.5 py-2 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700/80 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-bold text-gray-700 dark:text-slate-200 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
                                             >
                                                 <span className="text-blue-500">{currentCategoryInfo.icon}</span>
                                                 <span>{currentCategoryInfo.label}</span>
@@ -666,7 +878,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
 
                                             {isCategoryDropdownOpen && (
                                                 <div className="absolute left-0 top-full mt-1.5 w-52 bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl shadow-xl z-50 p-1.5 animate-in fade-in zoom-in-95 duration-150">
-                                                    {categories.filter(c => c.id !== 'all' && c.id !== 'pinned').map((cat) => (
+                                                    {categories.filter(c => c.id !== 'all' && c.id !== 'pinned' && c.id !== 'trash').map((cat) => (
                                                         <button
                                                             key={cat.id}
                                                             type="button"
@@ -691,15 +903,58 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                             )}
                                         </div>
 
+                                        {/* Color Label Palette Picker */}
+                                        <div className="relative" ref={colorDropdownRef}>
+                                            <button
+                                                type="button"
+                                                disabled={isSelectedNoteTrashed}
+                                                onClick={() => setIsColorDropdownOpen(!isColorDropdownOpen)}
+                                                className="flex items-center gap-2 px-3 py-2 bg-gray-50 dark:bg-slate-800 hover:bg-gray-100 dark:hover:bg-slate-700/80 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-bold text-gray-700 dark:text-slate-200 transition-all cursor-pointer shadow-2xs disabled:opacity-50"
+                                                title={t('noteColor') || '색상 라벨'}
+                                            >
+                                                <span className={`w-3.5 h-3.5 rounded-full ${currentColorPreset.dotBg}`} />
+                                                <span>{currentColorPreset.label}</span>
+                                                <span className="text-gray-400">{Icons.chevronDown}</span>
+                                            </button>
+
+                                            {isColorDropdownOpen && (
+                                                <div className="absolute left-0 top-full mt-1.5 w-44 bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-2xl shadow-xl z-50 p-1.5 animate-in fade-in zoom-in-95 duration-150">
+                                                    {COLOR_PRESETS.map((col) => (
+                                                        <button
+                                                            key={col.id}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setColor(col.id);
+                                                                setIsColorDropdownOpen(false);
+                                                                triggerAutoSave({ color: col.id });
+                                                            }}
+                                                            className={`w-full flex items-center justify-between px-3 py-2 rounded-xl text-sm font-bold transition-all text-left cursor-pointer ${
+                                                                color === col.id
+                                                                    ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400'
+                                                                    : 'text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700/60'
+                                                            }`}
+                                                        >
+                                                            <div className="flex items-center gap-2.5">
+                                                                <span className={`w-3.5 h-3.5 rounded-full ${col.dotBg}`} />
+                                                                <span>{col.label}</span>
+                                                            </div>
+                                                            {color === col.id && Icons.check}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+
                                         {/* Pin Toggle Button */}
                                         <button
                                             type="button"
+                                            disabled={isSelectedNoteTrashed}
                                             onClick={() => {
                                                 const next = !isPinned;
                                                 setIsPinned(next);
                                                 triggerAutoSave({ isPinned: next });
                                             }}
-                                            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer ${
+                                            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-bold transition-all cursor-pointer disabled:opacity-50 ${
                                                 isPinned
                                                     ? 'bg-amber-50 dark:bg-amber-950/60 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-800/60'
                                                     : 'bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-slate-400 border border-gray-200 dark:border-slate-700 hover:text-amber-500'
@@ -711,15 +966,26 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                     </div>
 
                                     <div className="flex items-center gap-2">
-                                        {/* Delete Button */}
-                                        <button
-                                            type="button"
-                                            onClick={() => handleDeleteNote(selectedNoteId)}
-                                            className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-all cursor-pointer"
-                                            title="노트 삭제"
-                                        >
-                                            {Icons.trash}
-                                        </button>
+                                        {/* Delete / Move to Trash Button */}
+                                        {!isSelectedNoteTrashed ? (
+                                            <button
+                                                type="button"
+                                                onClick={() => handleMoveToTrash(selectedNoteId)}
+                                                className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-all cursor-pointer"
+                                                title={t('moveToTrash') || '휴지통으로 이동'}
+                                            >
+                                                {Icons.trash}
+                                            </button>
+                                        ) : (
+                                            <button
+                                                type="button"
+                                                onClick={() => handlePermanentDelete(selectedNoteId)}
+                                                className="p-2.5 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-xl transition-all cursor-pointer"
+                                                title={t('permanentDelete') || '영구 삭제'}
+                                            >
+                                                {Icons.trash}
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
 
@@ -727,13 +993,14 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                 <div>
                                     <input
                                         type="text"
+                                        disabled={isSelectedNoteTrashed}
                                         value={title}
                                         onChange={(e) => {
                                             setTitle(e.target.value);
                                             triggerAutoSave({ title: e.target.value });
                                         }}
                                         placeholder={t('noteTitlePlaceholder') || '노트 제목...'}
-                                        className="w-full text-3xl md:text-4xl font-black text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-slate-600 bg-transparent border-none focus:outline-none tracking-tight font-['Pretendard',_'Noto_Sans_KR',_sans-serif]"
+                                        className="w-full text-3xl md:text-4xl font-black text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-slate-600 bg-transparent border-none focus:outline-none tracking-tight font-['Pretendard',_'Noto_Sans_KR',_sans-serif] disabled:opacity-60"
                                     />
                                 </div>
 
@@ -746,23 +1013,27 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                             className="px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-300 border border-blue-100 dark:border-blue-800/40 flex items-center gap-1.5 text-xs md:text-sm font-bold"
                                         >
                                             #{tg}
-                                            <button
-                                                type="button"
-                                                onClick={() => handleRemoveTag(tg)}
-                                                className="hover:text-red-500 cursor-pointer text-sm leading-none"
-                                            >
-                                                ×
-                                            </button>
+                                            {!isSelectedNoteTrashed && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveTag(tg)}
+                                                    className="hover:text-red-500 cursor-pointer text-sm leading-none"
+                                                >
+                                                    ×
+                                                </button>
+                                            )}
                                         </span>
                                     ))}
-                                    <input
-                                        type="text"
-                                        value={tagInput}
-                                        onChange={(e) => setTagInput(e.target.value)}
-                                        onKeyDown={handleAddTag}
-                                        placeholder="+ 태그 입력 (Enter)"
-                                        className="px-2 py-1 bg-transparent border-b border-gray-200 dark:border-slate-700 text-xs md:text-sm text-gray-700 dark:text-slate-200 focus:outline-none focus:border-blue-500 w-32"
-                                    />
+                                    {!isSelectedNoteTrashed && (
+                                        <input
+                                            type="text"
+                                            value={tagInput}
+                                            onChange={(e) => setTagInput(e.target.value)}
+                                            onKeyDown={handleAddTag}
+                                            placeholder="+ 태그 입력 (Enter)"
+                                            className="px-2 py-1 bg-transparent border-b border-gray-200 dark:border-slate-700 text-xs md:text-sm text-gray-700 dark:text-slate-200 focus:outline-none focus:border-blue-500 w-32"
+                                        />
+                                    )}
                                 </div>
 
                                 {/* SECTION 1: Client & Address Quick Block */}
@@ -792,13 +1063,14 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                                 </label>
                                                 <input
                                                     type="text"
+                                                    disabled={isSelectedNoteTrashed}
                                                     value={clientName}
                                                     onChange={(e) => {
                                                         setClientName(e.target.value);
                                                         triggerAutoSave({ clientName: e.target.value });
                                                     }}
                                                     placeholder="예: 진일상사 / 홍길동"
-                                                    className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                                                    className="w-full px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-60"
                                                 />
                                             </div>
 
@@ -809,13 +1081,14 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                                 <div className="relative">
                                                     <input
                                                         type="text"
+                                                        disabled={isSelectedNoteTrashed}
                                                         value={clientPhone}
                                                         onChange={(e) => {
                                                             setClientPhone(e.target.value);
                                                             triggerAutoSave({ clientPhone: e.target.value });
                                                         }}
                                                         placeholder="예: 010-1234-5678"
-                                                        className="w-full px-3.5 py-2.5 pr-9 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                                                        className="w-full px-3.5 py-2.5 pr-9 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-60"
                                                     />
                                                     {clientPhone && (
                                                         <button
@@ -837,19 +1110,20 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                                 <div className="relative">
                                                     <input
                                                         type="text"
+                                                        disabled={isSelectedNoteTrashed}
                                                         value={clientAddress}
                                                         onChange={(e) => {
                                                             setClientAddress(e.target.value);
                                                             triggerAutoSave({ clientAddress: e.target.value });
                                                         }}
                                                         placeholder="예: 서울시 중구 청계천로 123 4층 402호"
-                                                        className="w-full px-3.5 py-2.5 pr-10 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                                                        className="w-full px-3.5 py-2.5 pr-10 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-medium text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 disabled:opacity-60"
                                                     />
                                                     {clientAddress && (
                                                         <button
                                                             type="button"
                                                             onClick={() => copyToClipboard(clientAddress, 'address')}
-                                                            className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 text-gray-400 hover:text-blue-600 cursor-pointer"
+                                                            className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-blue-600 cursor-pointer"
                                                             title="주소 복사"
                                                         >
                                                             {Icons.copy}
@@ -882,13 +1156,14 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                                 <div className="flex gap-2">
                                                     <input
                                                         type="text"
+                                                        disabled={isSelectedNoteTrashed}
                                                         value={accountUrl}
                                                         onChange={(e) => {
                                                             setAccountUrl(e.target.value);
                                                             triggerAutoSave({ accountUrl: e.target.value });
                                                         }}
                                                         placeholder="https://example.com/admin"
-                                                        className="flex-1 px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-mono text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                                        className="flex-1 px-3.5 py-2.5 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-mono text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-60"
                                                     />
                                                     {accountUrl && (
                                                         <button
@@ -913,13 +1188,14 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                                 <div className="relative">
                                                     <input
                                                         type="text"
+                                                        disabled={isSelectedNoteTrashed}
                                                         value={accountUsername}
                                                         onChange={(e) => {
                                                             setAccountUsername(e.target.value);
                                                             triggerAutoSave({ accountUsername: e.target.value });
                                                         }}
                                                         placeholder="user_admin"
-                                                        className="w-full px-3.5 py-2.5 pr-9 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-mono font-bold text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                                        className="w-full px-3.5 py-2.5 pr-9 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-mono font-bold text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-60"
                                                     />
                                                     {accountUsername && (
                                                         <button
@@ -941,13 +1217,14 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                                 <div className="relative flex items-center">
                                                     <input
                                                         type={showPassword ? 'text' : 'password'}
+                                                        disabled={isSelectedNoteTrashed}
                                                         value={accountPassword}
                                                         onChange={(e) => {
                                                             setAccountPassword(e.target.value);
                                                             triggerAutoSave({ accountPassword: e.target.value });
                                                         }}
                                                         placeholder="••••••••••••"
-                                                        className="w-full px-3.5 py-2.5 pr-16 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-mono font-bold text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
+                                                        className="w-full px-3.5 py-2.5 pr-16 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-xl text-sm font-mono font-bold text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-60"
                                                     />
                                                     <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
                                                         <button
@@ -998,36 +1275,41 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                             <div key={item.id || idx} className="flex items-center gap-2.5 group">
                                                 <input
                                                     type="checkbox"
+                                                    disabled={isSelectedNoteTrashed}
                                                     checked={!!item.done}
                                                     onChange={() => handleToggleTodo(idx)}
-                                                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 dark:bg-slate-800 border-gray-300 dark:border-slate-700 cursor-pointer"
+                                                    className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 dark:bg-slate-800 border-gray-300 dark:border-slate-700 cursor-pointer disabled:opacity-60"
                                                 />
                                                 <span className={`text-sm font-medium flex-1 ${
                                                     item.done ? 'line-through text-gray-400 dark:text-slate-500' : 'text-gray-800 dark:text-slate-200'
                                                 }`}>
                                                     {item.text}
                                                 </span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleDeleteTodo(idx)}
-                                                    className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 text-sm px-1 cursor-pointer"
-                                                >
-                                                    {Icons.close}
-                                                </button>
+                                                {!isSelectedNoteTrashed && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleDeleteTodo(idx)}
+                                                        className="opacity-0 group-hover:opacity-100 text-gray-400 hover:text-red-500 text-sm px-1 cursor-pointer"
+                                                    >
+                                                        {Icons.close}
+                                                    </button>
+                                                )}
                                             </div>
                                         ))}
 
-                                        <div className="flex items-center gap-2.5 pt-1">
-                                            <span className="text-gray-400 dark:text-slate-600">{Icons.plus}</span>
-                                            <input
-                                                type="text"
-                                                value={newTodoText}
-                                                onChange={(e) => setNewTodoText(e.target.value)}
-                                                onKeyDown={handleAddTodo}
-                                                placeholder={t('addChecklistItem') || '할 일 추가... (Enter)'}
-                                                className="w-full text-sm bg-transparent border-none focus:outline-none placeholder-gray-400 dark:placeholder-slate-500 text-gray-800 dark:text-slate-200"
-                                            />
-                                        </div>
+                                        {!isSelectedNoteTrashed && (
+                                            <div className="flex items-center gap-2.5 pt-1">
+                                                <span className="text-gray-400 dark:text-slate-600">{Icons.plus}</span>
+                                                <input
+                                                    type="text"
+                                                    value={newTodoText}
+                                                    onChange={(e) => setNewTodoText(e.target.value)}
+                                                    onKeyDown={handleAddTodo}
+                                                    placeholder={t('addChecklistItem') || '할 일 추가... (Enter)'}
+                                                    className="w-full text-sm bg-transparent border-none focus:outline-none placeholder-gray-400 dark:placeholder-slate-500 text-gray-800 dark:text-slate-200"
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
 
@@ -1039,13 +1321,14 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                     </label>
                                     <textarea
                                         rows={9}
+                                        disabled={isSelectedNoteTrashed}
                                         value={content}
                                         onChange={(e) => {
                                             setContent(e.target.value);
                                             triggerAutoSave({ content: e.target.value });
                                         }}
                                         placeholder={t('noteContentPlaceholder') || '상세 내용을 여기에 작성하세요...'}
-                                        className="w-full p-4 md:p-5 bg-gray-50/50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-800 rounded-2xl text-sm md:text-base leading-relaxed text-gray-800 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white dark:focus:bg-slate-900 transition-all font-['Pretendard',_'Noto_Sans_KR',_sans-serif]"
+                                        className="w-full p-4 md:p-5 bg-gray-50/50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-800 rounded-2xl text-sm md:text-base leading-relaxed text-gray-800 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white dark:focus:bg-slate-900 transition-all font-['Pretendard',_'Noto_Sans_KR',_sans-serif] disabled:opacity-60"
                                     />
                                 </div>
 
@@ -1064,36 +1347,42 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                         )}
                                     </div>
 
-                                    <div className="flex items-center gap-2">
-                                        <button
-                                            type="button"
-                                            onClick={() => handleSaveNote()}
-                                            disabled={isSaving}
-                                            className="px-4 py-2 bg-gray-100 dark:bg-slate-800 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 text-gray-700 dark:text-slate-300 rounded-xl font-bold transition-all text-xs md:text-sm active:scale-95 cursor-pointer"
-                                        >
-                                            {isSaving ? '저장 중...' : (t('saveChanges') || '저장')}
-                                        </button>
-                                    </div>
+                                    {!isSelectedNoteTrashed && (
+                                        <div className="flex items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleSaveNote()}
+                                                disabled={isSaving}
+                                                className="px-4 py-2 bg-gray-100 dark:bg-slate-800 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 text-gray-700 dark:text-slate-300 rounded-xl font-bold transition-all text-xs md:text-sm active:scale-95 cursor-pointer"
+                                            >
+                                                {isSaving ? '저장 중...' : (t('saveChanges') || '저장')}
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
 
                             </div>
                         ) : (
                             <div className="flex-1 flex flex-col items-center justify-center text-gray-400 dark:text-slate-500 p-8 text-center">
                                 <div className="w-16 h-16 rounded-2xl bg-gray-50 dark:bg-slate-800 border border-gray-100 dark:border-slate-700 flex items-center justify-center mb-3 text-gray-400 dark:text-slate-500">
-                                    {Icons.general}
+                                    {activeCategory === 'trash' ? Icons.trash : Icons.general}
                                 </div>
                                 <h3 className="text-base font-bold text-gray-700 dark:text-slate-200 mb-1">
-                                    노트를 선택하거나 새로 만드세요
+                                    {activeCategory === 'trash' 
+                                        ? '휴지통에 선택된 노트가 없습니다' 
+                                        : '노트를 선택하거나 새로 만드세요'}
                                 </h3>
                                 <p className="text-xs md:text-sm text-gray-400 dark:text-slate-500 max-w-sm mb-4">
                                     고객 정보, 비밀번호, 아이디, 체크리스트를 안전하게 기록하고 실시간으로 공유하세요.
                                 </p>
-                                <button
-                                    onClick={handleCreateNewNote}
-                                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer"
-                                >
-                                    + 새 노트 작성
-                                </button>
+                                {activeCategory !== 'trash' && (
+                                    <button
+                                        onClick={handleCreateNewNote}
+                                        className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all shadow-sm cursor-pointer"
+                                    >
+                                        + 새 노트 작성
+                                    </button>
+                                )}
                             </div>
                         )}
                     </div>
