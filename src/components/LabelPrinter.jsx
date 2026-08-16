@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect, useEffectEvent, useMemo } from 'react';
+import React, { useState, useRef, useCallback, useEffect, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { db } from '../firebase';
 import { collection, onSnapshot, addDoc, deleteDoc, doc, query, orderBy, serverTimestamp } from 'firebase/firestore';
@@ -304,9 +304,6 @@ const DataTableRow = React.memo(({
 /* ───────── Component ───────── */
 export default function LabelPrinter({ user }) {
     const { t: _t } = useLanguage();
-
-    /* ── Print mode ── */
-    const [printMode, setPrintMode] = useState('manual');
 
     /* ── Paper & layout ── */
     const [paperSize, setPaperSize] = useState(PAPER_SIZES[0]);
@@ -926,22 +923,18 @@ export default function LabelPrinter({ user }) {
     };
 
     /* ────────── RENDER ────────── */
-    const handleKeyboardShortcuts = useEffectEvent((e) => {
-        if (e.ctrlKey && e.key === 'p') { e.preventDefault(); handlePrint(); }
-        if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveTemplate(); }
-    });
-
     useEffect(() => {
-        const handler = (e) => handleKeyboardShortcuts(e);
+        const handler = (e) => {
+            if (e.ctrlKey && e.key === 'p') { e.preventDefault(); handlePrint(); }
+            if (e.ctrlKey && e.key === 's') { e.preventDefault(); saveTemplate(); }
+        };
         window.addEventListener('keydown', handler);
         return () => window.removeEventListener('keydown', handler);
     }, []);
 
     return (
         <div className="min-h-screen bg-white px-5 py-4">
-            {printMode === 'manual' ?
-                <>
-                <div className="flex lg:flex-row flex-col gap-8 items-start animate-in fade-in duration-300">
+            <div className="flex lg:flex-row flex-col gap-8 items-start animate-in fade-in duration-300">
                     {/* ═══ Left Column: All Controls & Data ═══ */}
                     <div className="flex-1 min-w-0 w-full flex flex-col gap-5">
                         {/* ═══ ROW 1: Templates ═══ */}
@@ -1013,32 +1006,26 @@ export default function LabelPrinter({ user }) {
                         </div>
 
 
-                        {/* ═══ ROW 2: Tabs + Actions ═══ */}
-                        <div className="flex items-center justify-between gap-3 flex-wrap">
-                            <div className="flex items-center gap-2">
-                                <button onClick={() => setPrintMode('manual')} className={`h-10 px-5 rounded-xl text-[13px] font-bold transition-all ${printMode === 'manual' ? 'bg-blue-600 text-white shadow-md shadow-blue-200/60' : 'border border-slate-200 bg-white text-slate-500 hover:border-slate-300'}`}>기본 바코드 인쇄</button>
-                                <button onClick={() => setPrintMode('bartender')} className={`h-10 px-5 rounded-xl text-[13px] font-bold transition-all ${printMode === 'bartender' ? 'bg-blue-600 text-white shadow-md shadow-blue-200/60' : 'border border-slate-200 bg-white text-slate-500 hover:border-slate-300'}`}>BarTender 연동</button>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <button onClick={handlePrint} className="h-10 px-6 bg-[#00c896] hover:bg-[#00b085] text-white font-bold rounded-xl text-[14px] shadow-md shadow-emerald-200/60 transition-all active:scale-[0.98] flex items-center gap-2">
-                                    <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm-1 10H8v3h4v-3z" clipRule="evenodd" /></svg>
-                                    인쇄
-                                </button>
-                                <div className="w-px h-6 bg-slate-200 mx-1" />
-                                <button onClick={saveTemplate} className="h-10 px-4 bg-slate-700 hover:bg-slate-800 text-white rounded-xl text-[13px] font-bold flex items-center gap-1.5 transition-colors shadow-sm">
-                                    <svg className="w-4 h-4 opacity-80" fill="currentColor" viewBox="0 0 20 20"><path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293z" /></svg>
-                                    서식 저장
-                                </button>
-                                <label className={`h-10 px-4 rounded-xl text-[13px] font-bold flex items-center gap-1.5 cursor-pointer transition-colors text-white shadow-sm ${isImporting ? 'pointer-events-none bg-blue-400' : 'bg-blue-500 hover:bg-blue-600'}`}>
-                                    <svg className="w-4 h-4 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-                                    {isImporting ? '불러오는 중...' : 'Excel'}
-                                    <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileUpload} className="hidden" />
-                                </label>
-                                <button onClick={loadInventory} className="h-10 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-[13px] font-bold flex items-center gap-1.5 transition-colors shadow-sm">
-                                    <svg className="w-4 h-4 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
-                                    재고
-                                </button>
-                            </div>
+                        {/* ═══ ROW 2: Actions Bar ═══ */}
+                        <div className="flex items-center justify-end gap-2.5 flex-wrap">
+                            <button onClick={handlePrint} className="h-10 px-6 bg-[#00c896] hover:bg-[#00b085] text-white font-bold rounded-xl text-[14px] shadow-md shadow-emerald-200/60 transition-all active:scale-[0.98] flex items-center gap-2 cursor-pointer">
+                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm-1 10H8v3h4v-3z" clipRule="evenodd" /></svg>
+                                인쇄
+                            </button>
+                            <div className="w-px h-6 bg-slate-200 mx-1" />
+                            <button onClick={saveTemplate} className="h-10 px-4 bg-slate-700 hover:bg-slate-800 text-white rounded-xl text-[13px] font-bold flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer">
+                                <svg className="w-4 h-4 opacity-80" fill="currentColor" viewBox="0 0 20 20"><path d="M7.707 10.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V6h5a2 2 0 012 2v7a2 2 0 01-2 2H4a2 2 0 01-2-2V8a2 2 0 012-2h5v5.586l-1.293-1.293z" /></svg>
+                                서식 저장
+                            </button>
+                            <label className={`h-10 px-4 rounded-xl text-[13px] font-bold flex items-center gap-1.5 cursor-pointer transition-colors text-white shadow-sm ${isImporting ? 'pointer-events-none bg-blue-400' : 'bg-blue-500 hover:bg-blue-600'}`}>
+                                <svg className="w-4 h-4 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                                {isImporting ? '불러오는 중...' : 'Excel'}
+                                <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFileUpload} className="hidden" />
+                            </label>
+                            <button onClick={loadInventory} className="h-10 px-4 bg-blue-500 hover:bg-blue-600 text-white rounded-xl text-[13px] font-bold flex items-center gap-1.5 transition-colors shadow-sm cursor-pointer">
+                                <svg className="w-4 h-4 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" /></svg>
+                                재고
+                            </button>
                         </div>
 
                         {/* ═══ ROW 3: Paper config ═══ */}
@@ -1411,13 +1398,13 @@ export default function LabelPrinter({ user }) {
 
                 {/* ═══ Inventory Modal ═══ */}
                 {showInventoryPicker && (
-                    <div className="fixed inset-0 z-[200] flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-6 animate-in fade-in duration-200">
-                        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-                            <div className="p-5 border-b flex justify-between items-center">
+                    <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
+                        <div className="bg-white rounded-2xl w-[400px] max-h-[500px] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
+                            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                                 <h3 className="text-lg font-bold text-slate-800">재고 데이터 가져오기</h3>
-                                <button onClick={() => setShowInventoryPicker(false)} className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:bg-slate-100 hover:text-slate-800 transition-all text-xl">×</button>
+                                <button onClick={() => setShowInventoryPicker(false)} className="text-slate-400 hover:text-slate-600 font-bold text-lg cursor-pointer">✕</button>
                             </div>
-                            <div className="px-5 py-3 border-b">
+                            <div className="p-3 border-b border-slate-100">
                                 <input type="text" placeholder="상품명 또는 바코드..." value={inventorySearch} onChange={e => setInventorySearch(e.target.value)}
                                     className="w-full h-10 px-4 bg-slate-50 rounded-lg border border-slate-200 text-[14px] font-bold outline-none focus:ring-2 focus:ring-blue-400/20 focus:border-blue-300 placeholder:text-slate-300" />
                             </div>
@@ -1438,10 +1425,6 @@ export default function LabelPrinter({ user }) {
                         </div>
                     </div>
                 )}
-                </>
-                :
-                <BarTenderPrintPanel user={user} />
-            }
         </div>
     );
 }

@@ -6,6 +6,7 @@ import { useLanguage } from '../contexts/LanguageContext';
 import Swal from 'sweetalert2';
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
+import { DeliveryStatusBadge } from '../lib/deliveryStatus';
 
 export default function DeliveryWidget({ selectedDate, deliveries = [], onOpenInTransitModal }) {
     const { lang, t } = useLanguage();
@@ -554,15 +555,13 @@ export default function DeliveryWidget({ selectedDate, deliveries = [], onOpenIn
                                 </div>
                             )}
 
-                            {/* Hiển thị trạng thái giao hàng từ Supabase */}
+                            {/* Hiển thị trạng thái giao hàng */}
                             {item.tracking_status_label && (
                                 <div className="pt-2 flex flex-wrap items-center gap-1.5">
-                                    <span className="inline-flex items-center gap-1 rounded-full bg-blue-50 dark:bg-blue-900/30 px-2.5 py-0.5 text-[11px] font-bold text-blue-600 dark:text-blue-400 ring-1 ring-blue-500/20">
-                                        🚚 {item.tracking_status_label}
-                                    </span>
+                                    <DeliveryStatusBadge status={item.tracking_status_label} />
                                     {item.latest_location && (
                                         <span className="text-[10px] text-gray-400 dark:text-gray-500">
-                                            ({item.latest_location} - {item.latest_description})
+                                            ({item.latest_location}{item.latest_description ? ` - ${item.latest_description}` : ''})
                                         </span>
                                     )}
                                 </div>

@@ -100,14 +100,33 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
             label: t('inventoryManagement'),
             onClick: onOpenInventory,
             icon: (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 7v10c0 2 1 3 3 3h10c2 0 3-1 3-3V7M4 7c0-2 1-3 3-3h10c2 0 3 1 3 3M4 7h16m-8 4v6m-3-3h6" />
+                <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    {/* Checklist Sheet in background */}
+                    <path d="M7.5 2.5H17.5C18.3 2.5 19 3.2 19 4V13H7.5V2.5Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
+                    {/* Row 1: Check Circle & text lines */}
+                    <circle cx="10.5" cy="5.5" r="1.6" stroke="currentColor" strokeWidth="1.2" />
+                    <path d="M9.8 5.5L10.3 6L11.3 4.8" stroke="#16a34a" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M13.5 5.5H17" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                    {/* Row 2: Check Circle & text lines */}
+                    <circle cx="10.5" cy="9.5" r="1.6" stroke="currentColor" strokeWidth="1.2" />
+                    <path d="M9.8 9.5L10.3 10L11.3 8.8" stroke="#16a34a" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M13.5 9.5H16.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+                    
+                    {/* Open Box (Left foreground) */}
+                    <path d="M2.5 13.5L4 11H8L7 13.5" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+                    <path d="M9 13.5L10 11H14L12.5 13.5" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+                    <path d="M3.5 13.5V20.5C3.5 21 4 21.5 4.5 21.5H12C12.5 21.5 13 21 13 20.5V13.5H3.5Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+                    <path d="M8.2 13.5V21.5" stroke="currentColor" strokeWidth="1.2" />
+
+                    {/* Verified Badge (Right foreground) */}
+                    <circle cx="17.8" cy="16.8" r="4.2" stroke="currentColor" strokeWidth="1.5" className="fill-white dark:fill-slate-800" />
+                    <path d="M15.8 16.8L17.2 18.2L20 15.2" stroke="#16a34a" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
             )
         },
         {
-            key: 'orders',
-            label: '주문관리',
+            key: 'homepage',
+            label: t('homepage') || '홈페이지',
             onClick: () => window.electronAPI?.openExternal('https://www.jinil.top/') ?? window.open('https://www.jinil.top/', '_blank'),
             icon: (
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

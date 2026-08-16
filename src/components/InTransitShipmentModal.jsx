@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { notify } from '../lib/notify';
 import { supabase } from '../lib/supabase';
 import { db } from '../firebase';
 import { collection, getDocs, query as fsQuery, orderBy as fsOrderBy, limit as fsLimit } from 'firebase/firestore';
 import Swal from 'sweetalert2';
+import { DeliveryStatusBadge, getDeliveryStatusConfig } from '../lib/deliveryStatus';
 
 const getDriverInfo = (item) => {
   if (!item) return '-';
@@ -231,6 +232,7 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
   }, [onRefreshCount]);
 
   const [syncProgress, setSyncProgress] = useState(null);
+  const [statusFilter, setStatusFilter] = useState('all');
 
   useEffect(() => {
     if (isOpen) {
@@ -238,10 +240,25 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
     }
   }, [isOpen, fetchInTransitShipments]);
 
+  const statusCounts = useMemo(() => {
+    const counts = { all: shipments.length, pickup: 0, transit: 0, delivering: 0, error: 0 };
+    shipments.forEach((s) => {
+      const cfg = getDeliveryStatusConfig(s.tracking_status_label || s.tracking_status);
+      counts[cfg.key] = (counts[cfg.key] || 0) + 1;
+    });
+    return counts;
+  }, [shipments]);
+
   const filteredShipments = shipments.filter((s) => {
-    if (!hideCancelledAndPreparing) return true;
     const label = s.tracking_status_label || s.tracking_status || '배송 준비 중';
-    return label !== '반품취소' && label !== '배송 준비 중';
+    if (hideCancelledAndPreparing && (label === '반품취소' || label === '배송 준비 중')) {
+      return false;
+    }
+    if (statusFilter !== 'all') {
+      const cfg = getDeliveryStatusConfig(label);
+      if (cfg.key !== statusFilter) return false;
+    }
+    return true;
   });
 
   const handleManualSync = useCallback(async () => {
@@ -385,33 +402,98 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
         </div>
 
         {/* Status Subheader & Control Bar */}
-        <div className="px-6 py-3 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700 flex flex-wrap items-center justify-between gap-3 text-sm font-semibold">
-          <div className="text-gray-800 dark:text-gray-200">
-            배송이 완료되지 않은 최근 출고 건 <span className="font-extrabold text-black dark:text-white">{shipments.length}건</span> 중{' '}
-            <span className="font-extrabold text-blue-700 dark:text-blue-400">{filteredShipments.length}건</span> 표시 중
+        <div className="px-6 py-3 bg-gray-50 dark:bg-gray-900/50 border-b border-gray-100 dark:border-gray-700 flex flex-col gap-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 text-sm font-semibold">
+            <div className="text-gray-800 dark:text-gray-200">
+              배송이 완료되지 않은 최근 출고 건 <span className="font-extrabold text-black dark:text-white">{shipments.length}건</span> 중{' '}
+              <span className="font-extrabold text-blue-700 dark:text-blue-400">{filteredShipments.length}건</span> 표시 중
+            </div>
+
+            <div className="flex items-center gap-4">
+              <label className="flex items-center gap-2 text-gray-900 dark:text-gray-100 font-bold cursor-pointer select-none text-xs">
+                <input
+                  type="checkbox"
+                  checked={hideCancelledAndPreparing}
+                  onChange={(e) => setHideCancelledAndPreparing(e.target.checked)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                />
+                <span>반품취소 / 배송 시작 숨기기</span>
+              </label>
+
+              <button
+                type="button"
+                onClick={handleManualSync}
+                disabled={syncing || filteredShipments.length === 0}
+                className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-bold hover:bg-gray-50 dark:hover:bg-gray-600 transition disabled:opacity-50 active:scale-95 shadow-sm cursor-pointer text-xs"
+              >
+                <svg className={`w-3.5 h-3.5 ${syncing ? 'animate-spin text-blue-500' : 'text-gray-500 dark:text-gray-300'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span>{syncing ? `전체 동기화 중... (${syncProgress?.current || 0}/${syncProgress?.total || filteredShipments.length}건)` : '전체 배송상태 동기화 (15분 자동)'}</span>
+              </button>
+            </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <label className="flex items-center gap-2 text-gray-900 dark:text-gray-100 font-bold cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={hideCancelledAndPreparing}
-                onChange={(e) => setHideCancelledAndPreparing(e.target.checked)}
-                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-              />
-              <span>반품취소 / 배송 시작 숨기기</span>
-            </label>
-
+          {/* Color-Coded Status Filter Pills */}
+          <div className="flex flex-wrap items-center gap-2 pt-1">
             <button
               type="button"
-              onClick={handleManualSync}
-              disabled={syncing || filteredShipments.length === 0}
-              className="flex items-center gap-2 px-3 py-1.5 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-700 dark:text-gray-200 font-bold hover:bg-gray-50 dark:hover:bg-gray-600 transition disabled:opacity-50 active:scale-95 shadow-sm cursor-pointer"
+              onClick={() => setStatusFilter('all')}
+              className={`px-3 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer border ${
+                statusFilter === 'all'
+                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-transparent shadow-xs'
+                  : 'bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
+              }`}
             >
-              <svg className={`w-3.5 h-3.5 ${syncing ? 'animate-spin text-blue-500' : 'text-gray-500 dark:text-gray-300'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-              </svg>
-              <span>{syncing ? `전체 동기화 중... (${syncProgress?.current || 0}/${syncProgress?.total || filteredShipments.length}건)` : '전체 배송상태 동기화 (15분 자동)'}</span>
+              전체 ({statusCounts.all})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('pickup')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer border ${
+                statusFilter === 'pickup'
+                  ? 'bg-amber-500 text-white border-amber-600 shadow-xs'
+                  : 'bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60 hover:bg-amber-100 dark:hover:bg-amber-900/50'
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${statusFilter === 'pickup' ? 'bg-white' : 'bg-amber-500'}`} />
+              집하/접수 ({statusCounts.pickup})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('transit')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer border ${
+                statusFilter === 'transit'
+                  ? 'bg-blue-600 text-white border-blue-700 shadow-xs'
+                  : 'bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/60 hover:bg-blue-100 dark:hover:bg-blue-900/50'
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${statusFilter === 'transit' ? 'bg-white' : 'bg-blue-500'}`} />
+              이동/간선 ({statusCounts.transit})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('delivering')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer border ${
+                statusFilter === 'delivering'
+                  ? 'bg-emerald-600 text-white border-emerald-700 shadow-xs'
+                  : 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/50'
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${statusFilter === 'delivering' ? 'bg-white' : 'bg-emerald-500'}`} />
+              배달출발/도착 ({statusCounts.delivering})
+            </button>
+            <button
+              type="button"
+              onClick={() => setStatusFilter('error')}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-extrabold transition-all cursor-pointer border ${
+                statusFilter === 'error'
+                  ? 'bg-rose-600 text-white border-rose-700 shadow-xs'
+                  : 'bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/60 hover:bg-rose-100 dark:hover:bg-rose-900/50'
+              }`}
+            >
+              <span className={`w-2 h-2 rounded-full ${statusFilter === 'error' ? 'bg-white' : 'bg-rose-500'}`} />
+              지연/문제 ({statusCounts.error})
             </button>
           </div>
         </div>
@@ -511,9 +593,7 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
                         )}
                       </td>
                       <td className="py-3 px-3.5 whitespace-nowrap">
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-extrabold bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 border border-blue-200 shrink-0 whitespace-nowrap">
-                          {s.tracking_status_label || s.tracking_status || '배송 시작'}
-                        </span>
+                        <DeliveryStatusBadge status={s.tracking_status_label || s.tracking_status} />
                       </td>
                       <td className="py-3 px-3.5 text-center whitespace-nowrap">
                         <button

@@ -7,7 +7,7 @@ import { notify } from '../lib/notify';
 import Swal from 'sweetalert2';
 
 export default function ClientAddressBook({ user }) {
-    const { t } = useLanguage();
+    const { t, lang } = useLanguage();
     const [clients, setClients] = useState([]);
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState(true);
@@ -71,7 +71,6 @@ export default function ClientAddressBook({ user }) {
 
         const loadCombinedClients = async () => {
             let supabasePartners = [];
-            const supabasePartnerNames = new Set();
 
             try {
                 const searchQueries = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '서울', '경기', '미지정', 'Open', '공장', '스튜디오', '컴퍼니', '타워', '빌딩', '마포', '성북', '동대문', '중구'];
@@ -101,7 +100,6 @@ export default function ClientAddressBook({ user }) {
                                     address: s.recipient_address || '',
                                     sortIndex: 500,
                                 });
-                                supabasePartnerNames.add(key);
                             }
                         });
                     }
@@ -114,31 +112,7 @@ export default function ClientAddressBook({ user }) {
 
             const q = query(collection(db, 'clients'));
             onSnapshot(q, { includeMetadataChanges: true }, (snapshot) => {
-                const firestoreData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-
-                // Auto-sync Firestore clients to Supabase partners table if missing
-                void (async () => {
-                    for (const c of firestoreData) {
-                        const name = (c.name || '').trim();
-                        if (!name || supabasePartnerNames.has(name.toLowerCase())) continue;
-                        try {
-                            const { data: inserted } = await supabase.from('partners').insert([{
-                                company_name: name,
-                                representative_name: c.representative || '',
-                                contact_person: c.contactName || '',
-                                phone: c.phone || '',
-                                address: c.address || '',
-                                default_address: c.address || '',
-                            }]).select('*');
-
-                            if (inserted && inserted[0]) {
-                                supabasePartnerNames.add(name.toLowerCase());
-                            }
-                        } catch (e) {
-                            console.error('Auto sync to Supabase partners error:', e);
-                        }
-                    }
-                })();
+                const firestoreData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), isSupabase: false }));
 
                 // Combine Supabase partners and Firestore clients (avoid duplicates by name)
                 const existingFsNames = new Set(firestoreData.map(c => (c.name || '').trim().toLowerCase()));
@@ -170,36 +144,47 @@ export default function ClientAddressBook({ user }) {
         return () => { isMounted = false; };
     }, [sortField, sortOrder]);
 
+    const showSupabaseNotice = (clientName) => {
+        Swal.fire({
+            icon: 'info',
+            title: lang === 'vi' ? 'Thông báo chỉnh sửa' : '홈페이지 수정 안내',
+            html: `
+                <div style="text-align: left; font-size: 14px; line-height: 1.6; color: #475569;">
+                    ${clientName ? `<p style="margin-bottom: 8px; font-weight: bold; font-size: 15px; color: #1e293b;">${clientName}</p>` : ''}
+                    <p style="margin-bottom: 6px;">${lang === 'vi' 
+                        ? 'Vì chính sách bảo mật, dữ liệu địa chỉ này không thể chỉnh sửa trực tiếp trên ứng dụng.' 
+                        : '보안 정책상 해당 거래처 데이터는 앱에서 직접 수정할 수 없습니다.'}</p>
+                    <p style="font-weight: 600; color: #2563eb;">${lang === 'vi' 
+                        ? 'Vui lòng thực hiện tại hệ thống quản lý 홈페이지.' 
+                        : '홈페이지 관리 시스템에서 수정해 주세요.'}</p>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: lang === 'vi' ? '홈페이지 바로가기' : '홈페이지 바로가기',
+            cancelButtonText: lang === 'vi' ? '닫기' : '닫기',
+            confirmButtonColor: '#2563eb',
+            cancelButtonColor: '#64748b',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                if (window.electronAPI?.openExternal) {
+                    window.electronAPI.openExternal('https://www.jinil.top/');
+                } else {
+                    window.open('https://www.jinil.top/', '_blank');
+                }
+            }
+        });
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            // 1. Sync with Supabase partners table
-            const supabasePayload = {
-                company_name: formData.name,
-                representative_name: formData.representative,
-                contact_person: formData.contactName,
-                phone: formData.phone,
-                address: formData.address,
-                default_address: formData.address,
-            };
-
             if (editingId) {
-                try {
-                    await supabase.from('partners').update(supabasePayload).eq('id', editingId);
-                } catch (e) {}
-
-                try {
-                    await updateDoc(doc(db, 'clients', editingId), {
-                        ...formData,
-                        updatedAt: new Date()
-                    });
-                } catch (e) {}
+                await updateDoc(doc(db, 'clients', editingId), {
+                    ...formData,
+                    updatedAt: new Date()
+                });
                 Swal.fire(t('success'), '', 'success');
             } else {
-                try {
-                    await supabase.from('partners').insert([supabasePayload]);
-                } catch (e) {}
-
                 const maxSortIndex = clients.length > 0
                     ? Math.max(...clients.map(c => c.sortIndex || 0))
                     : 0;
@@ -220,11 +205,8 @@ export default function ClientAddressBook({ user }) {
     };
 
     const handleDragStart = (e, index) => {
-        // When drag starts, we should be in custom sort mode
         if (sortField !== 'custom') {
             setSortField('custom');
-            // Since onSnapshot will re-run, the order might jump. 
-            // In a real app we'd keep it stable, but here we just switch mode.
         }
         setDraggedItemIndex(index);
         e.dataTransfer.effectAllowed = "move";
@@ -241,34 +223,42 @@ export default function ClientAddressBook({ user }) {
         const newClients = [...clients];
         const draggedItem = newClients[draggedItemIndex];
 
+        // If it's a Supabase item, sort changes in Firestore only apply if it's stored
         newClients.splice(draggedItemIndex, 1);
         newClients.splice(targetIndex, 0, draggedItem);
 
         setClients(newClients);
         setDraggedItemIndex(null);
 
-        try {
-            let newIndex;
-            if (targetIndex === 0) {
-                newIndex = (newClients[1].sortIndex || 0) - 1000;
-            } else if (targetIndex === newClients.length - 1) {
-                newIndex = (newClients[newClients.length - 2].sortIndex || 0) + 1000;
-            } else {
-                const prevIndex = newClients[targetIndex - 1].sortIndex || 0;
-                const nextIndex = newClients[targetIndex + 1].sortIndex || 0;
-                newIndex = (prevIndex + nextIndex) / 2;
-            }
+        if (!draggedItem.isSupabase && !String(draggedItem.id).startsWith('sb-')) {
+            try {
+                let newIndex;
+                if (targetIndex === 0) {
+                    newIndex = (newClients[1]?.sortIndex || 0) - 1000;
+                } else if (targetIndex === newClients.length - 1) {
+                    newIndex = (newClients[newClients.length - 2]?.sortIndex || 0) + 1000;
+                } else {
+                    const prevIndex = newClients[targetIndex - 1]?.sortIndex || 0;
+                    const nextIndex = newClients[targetIndex + 1]?.sortIndex || 0;
+                    newIndex = (prevIndex + nextIndex) / 2;
+                }
 
-            await updateDoc(doc(db, 'clients', draggedItem.id), {
-                sortIndex: newIndex
-            });
-        } catch (error) {
-            console.error("Reorder failed:", error);
-            Swal.fire('Error', 'Failed to save order', 'error');
+                await updateDoc(doc(db, 'clients', draggedItem.id), {
+                    sortIndex: newIndex
+                });
+            } catch (error) {
+                console.error("Reorder failed:", error);
+            }
         }
     };
 
     const handleDelete = async (id) => {
+        const clientToDelete = clients.find(c => c.id === id);
+        if (clientToDelete?.isSupabase || String(id).startsWith('sb-')) {
+            showSupabaseNotice(clientToDelete?.name);
+            return;
+        }
+
         const isConfirmed = await notify.confirm({
             title: t('confirmDeleteTitle'),
             text: t('confirmDeleteText'),
@@ -277,12 +267,11 @@ export default function ClientAddressBook({ user }) {
         });
         if (isConfirmed) {
             try {
-                await supabase.from('partners').delete().eq('id', id);
-            } catch (e) {}
-            try {
                 await deleteDoc(doc(db, 'clients', id));
-            } catch (e) {}
-            setClients((prev) => prev.filter((c) => c.id !== id));
+                setClients((prev) => prev.filter((c) => c.id !== id));
+            } catch (e) {
+                console.error('Delete client error:', e);
+            }
         }
     };
 
@@ -293,6 +282,10 @@ export default function ClientAddressBook({ user }) {
     );
 
     const handleEdit = (client) => {
+        if (client.isSupabase || String(client.id).startsWith('sb-')) {
+            showSupabaseNotice(client.name);
+            return;
+        }
         setFormData({ ...client });
         setEditingId(client.id);
         setShowForm(true);
@@ -538,9 +531,14 @@ export default function ClientAddressBook({ user }) {
                                     title={t('clickToCopy') || 'Nhấn để copy'}
                                     onClick={(e) => { e.stopPropagation(); handleCopy(c, c.name, 'name'); }}
                                 >
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex items-center gap-1.5 min-w-0">
                                         <span className={`min-w-[8px] h-2 rounded-full ${status.dot}`} title={`${status.label} (${status.days}일 전)`}></span>
                                         <span className="truncate">{c.name}</span>
+                                        {c.isSupabase && (
+                                            <span className="shrink-0 text-[9px] bg-sky-50 dark:bg-sky-950/60 text-sky-600 dark:text-sky-400 border border-sky-200 dark:border-sky-800/60 px-1.5 py-0.5 rounded font-bold leading-none" title="홈페이지 등록 거래처">
+                                                홈페이지
+                                            </span>
+                                        )}
                                     </div>
                                 </td>
                                 <td className="px-4 py-3 text-gray-700 dark:text-slate-200 truncate" title={c.representative}>{c.representative}</td>
