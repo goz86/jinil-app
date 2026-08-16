@@ -5,14 +5,14 @@ import { hasAppLockPin, APP_LOCK_CHANGED_EVENT } from '../lib/appLock';
 
 export const WALLPAPERS = [
     { id: 'default', name: '기본', previewBg: 'bg-gray-100 dark:bg-gray-800' },
-    { id: 'blue', name: '스카이 블루', previewBg: 'bg-gradient-to-br from-sky-200 to-blue-400' },
-    { id: 'yellow', name: '웜 옐로우', previewBg: 'bg-gradient-to-br from-amber-100 to-amber-400' },
-    { id: 'green', name: '파스텔 그린', previewBg: 'bg-gradient-to-br from-emerald-100 to-green-400' },
-    { id: 'purple', name: '라벤더 퍼플', previewBg: 'bg-gradient-to-br from-purple-100 to-indigo-400' },
-    { id: 'pink', name: '로즈 핑크', previewBg: 'bg-gradient-to-br from-rose-100 to-pink-400' },
-    { id: 'vietnam', name: '베트남 테마', previewBg: 'bg-gradient-to-br from-red-600 via-yellow-300 to-green-500' },
+    { id: 'blue', name: '스카이 블루', previewBg: 'bg-gradient-to-br from-slate-50 via-sky-100 to-sky-200' },
+    { id: 'yellow', name: '웜 옐로우', previewBg: 'bg-gradient-to-br from-amber-50 via-amber-100 to-orange-100' },
+    { id: 'green', name: '파스텔 그린', previewBg: 'bg-gradient-to-br from-emerald-50 via-green-100 to-emerald-200' },
+    { id: 'purple', name: '라벤더 퍼플', previewBg: 'bg-gradient-to-br from-purple-50 via-purple-100 to-indigo-100' },
+    { id: 'pink', name: '로즈 핑크', previewBg: 'bg-gradient-to-br from-rose-50 via-rose-100 to-pink-200' },
+    { id: 'vietnam', name: '베트남 테마', previewBg: 'bg-gradient-to-br from-amber-50 via-rose-100 to-amber-100' },
     { id: 'korea', name: '태극 테마', previewBg: 'bg-gradient-to-br from-slate-100 via-blue-200 to-red-400' },
-    { id: 'futureCat', name: '푸른 도라에몽', previewBg: 'bg-gradient-to-br from-sky-400 via-blue-600 to-amber-300' }
+    { id: 'futureCat', name: '푸른 도라에몽', previewBg: 'bg-gradient-to-br from-teal-50 via-sky-100 to-blue-200' }
 ];
 
 export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics, wallpaper = 'default', setWallpaper = () => {}, onOpenAppLock, user, userRole, onOpenAdminDashboard }) {

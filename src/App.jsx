@@ -262,38 +262,38 @@ function App() {
       case 'blue':
         return {
           background: isDark
-            ? 'linear-gradient(135deg, #030712 0%, #0c4a6e 60%, #0369a1 100%)'
-            : 'linear-gradient(135deg, #e0f2fe 0%, #38bdf8 100%)'
+            ? 'linear-gradient(135deg, #0b0f19 0%, #0c2d48 55%, #0369a1 100%)'
+            : 'linear-gradient(135deg, #f8fafc 0%, #e0f2fe 48%, #bae6fd 100%)'
         };
       case 'yellow':
         return {
           background: isDark
-            ? 'linear-gradient(135deg, #09090b 0%, #451a03 60%, #78350f 100%)'
-            : 'linear-gradient(135deg, #fef3c7 0%, #f59e0b 100%)'
+            ? 'linear-gradient(135deg, #0c0a09 0%, #291807 55%, #592404 100%)'
+            : 'linear-gradient(135deg, #fffdfa 0%, #fef3c7 46%, #fed7aa 100%)'
         };
       case 'green':
         return {
           background: isDark
-            ? 'linear-gradient(135deg, #022c22 0%, #064e3b 60%, #047857 100%)'
-            : 'linear-gradient(135deg, #dcfce7 0%, #22c55e 100%)'
+            ? 'linear-gradient(135deg, #021a12 0%, #063d2f 55%, #065f46 100%)'
+            : 'linear-gradient(135deg, #f8fcf9 0%, #e6f7ec 46%, #bbf7d0 100%)'
         };
       case 'purple':
         return {
           background: isDark
-            ? 'linear-gradient(135deg, #0f0728 0%, #3b0764 60%, #581c87 100%)'
-            : 'linear-gradient(135deg, #f3e8ff 0%, #a855f7 100%)'
+            ? 'linear-gradient(135deg, #090614 0%, #1f0d3d 55%, #3b0764 100%)'
+            : 'linear-gradient(135deg, #fcfaff 0%, #f3e8ff 48%, #ddd6fe 100%)'
         };
       case 'pink':
         return {
           background: isDark
-            ? 'linear-gradient(135deg, #1f0409 0%, #881337 60%, #9f1239 100%)'
-            : 'linear-gradient(135deg, #ffe4e6 0%, #fb7185 100%)'
+            ? 'linear-gradient(135deg, #15050a 0%, #3f0919 55%, #5c0722 100%)'
+            : 'linear-gradient(135deg, #fffafb 0%, #ffe4e6 48%, #fecdd3 100%)'
         };
       case 'vietnam':
         return {
           background: isDark
-            ? 'linear-gradient(135deg, #450a0a 0%, #7f1d1d 34%, #78350f 64%, #064e3b 100%)'
-            : 'linear-gradient(135deg, #dc2626 0%, #ef4444 34%, #fef3c7 64%, #22c55e 100%)'
+            ? 'linear-gradient(135deg, #180505 0%, #3b0a0a 45%, #541d08 80%, #203518 100%)'
+            : 'linear-gradient(135deg, #fffdf5 0%, #fee2e2 38%, #fed7aa 72%, #fef3c7 100%)'
         };
       case 'korea':
         return {
@@ -304,8 +304,8 @@ function App() {
       case 'futureCat':
         return {
           background: isDark
-            ? 'linear-gradient(135deg, #0c4a6e 0%, #1e40af 60%, #713f12 100%)'
-            : 'linear-gradient(135deg, #38bdf8 0%, #2563eb 70%, #facc15 100%)'
+            ? 'linear-gradient(135deg, #030d1a 0%, #0a2540 55%, #0c4a6e 100%)'
+            : 'linear-gradient(135deg, #f0fdfa 0%, #ccfbf1 38%, #bae6fd 74%, #dbeafe 100%)'
         };
       default:
         if (wallpaper && (wallpaper.startsWith('data:') || wallpaper.startsWith('http://') || wallpaper.startsWith('https://'))) {
