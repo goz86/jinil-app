@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
-import { db, auth } from '../firebase';
+import { db, auth, storage } from '../firebase';
 import { 
     collection, 
     query, 
@@ -13,6 +13,7 @@ import {
     orderBy,
     writeBatch
 } from 'firebase/firestore';
+import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { useLanguage } from '../contexts/LanguageContext';
 import Swal from 'sweetalert2';
 
@@ -21,6 +22,11 @@ const Icons = {
     all: (
         <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+        </svg>
+    ),
+    image: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
         </svg>
     ),
     pinned: (
@@ -138,6 +144,11 @@ export default function NotesModal({ isOpen, onClose, user }) {
     const [newTodoText, setNewTodoText] = useState('');
     const [tags, setTags] = useState([]);
     const [tagInput, setTagInput] = useState('');
+    const [attachments, setAttachments] = useState([]);
+    const [isUploadingImage, setIsUploadingImage] = useState(false);
+    const [isDraggingOver, setIsDraggingOver] = useState(false);
+    const [previewImageModal, setPreviewImageModal] = useState(null);
+    const imageInputRef = useRef(null);
     
     // UI utilities state
     const [showPassword, setShowPassword] = useState(false);
@@ -154,11 +165,21 @@ export default function NotesModal({ isOpen, onClose, user }) {
                 const newContent = event.data.content;
                 setContent(newContent);
                 triggerAutoSave({ content: newContent });
+            } else if (event.data && event.data.type === 'JINIL_NOTE_PASTE_IMAGE') {
+                const { fileData, fileName } = event.data;
+                if (fileData) {
+                    fetch(fileData)
+                        .then(res => res.blob())
+                        .then(blob => {
+                            uploadAndAttachImage(blob, fileName || 'popup_paste');
+                        })
+                        .catch(err => console.error("Popup paste upload failed:", err));
+                }
             }
         };
         window.addEventListener('message', handlePopupMessage);
         return () => window.removeEventListener('message', handlePopupMessage);
-    }, []);
+    }, [selectedNoteId, attachments]);
     
     const categoryDropdownRef = useRef(null);
     const colorDropdownRef = useRef(null);
@@ -238,6 +259,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
             setContent('');
             setChecklist([]);
             setTags([]);
+            setAttachments([]);
             setShowPassword(false);
             return;
         }
@@ -258,6 +280,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
             setContent(note.content || '');
             setChecklist(Array.isArray(note.checklist) ? note.checklist : []);
             setTags(Array.isArray(note.tags) ? note.tags : []);
+            setAttachments(Array.isArray(note.attachments) ? note.attachments : []);
             setShowPassword(false);
             
             setTimeout(() => {
@@ -315,6 +338,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
                 content: '',
                 checklist: [],
                 tags: [],
+                attachments: [],
                 createdBy: currentUserEmail,
                 updatedBy: currentUserEmail,
                 createdAt: serverTimestamp(),
@@ -361,6 +385,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
                 content: overrideValues.content !== undefined ? overrideValues.content : content,
                 checklist: overrideValues.checklist !== undefined ? overrideValues.checklist : checklist,
                 tags: overrideValues.tags !== undefined ? overrideValues.tags : tags,
+                attachments: overrideValues.attachments !== undefined ? overrideValues.attachments : attachments,
                 updatedBy: currentUserEmail,
                 updatedAt: serverTimestamp()
             };
@@ -518,6 +543,176 @@ export default function NotesModal({ isOpen, onClose, user }) {
                 console.error("Failed to empty trash:", err);
             }
         }
+    };
+
+    // --- Image Compression & Attachment Helpers (With Quota-Exceeded Fallback) ---
+    const compressImageToDataUrl = (file, maxWidth = 1200, quality = 0.78) => {
+        return new Promise((resolve, reject) => {
+            if (!file || !file.type || !file.type.startsWith('image/')) {
+                return reject(new Error('유효한 이미지 파일이 아닙니다.'));
+            }
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const img = new Image();
+                img.onload = () => {
+                    let width = img.width;
+                    let height = img.height;
+                    if (width > maxWidth) {
+                        height = Math.round((height * maxWidth) / width);
+                        width = maxWidth;
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const dataUrl = canvas.toDataURL('image/webp', quality);
+                    canvas.toBlob((blob) => {
+                        resolve({
+                            dataUrl,
+                            blob: blob || file
+                        });
+                    }, 'image/webp', quality);
+                };
+                img.onerror = () => reject(new Error('이미지를 읽을 수 없습니다.'));
+                img.src = e.target.result;
+            };
+            reader.onerror = () => reject(new Error('파일 읽기 실패'));
+            reader.readAsDataURL(file);
+        });
+    };
+
+    const uploadAndAttachImage = async (file, sourceName = 'image') => {
+        if (!file || !file.type || !file.type.startsWith('image/')) return;
+        setIsUploadingImage(true);
+        try {
+            // 1. Compress image to highly optimized WebP format (~30-60KB)
+            const optimized = await compressImageToDataUrl(file, 1200, 0.78);
+            let finalUrl = optimized.dataUrl;
+
+            // 2. Try Firebase Storage upload if available
+            try {
+                const fileName = `notes_attachments/${selectedNoteId || 'general'}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}.webp`;
+                const storageRef = ref(storage, fileName);
+                const uploadTask = await uploadBytesResumable(storageRef, optimized.blob);
+                finalUrl = await getDownloadURL(uploadTask.ref);
+            } catch (storageErr) {
+                console.warn('Firebase storage upload failed (gracefully falling back to compressed base64):', storageErr);
+                // Fallback to high-efficiency compressed Base64 data URL
+                finalUrl = optimized.dataUrl;
+            }
+
+            const newAttachment = {
+                id: `att_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+                url: finalUrl,
+                name: file.name || `${sourceName}_${new Date().toLocaleTimeString('ko-KR').replace(/:/g, '-')}.webp`,
+                size: optimized.blob?.size || file.size,
+                createdAt: new Date().toISOString()
+            };
+
+            const updatedAttachments = [...attachments, newAttachment];
+            setAttachments(updatedAttachments);
+            triggerAutoSave({ attachments: updatedAttachments });
+
+            Swal.fire({
+                icon: 'success',
+                title: '이미지가 첨부되었습니다!',
+                toast: true,
+                position: 'top-end',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        } catch (err) {
+            console.error('Image attachment error:', err);
+            Swal.fire({
+                icon: 'error',
+                title: '이미지 첨부 실패',
+                text: err.message,
+                timer: 2500,
+                showConfirmButton: false
+            });
+        } finally {
+            setIsUploadingImage(false);
+        }
+    };
+
+    const handlePasteImage = async (e) => {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            if (item.type && item.type.indexOf('image') !== -1) {
+                const file = item.getAsFile();
+                if (file) {
+                    e.preventDefault();
+                    await uploadAndAttachImage(file, 'clipboard');
+                    return;
+                }
+            }
+        }
+    };
+
+    const handleFileInputChange = async (e) => {
+        const files = Array.from(e.target.files || []).filter(f => f.type.startsWith('image/'));
+        if (files.length === 0) return;
+        for (const file of files) {
+            await uploadAndAttachImage(file, file.name);
+        }
+        if (imageInputRef.current) imageInputRef.current.value = '';
+    };
+
+    const handleDragOver = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (!isDraggingOver) setIsDraggingOver(true);
+    };
+
+    const handleDragLeave = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDraggingOver(false);
+    };
+
+    const handleDrop = async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDraggingOver(false);
+        const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/'));
+        if (files.length > 0) {
+            for (const file of files) {
+                await uploadAndAttachImage(file, file.name);
+            }
+        }
+    };
+
+    const handleDeleteAttachment = async (attachmentId) => {
+        const result = await Swal.fire({
+            title: '이미지 삭제',
+            text: '이 이미지를 메모에서 삭제하시겠습니까?',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: '삭제',
+            cancelButtonText: '취소',
+            customClass: {
+                popup: 'rounded-2xl dark:bg-slate-900 dark:text-white',
+            }
+        });
+        if (result.isConfirmed) {
+            const updated = attachments.filter(a => a.id !== attachmentId);
+            setAttachments(updated);
+            triggerAutoSave({ attachments: updated });
+        }
+    };
+
+    const formatFileSize = (bytes) => {
+        if (!bytes || isNaN(bytes)) return '';
+        if (bytes < 1024) return bytes + ' B';
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     };
 
     // Detached Browser Popup Window with MiniWidget-Style Toss & Kakao Theme & Wallpaper System
@@ -2033,6 +2228,33 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         }
                     });
 
+                    // Clipboard Paste Listener for Images in Detached Window
+                    editor.addEventListener('paste', (e) => {
+                        const items = (e.clipboardData || window.clipboardData)?.items;
+                        if (!items) return;
+                        for (let i = 0; i < items.length; i++) {
+                            const item = items[i];
+                            if (item.type && item.type.indexOf('image') !== -1) {
+                                const file = item.getAsFile();
+                                if (file) {
+                                    e.preventDefault();
+                                    const reader = new FileReader();
+                                    reader.onload = (re) => {
+                                        if (window.opener && !window.opener.closed) {
+                                            window.opener.postMessage({
+                                                type: 'JINIL_NOTE_PASTE_IMAGE',
+                                                fileData: re.target.result,
+                                                fileName: file.name || 'clipboard_paste.webp'
+                                            }, '*');
+                                        }
+                                    };
+                                    reader.readAsDataURL(file);
+                                    return;
+                                }
+                            }
+                        }
+                    });
+
                     // Keyboard shortcuts
                     window.addEventListener('keydown', (e) => {
                         if (e.key === 'Escape') {
@@ -2860,14 +3082,36 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                     </div>
                                 </div>
 
-                                {/* SECTION 4: Free Text Content Editor */}
+                                {/* SECTION 4: Free Text Content Editor & Image Attachments */}
                                 <div className="space-y-2.5 pt-2">
                                     <div className="flex items-center justify-between">
                                         <label className="text-sm font-bold text-gray-600 dark:text-slate-300 flex items-center gap-2">
                                             <span className="text-gray-400">{Icons.general}</span>
                                             <span>상세 메모 & 본문</span>
                                         </label>
-                                        <div className="flex items-center gap-1.5">
+                                        <div className="flex items-center gap-2">
+                                            {/* Hidden file input for image attachment */}
+                                            <input
+                                                type="file"
+                                                ref={imageInputRef}
+                                                accept="image/*"
+                                                multiple
+                                                onChange={handleFileInputChange}
+                                                className="hidden"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => imageInputRef.current?.click()}
+                                                disabled={isSelectedNoteTrashed || isUploadingImage}
+                                                className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 rounded-xl transition-all border border-emerald-200/60 dark:border-emerald-800/40 cursor-pointer shadow-xs active:scale-95 group disabled:opacity-50"
+                                                title="이미지 파일 첨부 또는 클립보드(Ctrl+V)로 dán ảnh"
+                                            >
+                                                <svg className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                                <span>{isUploadingImage ? '업로드 중...' : '이미지 첨부'}</span>
+                                            </button>
+
                                             <button
                                                 type="button"
                                                 onClick={handleOpenExternalWindow}
@@ -2881,20 +3125,127 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                             </button>
                                         </div>
                                     </div>
-                                    <textarea
-                                        rows={9}
-                                        disabled={isSelectedNoteTrashed}
-                                        spellCheck={false}
-                                        autoCorrect="off"
-                                        autoCapitalize="off"
-                                        value={content}
-                                        onChange={(e) => {
-                                            setContent(e.target.value);
-                                            triggerAutoSave({ content: e.target.value });
-                                        }}
-                                        placeholder={t('noteContentPlaceholder') || '상세 내용을 여기에 작성하세요...'}
-                                        className="w-full p-4 md:p-5 bg-gray-50/50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-800 rounded-2xl text-sm md:text-base leading-relaxed text-gray-800 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white dark:focus:bg-slate-900 transition-all font-['Pretendard',_'Noto_Sans_KR',_sans-serif] disabled:opacity-60"
-                                    />
+
+                                    {/* Editor Box with Drag-and-Drop & Clipboard Paste Listener */}
+                                    <div
+                                        className={`relative rounded-2xl transition-all ${
+                                            isDraggingOver 
+                                                ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-slate-900 bg-blue-50/20' 
+                                                : ''
+                                        }`}
+                                        onDragOver={handleDragOver}
+                                        onDragLeave={handleDragLeave}
+                                        onDrop={handleDrop}
+                                    >
+                                        {isDraggingOver && (
+                                            <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-blue-600/10 dark:bg-blue-900/40 backdrop-blur-xs border-2 border-dashed border-blue-500 rounded-2xl pointer-events-none">
+                                                <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl shadow-lg flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-sm">
+                                                    <svg className="w-5 h-5 animate-bounce" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                                    </svg>
+                                                    <span>여기에 이미지를 놓으면 바로 첨부됩니다</span>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <textarea
+                                            rows={7}
+                                            disabled={isSelectedNoteTrashed}
+                                            spellCheck={false}
+                                            autoCorrect="off"
+                                            autoCapitalize="off"
+                                            value={content}
+                                            onChange={(e) => {
+                                                setContent(e.target.value);
+                                                triggerAutoSave({ content: e.target.value });
+                                            }}
+                                            onPaste={handlePasteImage}
+                                            placeholder={t('noteContentPlaceholder') || '상세 내용을 여기에 작성하세요... (Ctrl+V로 클립보드 이미지 바로 첨부 가능)'}
+                                            className="w-full p-4 md:p-5 bg-gray-50/50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-800 rounded-2xl text-sm md:text-base leading-relaxed text-gray-800 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white dark:focus:bg-slate-900 transition-all font-['Pretendard',_'Noto_Sans_KR',_sans-serif] disabled:opacity-60"
+                                        />
+                                    </div>
+
+                                    {/* Uploading progress indicator */}
+                                    {isUploadingImage && (
+                                        <div className="flex items-center gap-2 px-3.5 py-2.5 bg-blue-50 dark:bg-blue-950/40 border border-blue-200/80 dark:border-blue-800/50 rounded-xl text-blue-600 dark:text-blue-300 text-xs font-bold animate-pulse">
+                                            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                            </svg>
+                                            <span>이미지를 최적화하여 첨부 중입니다...</span>
+                                        </div>
+                                    )}
+
+                                    {/* Attached Images Gallery Grid */}
+                                    {attachments && attachments.length > 0 && (
+                                        <div className="space-y-2 pt-2">
+                                            <div className="flex items-center justify-between text-xs font-bold text-gray-600 dark:text-slate-300">
+                                                <div className="flex items-center gap-1.5">
+                                                    <svg className="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                    </svg>
+                                                    <span>첨부된 이미지 ({attachments.length})</span>
+                                                </div>
+                                                <span className="text-[11px] text-gray-400">클릭하여 확대</span>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2.5">
+                                                {attachments.map((att) => (
+                                                    <div
+                                                        key={att.id}
+                                                        className="group relative rounded-xl overflow-hidden border border-gray-200/80 dark:border-slate-700/80 bg-gray-100 dark:bg-slate-800/80 shadow-xs hover:shadow-md transition-all flex flex-col"
+                                                    >
+                                                        <div 
+                                                            onClick={() => setPreviewImageModal(att)}
+                                                            className="relative aspect-4/3 overflow-hidden cursor-pointer bg-slate-900/10 dark:bg-slate-950/40"
+                                                        >
+                                                            <img
+                                                                src={att.url}
+                                                                alt={att.name || '첨부 이미지'}
+                                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                                                loading="lazy"
+                                                            />
+                                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                                                <span className="p-1.5 bg-white/90 dark:bg-slate-900/90 text-gray-700 dark:text-slate-200 rounded-lg hover:scale-110 transition-transform shadow-xs" title="확대 보기">
+                                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v6m3-3H7" />
+                                                                    </svg>
+                                                                </span>
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="p-2 flex items-center justify-between gap-1 text-[11px] bg-white dark:bg-slate-800/90 border-t border-gray-100 dark:border-slate-700/60">
+                                                            <div className="flex flex-col min-w-0 flex-1">
+                                                                <span className="truncate text-gray-700 dark:text-slate-200 font-medium" title={att.name}>
+                                                                    {att.name || '이미지'}
+                                                                </span>
+                                                                {att.size && (
+                                                                    <span className="text-[10px] text-gray-400">
+                                                                        {formatFileSize(att.size)}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            {!isSelectedNoteTrashed && (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleDeleteAttachment(att.id);
+                                                                    }}
+                                                                    className="p-1 text-gray-400 hover:text-red-500 dark:hover:text-red-400 rounded-md hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                                                                    title="이미지 삭제"
+                                                                >
+                                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                                    </svg>
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Note Metadata Footer */}
@@ -2953,6 +3304,74 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     </div>
                 </div>
             </div>
+
+            {/* Lightbox Image Preview Modal */}
+            {previewImageModal && (
+                <div
+                    className="fixed inset-0 z-[120] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-in fade-in duration-200"
+                    onClick={() => setPreviewImageModal(null)}
+                >
+                    <div 
+                        className="relative max-w-4xl max-h-[90vh] flex flex-col items-center"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <img
+                            src={previewImageModal.url}
+                            alt={previewImageModal.name || '이미지 미리보기'}
+                            className="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl border border-white/10"
+                        />
+                        
+                        <div className="mt-3 flex items-center gap-3 bg-slate-900/90 backdrop-blur-md px-4 py-2 rounded-2xl border border-slate-700 text-white text-xs font-bold shadow-xl">
+                            <span className="max-w-xs truncate text-slate-300">{previewImageModal.name}</span>
+                            <span className="text-slate-600">|</span>
+                            <a
+                                href={previewImageModal.url}
+                                target="_blank"
+                                rel="noreferrer"
+                                download={previewImageModal.name || 'download.webp'}
+                                className="hover:text-blue-400 flex items-center gap-1 cursor-pointer transition-colors"
+                            >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                </svg>
+                                <span>다운로드</span>
+                            </a>
+                            <span className="text-slate-600">|</span>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    navigator.clipboard.writeText(previewImageModal.url);
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: '이미지 링크가 복사되었습니다',
+                                        toast: true,
+                                        position: 'top-end',
+                                        timer: 2000,
+                                        showConfirmButton: false
+                                    });
+                                }}
+                                className="hover:text-blue-400 flex items-center gap-1 cursor-pointer transition-colors"
+                            >
+                                <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                </svg>
+                                <span>링크 복사</span>
+                            </button>
+                            <span className="text-slate-600">|</span>
+                            <button
+                                type="button"
+                                onClick={() => setPreviewImageModal(null)}
+                                className="hover:text-red-400 flex items-center gap-1 cursor-pointer transition-colors"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                                <span>닫기</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>,
         document.body
     );
