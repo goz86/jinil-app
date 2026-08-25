@@ -153,30 +153,12 @@ export default function ClientAddressBook({ user }) {
         e.preventDefault();
         try {
             if (editingId) {
-<<<<<<< HEAD
-                await updateDoc(doc(db, 'clients', editingId), {
-                    ...formData,
-                    updatedAt: new Date()
-                });
-                Swal.fire(t('success'), '', 'success');
-            } else {
-                const maxSortIndex = clients.length > 0
-                    ? Math.max(...clients.map(c => c.sortIndex || 0))
-                    : 0;
-
-                await addDoc(collection(db, 'clients'), {
-                    ...formData,
-                    sortIndex: maxSortIndex + 1000,
-                    createdAt: new Date()
-                });
-=======
                 // Optimistic UI update
                 setClients(prev => prev.map(c => c.id === editingId ? { ...c, ...formData } : c));
                 await updateClient(editingId, formData);
                 Swal.fire(t('success'), '', 'success');
             } else {
                 await addClient(formData, clients);
->>>>>>> 41aa338 (feat: pre-fetch client address cache, detached note window with Toss & Kakao themes, and taste-skill vector icons)
                 Swal.fire(t('success'), '', 'success');
             }
             setShowForm(false);
@@ -213,27 +195,6 @@ export default function ClientAddressBook({ user }) {
         setClients(newClients);
         setDraggedItemIndex(null);
 
-<<<<<<< HEAD
-        if (!draggedItem.isSupabase && !String(draggedItem.id).startsWith('sb-')) {
-            try {
-                let newIndex;
-                if (targetIndex === 0) {
-                    newIndex = (newClients[1]?.sortIndex || 0) - 1000;
-                } else if (targetIndex === newClients.length - 1) {
-                    newIndex = (newClients[newClients.length - 2]?.sortIndex || 0) + 1000;
-                } else {
-                    const prevIndex = newClients[targetIndex - 1]?.sortIndex || 0;
-                    const nextIndex = newClients[targetIndex + 1]?.sortIndex || 0;
-                    newIndex = (prevIndex + nextIndex) / 2;
-                }
-
-                await updateDoc(doc(db, 'clients', draggedItem.id), {
-                    sortIndex: newIndex
-                });
-            } catch (error) {
-                console.error("Reorder failed:", error);
-            }
-=======
         try {
             let newIndex;
             if (targetIndex === 0) {
@@ -250,7 +211,6 @@ export default function ClientAddressBook({ user }) {
         } catch (error) {
             console.error("Reorder failed:", error);
             Swal.fire('Error', 'Failed to save order', 'error');
->>>>>>> 41aa338 (feat: pre-fetch client address cache, detached note window with Toss & Kakao themes, and taste-skill vector icons)
         }
     };
 
@@ -271,16 +231,9 @@ export default function ClientAddressBook({ user }) {
             // Optimistic update
             setClients(prev => prev.filter(c => c.id !== id));
             try {
-<<<<<<< HEAD
-                await deleteDoc(doc(db, 'clients', id));
-                setClients((prev) => prev.filter((c) => c.id !== id));
-            } catch (e) {
-                console.error('Delete client error:', e);
-=======
                 await deleteClient(id);
             } catch (e) {
                 console.error("Delete client error:", e);
->>>>>>> 41aa338 (feat: pre-fetch client address cache, detached note window with Toss & Kakao themes, and taste-skill vector icons)
             }
         }
     };

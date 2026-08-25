@@ -1298,7 +1298,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     </div>
 
                     <div class="editor-wrap">
-                        <textarea id="editor" placeholder="상세 내용을 작성하세요...">${safeText}</textarea>
+                        <textarea id="editor" spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off" placeholder="상세 내용을 작성하세요...">${safeText}</textarea>
                     </div>
 
                     <div class="footer" id="appFooter">
@@ -2884,6 +2884,9 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                     <textarea
                                         rows={9}
                                         disabled={isSelectedNoteTrashed}
+                                        spellCheck={false}
+                                        autoCorrect="off"
+                                        autoCapitalize="off"
                                         value={content}
                                         onChange={(e) => {
                                             setContent(e.target.value);
