@@ -148,8 +148,11 @@ export default function NotesModal({ isOpen, onClose, user }) {
     const [isUploadingImage, setIsUploadingImage] = useState(false);
     const [isDraggingOver, setIsDraggingOver] = useState(false);
     const [previewImageModal, setPreviewImageModal] = useState(null);
+    const [selectedImageEl, setSelectedImageEl] = useState(null);
+    const [imageToolbarPos, setImageToolbarPos] = useState(null);
     const imageInputRef = useRef(null);
     const editorRef = useRef(null);
+    const editorWrapperRef = useRef(null);
     const savedRangeRef = useRef(null);
     const isEditorFocusedRef = useRef(false);
     
@@ -622,21 +625,22 @@ export default function NotesModal({ isOpen, onClose, user }) {
             if (editorRef.current) {
                 editorRef.current.focus();
 
-                // Create inline image element
+                // Create inline image element with align & draggable support
                 const imgContainer = document.createElement('div');
-                imgContainer.className = 'my-2.5 inline-image-block select-none';
+                imgContainer.className = 'my-3 inline-image-block';
+                imgContainer.setAttribute('data-align', 'center');
+                imgContainer.style.textAlign = 'center';
                 imgContainer.contentEditable = 'false';
-                imgContainer.style.display = 'block';
+                imgContainer.draggable = true;
 
                 const img = document.createElement('img');
                 img.src = finalUrl;
                 img.alt = file.name || '본문 이미지';
-                img.className = 'max-w-full max-h-[500px] rounded-xl shadow-md border border-gray-200 dark:border-slate-700 cursor-pointer hover:opacity-95 transition-all my-1 object-contain';
-                img.style.display = 'block';
-                img.onclick = (e) => {
-                    e.stopPropagation();
-                    setPreviewImageModal({ url: finalUrl, name: file.name || '이미지' });
-                };
+                img.className = 'rounded-xl shadow-md border border-gray-200 dark:border-slate-700 cursor-pointer hover:opacity-95 transition-all inline-block object-contain';
+                img.style.maxWidth = '100%';
+                img.style.maxHeight = '500px';
+                img.style.width = '100%';
+                img.style.display = 'inline-block';
 
                 imgContainer.appendChild(img);
 
@@ -686,6 +690,95 @@ export default function NotesModal({ isOpen, onClose, user }) {
             });
         } finally {
             setIsUploadingImage(false);
+        }
+    };
+
+    // Image click, alignment & resizing handlers
+    const handleEditorClick = (e) => {
+        const clickedImg = e.target.closest('img');
+        if (clickedImg && editorRef.current?.contains(clickedImg)) {
+            const block = clickedImg.closest('.inline-image-block') || clickedImg.parentElement;
+            setSelectedImageEl({ img: clickedImg, block });
+
+            if (editorWrapperRef.current) {
+                const wrapperRect = editorWrapperRef.current.getBoundingClientRect();
+                const imgRect = clickedImg.getBoundingClientRect();
+                setImageToolbarPos({
+                    top: Math.max(8, imgRect.top - wrapperRect.top - 46),
+                    left: Math.max(12, imgRect.left - wrapperRect.left + (imgRect.width / 2) - 160)
+                });
+            }
+        } else if (!e.target.closest('.image-floating-toolbar')) {
+            setSelectedImageEl(null);
+            setImageToolbarPos(null);
+        }
+    };
+
+    const handleAlignImage = (align) => {
+        if (!selectedImageEl) return;
+        const { block, img } = selectedImageEl;
+        if (block) {
+            block.style.textAlign = align;
+            block.setAttribute('data-align', align);
+        }
+        if (img) {
+            img.style.display = 'inline-block';
+        }
+        if (editorRef.current) {
+            const html = editorRef.current.innerHTML;
+            setContent(html);
+            triggerAutoSave({ content: html });
+        }
+        setTimeout(() => {
+            if (selectedImageEl?.img && editorWrapperRef.current) {
+                const wrapperRect = editorWrapperRef.current.getBoundingClientRect();
+                const imgRect = selectedImageEl.img.getBoundingClientRect();
+                setImageToolbarPos({
+                    top: Math.max(8, imgRect.top - wrapperRect.top - 46),
+                    left: Math.max(12, imgRect.left - wrapperRect.left + (imgRect.width / 2) - 160)
+                });
+            }
+        }, 60);
+    };
+
+    const handleResizeImage = (widthPercent) => {
+        if (!selectedImageEl) return;
+        const { img } = selectedImageEl;
+        if (img) {
+            img.style.width = widthPercent;
+            img.setAttribute('data-size', widthPercent);
+        }
+        if (editorRef.current) {
+            const html = editorRef.current.innerHTML;
+            setContent(html);
+            triggerAutoSave({ content: html });
+        }
+        setTimeout(() => {
+            if (selectedImageEl?.img && editorWrapperRef.current) {
+                const wrapperRect = editorWrapperRef.current.getBoundingClientRect();
+                const imgRect = selectedImageEl.img.getBoundingClientRect();
+                setImageToolbarPos({
+                    top: Math.max(8, imgRect.top - wrapperRect.top - 46),
+                    left: Math.max(12, imgRect.left - wrapperRect.left + (imgRect.width / 2) - 160)
+                });
+            }
+        }, 60);
+    };
+
+    const handleDeleteSelectedImage = () => {
+        if (!selectedImageEl) return;
+        const { block, img } = selectedImageEl;
+        if (block && block.classList.contains('inline-image-block')) {
+            block.remove();
+        } else if (img) {
+            img.remove();
+        }
+        setSelectedImageEl(null);
+        setImageToolbarPos(null);
+        if (editorRef.current) {
+            const html = editorRef.current.innerHTML;
+            setContent(html);
+            triggerAutoSave({ content: html });
         }
     };
 
@@ -3234,8 +3327,10 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                         </div>
                                     </div>
 
-                                    {/* Editor Box with Drag-and-Drop & Clipboard Paste Listener */}
+                                    {/* Editor Box with Drag-and-Drop, Clipboard Paste & Floating Image Controls */}
                                     <div
+                                        ref={editorWrapperRef}
+                                        onClick={handleEditorClick}
                                         className={`relative rounded-2xl transition-all ${
                                             isDraggingOver 
                                                 ? 'ring-2 ring-blue-500 ring-offset-2 dark:ring-offset-slate-900 bg-blue-50/20' 
@@ -3245,6 +3340,101 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                         onDragLeave={handleDragLeave}
                                         onDrop={handleDrop}
                                     >
+                                        {/* Floating Image Control Toolbar */}
+                                        {selectedImageEl && imageToolbarPos && (
+                                            <div
+                                                className="image-floating-toolbar absolute z-30 flex items-center gap-1.5 p-1.5 bg-slate-900/95 dark:bg-slate-800/95 text-white backdrop-blur-md rounded-2xl shadow-2xl border border-white/20 text-xs animate-in fade-in zoom-in-95 duration-150 select-none"
+                                                style={{
+                                                    top: `${imageToolbarPos.top}px`,
+                                                    left: `${imageToolbarPos.left}px`,
+                                                }}
+                                            >
+                                                {/* Alignment Buttons */}
+                                                <div className="flex items-center bg-white/10 rounded-xl p-0.5">
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => { e.stopPropagation(); handleAlignImage('left'); }}
+                                                        title="Canh Trái (Left)"
+                                                        className={`p-1.5 rounded-lg hover:bg-white/20 transition-all cursor-pointer ${
+                                                            selectedImageEl.block?.style?.textAlign === 'left' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-300'
+                                                        }`}
+                                                    >
+                                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h10M4 18h14" />
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => { e.stopPropagation(); handleAlignImage('center'); }}
+                                                        title="Canh Giữa (Center)"
+                                                        className={`p-1.5 rounded-lg hover:bg-white/20 transition-all cursor-pointer ${
+                                                            (!selectedImageEl.block?.style?.textAlign || selectedImageEl.block?.style?.textAlign === 'center') ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-300'
+                                                        }`}
+                                                    >
+                                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M7 12h10M5 18h14" />
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => { e.stopPropagation(); handleAlignImage('right'); }}
+                                                        title="Canh Phải (Right)"
+                                                        className={`p-1.5 rounded-lg hover:bg-white/20 transition-all cursor-pointer ${
+                                                            selectedImageEl.block?.style?.textAlign === 'right' ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-300'
+                                                        }`}
+                                                    >
+                                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M10 12h10M6 18h14" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+
+                                                <div className="w-[1px] h-4 bg-white/20 my-auto"></div>
+
+                                                {/* Size Presets */}
+                                                <div className="flex items-center gap-0.5 bg-white/10 rounded-xl p-0.5 font-bold text-[11px]">
+                                                    {['25%', '50%', '75%', '100%'].map((sz) => (
+                                                        <button
+                                                            key={sz}
+                                                            type="button"
+                                                            onClick={(e) => { e.stopPropagation(); handleResizeImage(sz); }}
+                                                            className={`px-1.5 py-1 rounded-lg hover:bg-white/20 transition-all cursor-pointer ${
+                                                                (selectedImageEl.img?.style?.width === sz || (!selectedImageEl.img?.style?.width && sz === '100%')) ? 'bg-blue-600 text-white shadow-sm' : 'text-slate-300'
+                                                            }`}
+                                                        >
+                                                            {sz}
+                                                        </button>
+                                                    ))}
+                                                </div>
+
+                                                <div className="w-[1px] h-4 bg-white/20 my-auto"></div>
+
+                                                {/* Fullscreen Preview */}
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => { e.stopPropagation(); setPreviewImageModal({ url: selectedImageEl.img?.src, name: '이미지' }); }}
+                                                    title="Xem toàn màn hình (Fullscreen Zoom)"
+                                                    className="p-1.5 rounded-lg hover:bg-white/20 text-slate-300 hover:text-white transition-all cursor-pointer"
+                                                >
+                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                                                    </svg>
+                                                </button>
+
+                                                {/* Delete Image */}
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => { e.stopPropagation(); handleDeleteSelectedImage(); }}
+                                                    title="Xóa ảnh (Delete Image)"
+                                                    className="p-1.5 rounded-lg hover:bg-red-500/80 text-red-300 hover:text-white transition-all cursor-pointer"
+                                                >
+                                                    <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        )}
+
                                         {isDraggingOver && (
                                             <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-blue-600/10 dark:bg-blue-900/40 backdrop-blur-xs border-2 border-dashed border-blue-500 rounded-2xl pointer-events-none">
                                                 <div className="p-3 bg-white dark:bg-slate-900 rounded-2xl shadow-lg flex items-center gap-2 text-blue-600 dark:text-blue-400 font-bold text-sm">
