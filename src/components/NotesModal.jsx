@@ -149,6 +149,9 @@ export default function NotesModal({ isOpen, onClose, user }) {
     const [isDraggingOver, setIsDraggingOver] = useState(false);
     const [previewImageModal, setPreviewImageModal] = useState(null);
     const imageInputRef = useRef(null);
+    const editorRef = useRef(null);
+    const savedRangeRef = useRef(null);
+    const isEditorFocusedRef = useRef(false);
     
     // UI utilities state
     const [showPassword, setShowPassword] = useState(false);
@@ -164,22 +167,29 @@ export default function NotesModal({ isOpen, onClose, user }) {
             if (event.data && event.data.type === 'JINIL_NOTE_CONTENT_UPDATE') {
                 const newContent = event.data.content;
                 setContent(newContent);
-                triggerAutoSave({ content: newContent });
-            } else if (event.data && event.data.type === 'JINIL_NOTE_PASTE_IMAGE') {
-                const { fileData, fileName } = event.data;
-                if (fileData) {
-                    fetch(fileData)
-                        .then(res => res.blob())
-                        .then(blob => {
-                            uploadAndAttachImage(blob, fileName || 'popup_paste');
-                        })
-                        .catch(err => console.error("Popup paste upload failed:", err));
+                if (editorRef.current && !isEditorFocusedRef.current) {
+                    editorRef.current.innerHTML = newContent;
                 }
+                triggerAutoSave({ content: newContent });
             }
         };
         window.addEventListener('message', handlePopupMessage);
         return () => window.removeEventListener('message', handlePopupMessage);
-    }, [selectedNoteId, attachments]);
+    }, [selectedNoteId]);
+
+    // Synchronize content to editor div when selected note or content changes
+    useEffect(() => {
+        if (editorRef.current && !isEditorFocusedRef.current) {
+            const currentHtml = editorRef.current.innerHTML;
+            if (currentHtml !== content) {
+                // If it's plain text with newlines (from older version), convert \n to <br/>
+                const formatted = (content && !content.includes('<') && content.includes('\n')) 
+                    ? content.replace(/\n/g, '<br/>') 
+                    : (content || '');
+                editorRef.current.innerHTML = formatted;
+            }
+        }
+    }, [selectedNoteId, content]);
     
     const categoryDropdownRef = useRef(null);
     const colorDropdownRef = useRef(null);
@@ -583,7 +593,14 @@ export default function NotesModal({ isOpen, onClose, user }) {
         });
     };
 
-    const uploadAndAttachImage = async (file, sourceName = 'image') => {
+    const saveCurrentSelection = () => {
+        const sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+            savedRangeRef.current = sel.getRangeAt(0).cloneRange();
+        }
+    };
+
+    const insertImageAtCursor = async (file, sourceName = 'image') => {
         if (!file || !file.type || !file.type.startsWith('image/')) return;
         setIsUploadingImage(true);
         try {
@@ -599,35 +616,70 @@ export default function NotesModal({ isOpen, onClose, user }) {
                 finalUrl = await getDownloadURL(uploadTask.ref);
             } catch (storageErr) {
                 console.warn('Firebase storage upload failed (gracefully falling back to compressed base64):', storageErr);
-                // Fallback to high-efficiency compressed Base64 data URL
                 finalUrl = optimized.dataUrl;
             }
 
-            const newAttachment = {
-                id: `att_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
-                url: finalUrl,
-                name: file.name || `${sourceName}_${new Date().toLocaleTimeString('ko-KR').replace(/:/g, '-')}.webp`,
-                size: optimized.blob?.size || file.size,
-                createdAt: new Date().toISOString()
-            };
+            if (editorRef.current) {
+                editorRef.current.focus();
 
-            const updatedAttachments = [...attachments, newAttachment];
-            setAttachments(updatedAttachments);
-            triggerAutoSave({ attachments: updatedAttachments });
+                // Create inline image element
+                const imgContainer = document.createElement('div');
+                imgContainer.className = 'my-2.5 inline-image-block select-none';
+                imgContainer.contentEditable = 'false';
+                imgContainer.style.display = 'block';
 
-            Swal.fire({
-                icon: 'success',
-                title: '이미지가 첨부되었습니다!',
-                toast: true,
-                position: 'top-end',
-                timer: 2000,
-                showConfirmButton: false
-            });
+                const img = document.createElement('img');
+                img.src = finalUrl;
+                img.alt = file.name || '본문 이미지';
+                img.className = 'max-w-full max-h-[500px] rounded-xl shadow-md border border-gray-200 dark:border-slate-700 cursor-pointer hover:opacity-95 transition-all my-1 object-contain';
+                img.style.display = 'block';
+                img.onclick = (e) => {
+                    e.stopPropagation();
+                    setPreviewImageModal({ url: finalUrl, name: file.name || '이미지' });
+                };
+
+                imgContainer.appendChild(img);
+
+                // Add an empty line right after so typing can continue smoothly
+                const emptyLine = document.createElement('p');
+                emptyLine.innerHTML = '<br>';
+
+                const sel = window.getSelection();
+                let range = savedRangeRef.current || (sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null);
+
+                if (range && editorRef.current.contains(range.commonAncestorContainer)) {
+                    range.deleteContents();
+                    range.insertNode(emptyLine);
+                    range.insertNode(imgContainer);
+
+                    const newRange = document.createRange();
+                    newRange.setStart(emptyLine, 0);
+                    newRange.collapse(true);
+                    sel.removeAllRanges();
+                    sel.addRange(newRange);
+                } else {
+                    editorRef.current.appendChild(imgContainer);
+                    editorRef.current.appendChild(emptyLine);
+                }
+
+                const newContent = editorRef.current.innerHTML;
+                setContent(newContent);
+                triggerAutoSave({ content: newContent });
+
+                Swal.fire({
+                    icon: 'success',
+                    title: '본문에 이미지가 삽입되었습니다!',
+                    toast: true,
+                    position: 'top-end',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }
         } catch (err) {
-            console.error('Image attachment error:', err);
+            console.error('Image insertion error:', err);
             Swal.fire({
                 icon: 'error',
-                title: '이미지 첨부 실패',
+                title: '이미지 삽입 실패',
                 text: err.message,
                 timer: 2500,
                 showConfirmButton: false
@@ -638,7 +690,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
     };
 
     const handlePasteImage = async (e) => {
-        const items = e.clipboardData?.items;
+        const items = (e.clipboardData || window.clipboardData)?.items;
         if (!items) return;
 
         for (let i = 0; i < items.length; i++) {
@@ -647,7 +699,8 @@ export default function NotesModal({ isOpen, onClose, user }) {
                 const file = item.getAsFile();
                 if (file) {
                     e.preventDefault();
-                    await uploadAndAttachImage(file, 'clipboard');
+                    saveCurrentSelection();
+                    await insertImageAtCursor(file, 'clipboard');
                     return;
                 }
             }
@@ -657,8 +710,9 @@ export default function NotesModal({ isOpen, onClose, user }) {
     const handleFileInputChange = async (e) => {
         const files = Array.from(e.target.files || []).filter(f => f.type.startsWith('image/'));
         if (files.length === 0) return;
+        saveCurrentSelection();
         for (const file of files) {
-            await uploadAndAttachImage(file, file.name);
+            await insertImageAtCursor(file, file.name);
         }
         if (imageInputRef.current) imageInputRef.current.value = '';
     };
@@ -682,7 +736,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
         const files = Array.from(e.dataTransfer.files || []).filter(f => f.type.startsWith('image/'));
         if (files.length > 0) {
             for (const file of files) {
-                await uploadAndAttachImage(file, file.name);
+                await insertImageAtCursor(file, file.name);
             }
         }
     };
@@ -961,7 +1015,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         min-height: 0;
                     }
 
-                    textarea {
+                    .rich-editor {
                         flex: 1;
                         width: 100%;
                         background-color: var(--textarea-bg);
@@ -971,16 +1025,40 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         padding: 16px 18px;
                         font-size: 16px;
                         line-height: 1.7;
-                        resize: none;
                         outline: none;
                         font-family: "Pretendard", sans-serif;
                         box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
                         transition: all 0.2s ease;
+                        overflow-y: auto;
+                        min-height: 0;
+                        cursor: text;
+                        user-select: text;
                     }
 
-                    textarea:focus {
+                    .rich-editor:focus {
                         border-color: var(--accent-color);
                         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25), inset 0 2px 4px rgba(0,0,0,0.1);
+                    }
+
+                    .rich-editor:empty:before {
+                        content: "상세 내용을 작성하세요... (Ctrl+V로 con trỏ chuột dán ảnh trực tiếp)";
+                        color: var(--text-muted);
+                        pointer-events: none;
+                    }
+
+                    .inline-image-block {
+                        margin: 12px 0;
+                        user-select: none;
+                    }
+
+                    .inline-image-block img {
+                        max-width: 100%;
+                        max-height: 480px;
+                        border-radius: 12px;
+                        box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+                        display: block;
+                        object-fit: contain;
+                        cursor: pointer;
                     }
 
                     .footer {
@@ -1493,7 +1571,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     </div>
 
                     <div class="editor-wrap">
-                        <textarea id="editor" spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off" placeholder="상세 내용을 작성하세요...">${safeText}</textarea>
+                        <div id="editor" contenteditable="true" spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off" class="rich-editor">${safeText}</div>
                     </div>
 
                     <div class="footer" id="appFooter">
@@ -2205,14 +2283,14 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     }
 
                     function updateStats() {
-                        const text = editor.value;
+                        const text = editor.innerText || '';
                         document.getElementById('charCount').innerText = text.length + ' 글자';
-                        document.getElementById('wordCount').innerText = (text.trim() ? text.trim().split(/\\s+/).length : 0) + ' 단어';
-                        document.getElementById('lineCount').innerText = text.split('\\n').length + ' 줄';
+                        document.getElementById('wordCount').innerText = (text.trim() ? text.trim().split(/\s+/).length : 0) + ' 단어';
+                        document.getElementById('lineCount').innerText = text.split('\n').length + ' 줄';
                     }
 
                     function copyContent() {
-                        navigator.clipboard.writeText(editor.value);
+                        navigator.clipboard.writeText(editor.innerText || '');
                         const btn = document.getElementById('copyBtn');
                         btn.innerHTML = '<span>복사됨! ✓</span>';
                         setTimeout(() => { btn.innerHTML = '<span>전체 복사</span>'; }, 2000);
@@ -2223,12 +2301,12 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         if (window.opener && !window.opener.closed) {
                             window.opener.postMessage({
                                 type: 'JINIL_NOTE_CONTENT_UPDATE',
-                                content: editor.value
+                                content: editor.innerHTML
                             }, '*');
                         }
                     });
 
-                    // Clipboard Paste Listener for Images in Detached Window
+                    // Clipboard Paste Listener for Inline Images in Detached Window
                     editor.addEventListener('paste', (e) => {
                         const items = (e.clipboardData || window.clipboardData)?.items;
                         if (!items) return;
@@ -2240,11 +2318,41 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                     e.preventDefault();
                                     const reader = new FileReader();
                                     reader.onload = (re) => {
+                                        const sel = window.getSelection();
+                                        let range = (sel && sel.rangeCount > 0) ? sel.getRangeAt(0) : null;
+
+                                        const imgContainer = document.createElement('div');
+                                        imgContainer.className = 'inline-image-block';
+                                        imgContainer.contentEditable = 'false';
+
+                                        const img = document.createElement('img');
+                                        img.src = re.target.result;
+                                        img.alt = file.name || '이미지';
+                                        imgContainer.appendChild(img);
+
+                                        const emptyLine = document.createElement('p');
+                                        emptyLine.innerHTML = '<br>';
+
+                                        if (range && editor.contains(range.commonAncestorContainer)) {
+                                            range.deleteContents();
+                                            range.insertNode(emptyLine);
+                                            range.insertNode(imgContainer);
+
+                                            const newRange = document.createRange();
+                                            newRange.setStart(emptyLine, 0);
+                                            newRange.collapse(true);
+                                            sel.removeAllRanges();
+                                            sel.addRange(newRange);
+                                        } else {
+                                            editor.appendChild(imgContainer);
+                                            editor.appendChild(emptyLine);
+                                        }
+
+                                        updateStats();
                                         if (window.opener && !window.opener.closed) {
                                             window.opener.postMessage({
-                                                type: 'JINIL_NOTE_PASTE_IMAGE',
-                                                fileData: re.target.result,
-                                                fileName: file.name || 'clipboard_paste.webp'
+                                                type: 'JINIL_NOTE_CONTENT_UPDATE',
+                                                content: editor.innerHTML
                                             }, '*');
                                         }
                                     };
@@ -3148,20 +3256,34 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                             </div>
                                         )}
 
-                                        <textarea
-                                            rows={7}
-                                            disabled={isSelectedNoteTrashed}
+                                        <div
+                                            ref={editorRef}
+                                            contentEditable={!isSelectedNoteTrashed}
+                                            suppressContentEditableWarning={true}
                                             spellCheck={false}
                                             autoCorrect="off"
                                             autoCapitalize="off"
-                                            value={content}
-                                            onChange={(e) => {
-                                                setContent(e.target.value);
-                                                triggerAutoSave({ content: e.target.value });
+                                            onFocus={() => { isEditorFocusedRef.current = true; }}
+                                            onBlur={() => {
+                                                isEditorFocusedRef.current = false;
+                                                saveCurrentSelection();
+                                                if (editorRef.current) {
+                                                    const html = editorRef.current.innerHTML;
+                                                    setContent(html);
+                                                    triggerAutoSave({ content: html });
+                                                }
+                                            }}
+                                            onInput={(e) => {
+                                                saveCurrentSelection();
+                                                const html = e.currentTarget.innerHTML;
+                                                setContent(html);
+                                                triggerAutoSave({ content: html });
                                             }}
                                             onPaste={handlePasteImage}
-                                            placeholder={t('noteContentPlaceholder') || '상세 내용을 여기에 작성하세요... (Ctrl+V로 클립보드 이미지 바로 첨부 가능)'}
-                                            className="w-full p-4 md:p-5 bg-gray-50/50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-800 rounded-2xl text-sm md:text-base leading-relaxed text-gray-800 dark:text-slate-100 placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white dark:focus:bg-slate-900 transition-all font-['Pretendard',_'Noto_Sans_KR',_sans-serif] disabled:opacity-60"
+                                            onKeyUp={saveCurrentSelection}
+                                            onMouseUp={saveCurrentSelection}
+                                            data-placeholder={t('noteContentPlaceholder') || '상세 내용을 여기에 작성하세요... (Ctrl+V로 con trỏ chuột dán ảnh trực tiếp vào văn bản như Word)'}
+                                            className="rich-note-editor w-full min-h-[220px] max-h-[580px] overflow-y-auto p-4 md:p-5 bg-gray-50/50 dark:bg-slate-800/40 border border-gray-200 dark:border-slate-800 rounded-2xl text-sm md:text-base leading-relaxed text-gray-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:bg-white dark:focus:bg-slate-900 transition-all font-['Pretendard',_'Noto_Sans_KR',_sans-serif] disabled:opacity-60 cursor-text select-text"
                                         />
                                     </div>
 
