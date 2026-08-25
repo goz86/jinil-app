@@ -147,6 +147,19 @@ export default function NotesModal({ isOpen, onClose, user }) {
     const [isCategoryDropdownOpen, setIsCategoryDropdownOpen] = useState(false);
     const [isColorDropdownOpen, setIsColorDropdownOpen] = useState(false);
     
+    // Realtime synchronization from detached popup window
+    useEffect(() => {
+        const handlePopupMessage = (event) => {
+            if (event.data && event.data.type === 'JINIL_NOTE_CONTENT_UPDATE') {
+                const newContent = event.data.content;
+                setContent(newContent);
+                triggerAutoSave({ content: newContent });
+            }
+        };
+        window.addEventListener('message', handlePopupMessage);
+        return () => window.removeEventListener('message', handlePopupMessage);
+    }, []);
+    
     const categoryDropdownRef = useRef(null);
     const colorDropdownRef = useRef(null);
     const autoSaveTimerRef = useRef(null);
@@ -505,6 +518,1540 @@ export default function NotesModal({ isOpen, onClose, user }) {
                 console.error("Failed to empty trash:", err);
             }
         }
+    };
+
+    // Detached Browser Popup Window with MiniWidget-Style Toss & Kakao Theme & Wallpaper System
+    const handleOpenExternalWindow = () => {
+        const noteTitle = title || '메모 본문';
+        const noteText = content || '';
+        const w = 840;
+        const h = 740;
+        const left = Math.max(0, Math.round((window.screen.width - w) / 2));
+        const top = Math.max(0, Math.round((window.screen.height - h) / 2));
+        const popup = window.open('', '_blank', `width=${w},height=${h},top=${top},left=${left},resizable=yes,scrollbars=yes`);
+        if (!popup) return;
+
+        const safeTitle = noteTitle.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const safeText = noteText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+        popup.document.write(`
+            <!DOCTYPE html>
+            <html lang="ko">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>${safeTitle} - 진일 상세 메모</title>
+                <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+                <style>
+                    * { box-sizing: border-box; margin: 0; padding: 0; }
+                    
+                    :root {
+                        --bg-body: #0b0f19;
+                        --card-bg: #0f172a;
+                        --header-bg: #1e293b;
+                        --header-border: #334155;
+                        --text-main: #f8fafc;
+                        --text-muted: #94a3b8;
+                        --textarea-bg: #020617;
+                        --textarea-border: #1e293b;
+                        --border-color: rgba(255, 255, 255, 0.12);
+                        --btn-bg: rgba(255, 255, 255, 0.08);
+                        --btn-text: #e2e8f0;
+                        --btn-border: rgba(255, 255, 255, 0.15);
+                        --btn-hover-bg: rgba(255, 255, 255, 0.15);
+                        --btn-hover-text: #ffffff;
+                        --btn-hover-border: rgba(255, 255, 255, 0.25);
+                        --btn-theme-bg: #2563eb;
+                        --btn-theme-text: #ffffff;
+                        --btn-theme-border: #3b82f6;
+                        --btn-theme-hover: #1d4ed8;
+                        --btn-copy-bg: #0f766e;
+                        --btn-copy-text: #ccfbf1;
+                        --btn-copy-border: #14b8a6;
+                        --btn-copy-hover: #0d9488;
+                        --accent-color: #3b82f6;
+                        --badge-bg: #2563eb;
+                        --badge-text: #ffffff;
+                        --footer-bg: #0f172a;
+                    }
+
+                    body {
+                        padding: 14px;
+                        font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+                        background-color: var(--bg-body);
+                        color: var(--text-main);
+                        height: 100vh;
+                        overflow: hidden;
+                        display: flex;
+                        flex-direction: column;
+                        transition: background 0.3s ease, color 0.3s ease;
+                        background-size: cover;
+                        background-position: center;
+                        background-repeat: no-repeat;
+                    }
+
+                    .app-container {
+                        display: flex;
+                        flex-direction: column;
+                        height: 100%;
+                        background-color: var(--card-bg);
+                        border: 1px solid var(--border-color);
+                        border-radius: 20px;
+                        overflow: hidden;
+                        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+                        backdrop-filter: blur(16px);
+                        -webkit-backdrop-filter: blur(16px);
+                        transition: all 0.3s ease;
+                    }
+
+                    .high-contrast .app-container {
+                        border-width: 2px !important;
+                        border-color: var(--accent-color) !important;
+                        box-shadow: 0 0 0 1px var(--accent-color), 0 25px 50px rgba(0,0,0,0.7) !important;
+                    }
+
+                    .high-contrast textarea {
+                        border-width: 2px !important;
+                        border-color: var(--accent-color) !important;
+                    }
+
+                    .header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 12px 18px;
+                        background-color: var(--header-bg);
+                        border-bottom: 1px solid var(--header-border);
+                        gap: 12px;
+                        min-height: 58px;
+                        box-sizing: border-box;
+                        transition: all 0.3s ease;
+                    }
+
+                    .title-group {
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                        min-width: 0;
+                        flex-shrink: 1;
+                    }
+
+                    .badge {
+                        background-color: var(--badge-bg);
+                        color: var(--badge-text);
+                        font-size: 11px;
+                        font-weight: 800;
+                        padding: 4px 9px;
+                        border-radius: 8px;
+                        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+                        white-space: nowrap;
+                    }
+
+                    .title-text {
+                        font-size: 15px;
+                        font-weight: 800;
+                        color: var(--text-main);
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                        max-width: 240px;
+                    }
+
+                    .toolbar {
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        flex-wrap: nowrap;
+                        flex-shrink: 0;
+                    }
+
+                    .btn {
+                        height: 34px;
+                        padding: 0 11px;
+                        border-radius: 9px;
+                        font-weight: 700;
+                        font-size: 12px;
+                        cursor: pointer;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 5px;
+                        white-space: nowrap;
+                        transition: all 0.15s ease;
+                        user-select: none;
+                        box-sizing: border-box;
+                        line-height: 1;
+                        background-color: var(--btn-bg);
+                        color: var(--btn-text);
+                        border: 1px solid var(--btn-border);
+                    }
+
+                    .btn:hover {
+                        background-color: var(--btn-hover-bg);
+                        color: var(--btn-hover-text);
+                        border-color: var(--btn-hover-border);
+                        transform: translateY(-1px);
+                    }
+
+                    .btn-theme {
+                        background-color: var(--btn-theme-bg);
+                        color: var(--btn-theme-text);
+                        border: 1px solid var(--btn-theme-border);
+                        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                    }
+
+                    .btn-theme:hover {
+                        background-color: var(--btn-theme-hover);
+                        color: var(--btn-theme-text);
+                        transform: translateY(-1px);
+                    }
+
+                    .btn-copy {
+                        background-color: var(--btn-copy-bg);
+                        color: var(--btn-copy-text);
+                        border: 1px solid var(--btn-copy-border);
+                    }
+
+                    .btn-copy:hover {
+                        background-color: var(--btn-copy-hover);
+                        color: var(--btn-copy-text);
+                    }
+
+                    .font-controls {
+                        height: 34px;
+                        display: inline-flex;
+                        align-items: center;
+                        background-color: var(--btn-bg);
+                        border-radius: 9px;
+                        border: 1px solid var(--btn-border);
+                        padding: 2px 3px;
+                        box-sizing: border-box;
+                    }
+
+                    .font-controls button {
+                        height: 28px;
+                        padding: 0 7px;
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        background: transparent;
+                        border: none;
+                        color: var(--btn-text);
+                        font-weight: 800;
+                        font-size: 11px;
+                        cursor: pointer;
+                        border-radius: 6px;
+                        transition: background 0.15s;
+                        line-height: 1;
+                    }
+
+                    .font-controls button:hover {
+                        background-color: var(--btn-hover-bg);
+                        color: var(--btn-hover-text);
+                    }
+
+                    .font-size-text {
+                        font-size: 11px;
+                        color: var(--text-muted);
+                        padding: 0 4px;
+                        font-weight: bold;
+                        user-select: none;
+                    }
+
+                    .editor-wrap {
+                        flex: 1;
+                        display: flex;
+                        flex-direction: column;
+                        padding: 14px 18px;
+                        min-height: 0;
+                    }
+
+                    textarea {
+                        flex: 1;
+                        width: 100%;
+                        background-color: var(--textarea-bg);
+                        border: 1px solid var(--textarea-border);
+                        color: var(--text-main);
+                        border-radius: 16px;
+                        padding: 16px 18px;
+                        font-size: 16px;
+                        line-height: 1.7;
+                        resize: none;
+                        outline: none;
+                        font-family: "Pretendard", sans-serif;
+                        box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+                        transition: all 0.2s ease;
+                    }
+
+                    textarea:focus {
+                        border-color: var(--accent-color);
+                        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25), inset 0 2px 4px rgba(0,0,0,0.1);
+                    }
+
+                    .footer {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        padding: 10px 18px;
+                        border-top: 1px solid var(--header-border);
+                        background-color: var(--footer-bg);
+                        font-size: 12px;
+                        color: var(--text-muted);
+                        transition: all 0.3s ease;
+                    }
+
+                    .sync-status {
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        font-weight: 700;
+                    }
+
+                    .status-dot {
+                        width: 8px;
+                        height: 8px;
+                        border-radius: 50%;
+                        background-color: #10b981;
+                        box-shadow: 0 0 8px #10b981;
+                        animation: pulse 2s infinite;
+                    }
+
+                    @keyframes pulse {
+                        0%, 100% { opacity: 1; transform: scale(1); }
+                        50% { opacity: 0.5; transform: scale(0.85); }
+                    }
+
+                    .stats-group {
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                        font-weight: 600;
+                    }
+
+                    /* 🎨 Modal Dialog for Toss & Kakao Themes & Wallpapers */
+                    .modal-backdrop {
+                        position: fixed;
+                        inset: 0;
+                        background: rgba(0, 0, 0, 0.75);
+                        backdrop-filter: blur(12px);
+                        -webkit-backdrop-filter: blur(12px);
+                        z-index: 1000;
+                        display: none;
+                        align-items: center;
+                        justify-content: center;
+                        padding: 16px;
+                        animation: fadeIn 0.2s ease-out;
+                    }
+
+                    .modal-backdrop.show {
+                        display: flex;
+                    }
+
+                    .theme-modal {
+                        width: 100%;
+                        max-width: 440px;
+                        max-height: 88vh;
+                        background: #0f172a;
+                        border: 1px solid rgba(255, 255, 255, 0.15);
+                        border-radius: 28px;
+                        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+                        padding: 20px;
+                        color: #ffffff;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 16px;
+                        overflow-y: auto;
+                        animation: scaleUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                    }
+
+                    .theme-modal::-webkit-scrollbar {
+                        width: 6px;
+                    }
+                    .theme-modal::-webkit-scrollbar-thumb {
+                        background: rgba(255,255,255,0.2);
+                        border-radius: 3px;
+                    }
+
+                    @keyframes fadeIn {
+                        from { opacity: 0; }
+                        to { opacity: 1; }
+                    }
+
+                    @keyframes scaleUp {
+                        from { opacity: 0; transform: scale(0.94); }
+                        to { opacity: 1; transform: scale(1); }
+                    }
+
+                    .modal-header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                        padding-bottom: 12px;
+                    }
+
+                    .modal-title-wrap {
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                    }
+
+                    .modal-icon {
+                        width: 32px;
+                        height: 32px;
+                        border-radius: 12px;
+                        background: linear-gradient(135deg, #3b82f6, #6366f1);
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 16px;
+                        box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+                    }
+
+                    .modal-title-wrap h3 {
+                        font-size: 14px;
+                        font-weight: 800;
+                        color: #ffffff;
+                    }
+
+                    .modal-title-wrap p {
+                        font-size: 10px;
+                        color: #94a3b8;
+                    }
+
+                    .modal-close-btn {
+                        width: 28px;
+                        height: 28px;
+                        border-radius: 10px;
+                        background: rgba(255, 255, 255, 0.1);
+                        border: none;
+                        color: #94a3b8;
+                        font-size: 13px;
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        transition: all 0.15s;
+                    }
+
+                    .modal-close-btn:hover {
+                        background: rgba(255, 255, 255, 0.2);
+                        color: #ffffff;
+                    }
+
+                    .tab-switcher {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        background: rgba(255, 255, 255, 0.08);
+                        padding: 4px;
+                        border-radius: 16px;
+                        gap: 4px;
+                    }
+
+                    .tab-btn {
+                        padding: 8px 12px;
+                        font-size: 12px;
+                        font-weight: 800;
+                        border: none;
+                        border-radius: 12px;
+                        cursor: pointer;
+                        color: #94a3b8;
+                        background: transparent;
+                        transition: all 0.2s;
+                    }
+
+                    .tab-btn.active-theme {
+                        background: #2563eb;
+                        color: #ffffff;
+                        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+                    }
+
+                    .tab-btn.active-wp {
+                        background: #9333ea;
+                        color: #ffffff;
+                        box-shadow: 0 4px 12px rgba(147, 51, 234, 0.35);
+                    }
+
+                    .theme-list {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 8px;
+                    }
+
+                    .theme-card {
+                        padding: 10px 14px;
+                        border-radius: 16px;
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        background: rgba(255, 255, 255, 0.04);
+                        cursor: pointer;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        transition: all 0.15s;
+                    }
+
+                    .theme-card:hover {
+                        background: rgba(255, 255, 255, 0.08);
+                        border-color: rgba(255, 255, 255, 0.2);
+                        transform: translateY(-1px);
+                    }
+
+                    .theme-card.active {
+                        border-color: #3b82f6;
+                        background: rgba(59, 130, 246, 0.18);
+                        box-shadow: 0 4px 14px rgba(59, 130, 246, 0.2);
+                    }
+
+                    .theme-card-left {
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                    }
+
+                    .theme-mini-thumb {
+                        width: 36px;
+                        height: 36px;
+                        border-radius: 10px;
+                        border: 1px solid rgba(255, 255, 255, 0.2);
+                        overflow: hidden;
+                        display: flex;
+                        flex-direction: column;
+                        flex-shrink: 0;
+                    }
+
+                    .theme-mini-header {
+                        height: 12px;
+                        width: 100%;
+                    }
+
+                    .theme-mini-body {
+                        flex: 1;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        padding: 2px;
+                    }
+
+                    .theme-mini-inner {
+                        width: 20px;
+                        height: 10px;
+                        border-radius: 3px;
+                    }
+
+                    .theme-card-name {
+                        font-size: 12px;
+                        font-weight: 800;
+                        color: #ffffff;
+                    }
+
+                    .theme-card-cat {
+                        font-size: 10px;
+                        color: #94a3b8;
+                    }
+
+                    .check-badge {
+                        width: 20px;
+                        height: 20px;
+                        border-radius: 50%;
+                        background: #2563eb;
+                        color: #ffffff;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 11px;
+                        font-weight: 900;
+                    }
+
+                    .radio-circle {
+                        width: 16px;
+                        height: 16px;
+                        border-radius: 50%;
+                        border: 1px solid rgba(255, 255, 255, 0.3);
+                    }
+
+                    .contrast-section {
+                        border-top: 1px solid rgba(255, 255, 255, 0.1);
+                        padding-top: 12px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                    }
+
+                    .contrast-title {
+                        font-size: 12px;
+                        font-weight: 800;
+                        color: #ffffff;
+                    }
+
+                    .contrast-sub {
+                        font-size: 10px;
+                        color: #94a3b8;
+                    }
+
+                    .switch-btn {
+                        width: 44px;
+                        height: 24px;
+                        border-radius: 12px;
+                        background: #334155;
+                        border: none;
+                        cursor: pointer;
+                        position: relative;
+                        transition: background 0.2s;
+                    }
+
+                    .switch-btn.on {
+                        background: #2563eb;
+                    }
+
+                    .switch-knob {
+                        width: 18px;
+                        height: 18px;
+                        border-radius: 50%;
+                        background: #ffffff;
+                        position: absolute;
+                        top: 3px;
+                        left: 3px;
+                        transition: transform 0.2s;
+                    }
+
+                    .switch-btn.on .switch-knob {
+                        transform: translateX(20px);
+                    }
+
+                    .wallpaper-grid {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 10px;
+                    }
+
+                    .wp-card {
+                        height: 80px;
+                        border-radius: 18px;
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        background: rgba(255, 255, 255, 0.05);
+                        padding: 10px;
+                        cursor: pointer;
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: space-between;
+                        position: relative;
+                        overflow: hidden;
+                        transition: all 0.15s;
+                    }
+
+                    .wp-card:hover {
+                        border-color: rgba(255, 255, 255, 0.3);
+                        transform: translateY(-2px);
+                    }
+
+                    .wp-card.active {
+                        border-color: #a855f7;
+                        box-shadow: 0 0 0 2px #a855f7, 0 4px 14px rgba(168, 85, 247, 0.3);
+                    }
+
+                    .wp-card-bg {
+                        position: absolute;
+                        inset: 0;
+                        opacity: 0.5;
+                        transition: opacity 0.2s;
+                    }
+
+                    .wp-card:hover .wp-card-bg {
+                        opacity: 0.75;
+                    }
+
+                    .wp-card-top {
+                        position: relative;
+                        z-index: 2;
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                    }
+
+                    .wp-icon {
+                        font-size: 16px;
+                    }
+
+                    .wp-card-bot {
+                        position: relative;
+                        z-index: 2;
+                    }
+
+                    .wp-card-name {
+                        font-size: 11px;
+                        font-weight: 800;
+                        color: #ffffff;
+                    }
+
+                    .wp-card-eng {
+                        font-size: 9px;
+                        color: #e2e8f0;
+                    }
+
+                    .upload-box {
+                        border-top: 1px solid rgba(255, 255, 255, 0.1);
+                        padding-top: 12px;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 8px;
+                    }
+
+                    .upload-label {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 8px;
+                        padding: 10px;
+                        border-radius: 16px;
+                        border: 1px dashed rgba(168, 85, 247, 0.6);
+                        background: rgba(147, 51, 234, 0.1);
+                        color: #d8b4fe;
+                        font-size: 11px;
+                        font-weight: 800;
+                        cursor: pointer;
+                        transition: all 0.15s;
+                    }
+
+                    .upload-label:hover {
+                        background: rgba(147, 51, 234, 0.2);
+                        color: #ffffff;
+                    }
+
+                    .url-input {
+                        width: 100%;
+                        padding: 8px 12px;
+                        border-radius: 12px;
+                        border: 1px solid rgba(255, 255, 255, 0.15);
+                        background: rgba(0, 0, 0, 0.4);
+                        color: #ffffff;
+                        font-size: 11px;
+                        outline: none;
+                    }
+
+                    .url-input:focus {
+                        border-color: #a855f7;
+                    }
+
+                    .apply-btn {
+                        width: 100%;
+                        padding: 12px;
+                        border-radius: 16px;
+                        background: linear-gradient(135deg, #2563eb, #7c3aed);
+                        color: #ffffff;
+                        font-size: 12px;
+                        font-weight: 800;
+                        border: none;
+                        cursor: pointer;
+                        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
+                        transition: all 0.15s;
+                    }
+
+                    .apply-btn:hover {
+                        background: linear-gradient(135deg, #1d4ed8, #6d28d9);
+                        transform: translateY(-1px);
+                    }
+                </style>
+            </head>
+            <body>
+                <div class="app-container" id="appContainer">
+                    <div class="header" id="appHeader">
+                        <div class="title-group">
+                            <span class="badge" id="appBadge">새 창 메모</span>
+                            <div class="title-text" id="appTitle">${safeTitle}</div>
+                        </div>
+
+                        <div class="toolbar">
+                            <!-- Theme & Wallpaper Settings Button (Taste-Skill Vector SVG) -->
+                            <button class="btn btn-theme" onclick="openThemeModal()" title="테마 및 배경화면 설정">
+                                <svg style="width:14px; height:14px; flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
+                                    <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
+                                    <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
+                                    <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
+                                    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2Z"/>
+                                </svg>
+                                <span>테마 설정</span>
+                            </button>
+
+                            <!-- Font Size Controls -->
+                            <div class="font-controls">
+                                <button onclick="changeFontSize(-2)" title="글자 크기 축소">A-</button>
+                                <span id="fontSizeDisplay" class="font-size-text">16px</span>
+                                <button onclick="changeFontSize(2)" title="글자 크기 확대">A+</button>
+                            </div>
+
+                            <!-- Copy Button -->
+                            <button id="copyBtn" class="btn btn-copy" onclick="copyContent()">
+                                <span>전체 복사</span>
+                            </button>
+
+                            <!-- Print Button -->
+                            <button class="btn" onclick="window.print()" title="인쇄">
+                                <span>인쇄</span>
+                            </button>
+
+                            <!-- Close Button -->
+                            <button class="btn" onclick="window.close()" title="창 닫기">
+                                <span>닫기</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="editor-wrap">
+                        <textarea id="editor" placeholder="상세 내용을 작성하세요...">${safeText}</textarea>
+                    </div>
+
+                    <div class="footer" id="appFooter">
+                        <div class="sync-status">
+                            <span class="status-dot"></span>
+                            <span>메인 앱과 실시간 동기화 중</span>
+                        </div>
+                        <div class="stats-group">
+                            <span id="charCount">${noteText.length} 글자</span>
+                            <span>·</span>
+                            <span id="wordCount">${noteText.trim() ? noteText.trim().split(/\\s+/).length : 0} 단어</span>
+                            <span>·</span>
+                            <span id="lineCount">${noteText.split('\\n').length} 줄</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 🎨 MiniWidget Toss & Kakao Theme & Wallpaper Modal Dialog -->
+                <div id="themeModalBackdrop" class="modal-backdrop" onclick="closeThemeModalOnBackdrop(event)">
+                    <div class="theme-modal">
+                        <!-- Modal Header -->
+                        <div class="modal-header">
+                            <div class="modal-title-wrap">
+                                <div class="modal-icon">
+                                    <svg style="width:16px; height:16px;" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M7 21a4 4 0 0 1-4-4V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v12a4 4 0 0 1-4 4zm0 0h12a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 0 1 2.828 0l2.829 2.829a2 2 0 0 1 0 2.828l-8.486 8.485M7 17h.01" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3>테마 및 배경화면 설정</h3>
+                                    <p>Toss & Kakao 프리미엄 디자인</p>
+                                </div>
+                            </div>
+                            <button class="modal-close-btn" onclick="closeThemeModal()">✕</button>
+                        </div>
+
+                        <!-- Tab Switcher -->
+                        <div class="tab-switcher">
+                            <button id="tabThemeBtn" class="tab-btn active-theme" onclick="switchModalTab('themes')">
+                                <svg style="width:13px; height:13px; display:inline-block; vertical-align:middle; margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
+                                    <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
+                                    <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
+                                    <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
+                                    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2Z"/>
+                                </svg>
+                                <span>UI 테마 (Themes)</span>
+                            </button>
+                            <button id="tabWpBtn" class="tab-btn" onclick="switchModalTab('wallpapers')">
+                                <svg style="width:13px; height:13px; display:inline-block; vertical-align:middle; margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect width="18" height="18" x="3" y="3" rx="2" />
+                                    <circle cx="9" cy="9" r="2" />
+                                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                                </svg>
+                                <span>배경화면 (Wallpapers)</span>
+                            </button>
+                        </div>
+
+                        <!-- Tab 1: UI Themes -->
+                        <div id="themeTabContent">
+                            <div class="theme-list">
+                                <!-- Toss Dark -->
+                                <div class="theme-card" data-theme="toss-dark" onclick="selectTheme('toss-dark')">
+                                    <div class="theme-card-left">
+                                        <div class="theme-mini-thumb" style="background:#0b0f19;">
+                                            <div class="theme-mini-header" style="background:#1e293b;"></div>
+                                            <div class="theme-mini-body"><div class="theme-mini-inner" style="background:#3b82f6;"></div></div>
+                                        </div>
+                                        <div>
+                                            <div class="theme-card-name">토스 다크 (Toss Dark Navy)</div>
+                                            <div class="theme-card-cat">Toss Style</div>
+                                        </div>
+                                    </div>
+                                    <div class="check-slot"></div>
+                                </div>
+
+                                <!-- Kakao Yellow -->
+                                <div class="theme-card" data-theme="kakao-yellow" onclick="selectTheme('kakao-yellow')">
+                                    <div class="theme-card-left">
+                                        <div class="theme-mini-thumb" style="background:#FAF9F5;">
+                                            <div class="theme-mini-header" style="background:#FEE500;"></div>
+                                            <div class="theme-mini-body"><div class="theme-mini-inner" style="background:#191919;"></div></div>
+                                        </div>
+                                        <div>
+                                            <div class="theme-card-name">카카오 옐로우 (Kakao Classic)</div>
+                                            <div class="theme-card-cat">Kakao Style</div>
+                                        </div>
+                                    </div>
+                                    <div class="check-slot"></div>
+                                </div>
+
+                                <!-- Kakao Dark -->
+                                <div class="theme-card" data-theme="kakao-dark" onclick="selectTheme('kakao-dark')">
+                                    <div class="theme-card-left">
+                                        <div class="theme-mini-thumb" style="background:#181818;">
+                                            <div class="theme-mini-header" style="background:#222222;"></div>
+                                            <div class="theme-mini-body"><div class="theme-mini-inner" style="background:#FEE500;"></div></div>
+                                        </div>
+                                        <div>
+                                            <div class="theme-card-name">카카오 다크 (Kakao Charcoal)</div>
+                                            <div class="theme-card-cat">Kakao Style</div>
+                                        </div>
+                                    </div>
+                                    <div class="check-slot"></div>
+                                </div>
+
+                                <!-- Toss Light -->
+                                <div class="theme-card" data-theme="toss-light" onclick="selectTheme('toss-light')">
+                                    <div class="theme-card-left">
+                                        <div class="theme-mini-thumb" style="background:#F8FAFC;">
+                                            <div class="theme-mini-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0;"></div>
+                                            <div class="theme-mini-body"><div class="theme-mini-inner" style="background:#2563eb;"></div></div>
+                                        </div>
+                                        <div>
+                                            <div class="theme-card-name">토스 화이트 (Toss Light Blue)</div>
+                                            <div class="theme-card-cat">Toss Style</div>
+                                        </div>
+                                    </div>
+                                    <div class="check-slot"></div>
+                                </div>
+
+                                <!-- OLED Black -->
+                                <div class="theme-card" data-theme="oled-black" onclick="selectTheme('oled-black')">
+                                    <div class="theme-card-left">
+                                        <div class="theme-mini-thumb" style="background:#000000;">
+                                            <div class="theme-mini-header" style="background:#121212;"></div>
+                                            <div class="theme-mini-body"><div class="theme-mini-inner" style="background:#a855f7;"></div></div>
+                                        </div>
+                                        <div>
+                                            <div class="theme-card-name">OLED 트루 블랙 (Deep Contrast)</div>
+                                            <div class="theme-card-cat">Minimal</div>
+                                        </div>
+                                    </div>
+                                    <div class="check-slot"></div>
+                                </div>
+
+                                <!-- Neon Magenta -->
+                                <div class="theme-card" data-theme="cyber-neon" onclick="selectTheme('cyber-neon')">
+                                    <div class="theme-card-left">
+                                        <div class="theme-mini-thumb" style="background:#050510;">
+                                            <div class="theme-mini-header" style="background:#1f0e3d;"></div>
+                                            <div class="theme-mini-body"><div class="theme-mini-inner" style="background:#ec4899;"></div></div>
+                                        </div>
+                                        <div>
+                                            <div class="theme-card-name">네온 사이버 (Neon Magenta)</div>
+                                            <div class="theme-card-cat">Vibrant</div>
+                                        </div>
+                                    </div>
+                                    <div class="check-slot"></div>
+                                </div>
+
+                                <!-- Emerald Mint -->
+                                <div class="theme-card" data-theme="emerald-mint" onclick="selectTheme('emerald-mint')">
+                                    <div class="theme-card-left">
+                                        <div class="theme-mini-thumb" style="background:#021a12;">
+                                            <div class="theme-mini-header" style="background:#0b3b2c;"></div>
+                                            <div class="theme-mini-body"><div class="theme-mini-inner" style="background:#10b981;"></div></div>
+                                        </div>
+                                        <div>
+                                            <div class="theme-card-name">에메랄드 민트 (Forest Fresh)</div>
+                                            <div class="theme-card-cat">Vibrant</div>
+                                        </div>
+                                    </div>
+                                    <div class="check-slot"></div>
+                                </div>
+                            </div>
+
+                            <!-- High Contrast Toggle -->
+                            <div class="contrast-section">
+                                <div>
+                                    <div class="contrast-title">선명한 고대비 모드 (High Contrast)</div>
+                                    <div class="contrast-sub">폰트와 테두리의 명암비를 극대화합니다.</div>
+                                </div>
+                                <button id="contrastBtn" class="switch-btn" onclick="toggleHighContrast()">
+                                    <div class="switch-knob"></div>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Tab 2: Wallpapers -->
+                        <div id="wallpaperTabContent" style="display: none;">
+                            <div class="wallpaper-grid">
+                                <div class="wp-card" data-wp="orbs" onclick="selectWallpaper('orbs')">
+                                    <div class="wp-card-bg" style="background: linear-gradient(135deg, #9333ea, #4f46e5, #ec4899);"></div>
+                                    <div class="wp-card-top">
+                                        <span class="wp-icon" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);">
+                                            <svg style="width:14px;height:14px;color:#e9d5ff;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <circle cx="12" cy="12" r="9" />
+                                                <path d="m4.93 4.93 4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24" />
+                                            </svg>
+                                        </span>
+                                        <span class="wp-slot"></span>
+                                    </div>
+                                    <div class="wp-card-bot"><div class="wp-card-name">은은한 오로라</div><div class="wp-card-eng">Aurora Glow</div></div>
+                                </div>
+
+                                <div class="wp-card" data-wp="mesh" onclick="selectWallpaper('mesh')">
+                                    <div class="wp-card-bg" style="background: linear-gradient(135deg, #2563eb, #14b8a6, #4ade80);"></div>
+                                    <div class="wp-card-top">
+                                        <span class="wp-icon" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);">
+                                            <svg style="width:14px;height:14px;color:#99f6e4;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M2 12c3-4 6-4 10 0s7 4 10 0M2 6c3-4 6-4 10 0s7 4 10 0M2 18c3-4 6-4 10 0s7 4 10 0" />
+                                            </svg>
+                                        </span>
+                                        <span class="wp-slot"></span>
+                                    </div>
+                                    <div class="wp-card-bot"><div class="wp-card-name">입체 메쉬</div><div class="wp-card-eng">Mesh Wave</div></div>
+                                </div>
+
+                                <div class="wp-card" data-wp="grid" onclick="selectWallpaper('grid')">
+                                    <div class="wp-card-bg" style="background: #0f172a; border: 1px solid #3b82f6;"></div>
+                                    <div class="wp-card-top">
+                                        <span class="wp-icon" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);">
+                                            <svg style="width:14px;height:14px;color:#93c5fd;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <rect width="18" height="18" x="3" y="3" rx="2" />
+                                                <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
+                                            </svg>
+                                        </span>
+                                        <span class="wp-slot"></span>
+                                    </div>
+                                    <div class="wp-card-bot"><div class="wp-card-name">하이테크 그리드</div><div class="wp-card-eng">Tech Grid</div></div>
+                                </div>
+
+                                <div class="wp-card" data-wp="dots" onclick="selectWallpaper('dots')">
+                                    <div class="wp-card-bg" style="background: #020617; border: 1px solid #475569;"></div>
+                                    <div class="wp-card-top">
+                                        <span class="wp-icon" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);">
+                                            <svg style="width:14px;height:14px;color:#e2e8f0;" viewBox="0 0 24 24" fill="currentColor">
+                                                <circle cx="6" cy="6" r="2" /><circle cx="12" cy="6" r="2" /><circle cx="18" cy="6" r="2" />
+                                                <circle cx="6" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="18" cy="12" r="2" />
+                                                <circle cx="6" cy="18" r="2" /><circle cx="12" cy="18" r="2" /><circle cx="18" cy="18" r="2" />
+                                            </svg>
+                                        </span>
+                                        <span class="wp-slot"></span>
+                                    </div>
+                                    <div class="wp-card-bot"><div class="wp-card-name">미니멀 도트</div><div class="wp-card-eng">Dot Matrix</div></div>
+                                </div>
+
+                                <div class="wp-card" data-wp="vietnam" onclick="selectWallpaper('vietnam')">
+                                    <div class="wp-card-bg" style="background: linear-gradient(135deg, #dc2626, #facc15, #16a34a);"></div>
+                                    <div class="wp-card-top">
+                                        <span class="wp-icon" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);">
+                                            <svg style="width:15px;height:15px;color:#fde047;" viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                            </svg>
+                                        </span>
+                                        <span class="wp-slot"></span>
+                                    </div>
+                                    <div class="wp-card-bot"><div class="wp-card-name">베트남 에디션</div><div class="wp-card-eng">Vietnam Star</div></div>
+                                </div>
+
+                                <div class="wp-card" data-wp="korea" onclick="selectWallpaper('korea')">
+                                    <div class="wp-card-bg" style="background: linear-gradient(135deg, #ffffff, #93c5fd, #f87171);"></div>
+                                    <div class="wp-card-top">
+                                        <span class="wp-icon" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);">
+                                            <svg style="width:15px;height:15px;" viewBox="0 0 24 24" fill="none">
+                                                <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.8)" stroke-width="1.5" />
+                                                <path d="M12 3a4.5 4.5 0 0 0 0 9 4.5 4.5 0 0 1 0 9A9 9 0 0 0 12 3z" fill="#ef4444" />
+                                                <path d="M12 3a4.5 4.5 0 0 1 0 9 4.5 4.5 0 0 0 0 9A9 9 0 0 1 12 3z" fill="#3b82f6" />
+                                            </svg>
+                                        </span>
+                                        <span class="wp-slot"></span>
+                                    </div>
+                                    <div class="wp-card-bot"><div class="wp-card-name">한국 에디션</div><div class="wp-card-eng">Korea Taeguk</div></div>
+                                </div>
+
+                                <div class="wp-card" data-wp="cyberpunk" onclick="selectWallpaper('cyberpunk')">
+                                    <div class="wp-card-bg" style="background: linear-gradient(135deg, #d946ef, #7e22ce, #06b6d4);"></div>
+                                    <div class="wp-card-top">
+                                        <span class="wp-icon" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);">
+                                            <svg style="width:14px;height:14px;color:#f472b6;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" />
+                                            </svg>
+                                        </span>
+                                        <span class="wp-slot"></span>
+                                    </div>
+                                    <div class="wp-card-bot"><div class="wp-card-name">네온 사이버</div><div class="wp-card-eng">Cyberpunk HD</div></div>
+                                </div>
+
+                                <div class="wp-card" data-wp="solid" onclick="selectWallpaper('solid')">
+                                    <div class="wp-card-bg" style="background: #1e293b;"></div>
+                                    <div class="wp-card-top">
+                                        <span class="wp-icon" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);">
+                                            <svg style="width:14px;height:14px;color:#cbd5e1;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <rect width="18" height="18" x="3" y="3" rx="4" />
+                                                <path d="M3 14h18" />
+                                            </svg>
+                                        </span>
+                                        <span class="wp-slot"></span>
+                                    </div>
+                                    <div class="wp-card-bot"><div class="wp-card-name">플랫 솔리드</div><div class="wp-card-eng">Clean Solid</div></div>
+                                </div>
+                            </div>
+
+                            <!-- Upload Box -->
+                            <div class="upload-box">
+                                <label class="upload-label">
+                                    <svg style="width:14px;height:14px;color:#c084fc;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M4 16v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1M4 8l8-4 8 4M12 4v12"/>
+                                    </svg>
+                                    <span>내 컴퓨터에서 이미지 업로드</span>
+                                    <input type="file" accept="image/*" onchange="handleFileUpload(event)" style="display:none;">
+                                </label>
+                                <input id="customUrlInput" type="text" class="url-input" placeholder="또는 이미지 URL 입력..." onchange="handleUrlInput(event)">
+                            </div>
+                        </div>
+
+                        <!-- Apply Button -->
+                        <button class="apply-btn" onclick="closeThemeModal()">설정 완료 (Apply Theme)</button>
+                    </div>
+                </div>
+
+                <script>
+                    const THEME_PRESETS = {
+                        'toss-dark': {
+                            bgBody: '#090d16',
+                            cardBg: '#0f172a',
+                            headerBg: '#1e293b',
+                            headerBorder: '#334155',
+                            textMain: '#f8fafc',
+                            textMuted: '#94a3b8',
+                            textareaBg: '#020617',
+                            textareaBorder: '#1e293b',
+                            borderColor: 'rgba(255, 255, 255, 0.12)',
+                            btnBg: 'rgba(255, 255, 255, 0.08)',
+                            btnText: '#e2e8f0',
+                            btnBorder: 'rgba(255, 255, 255, 0.15)',
+                            btnHoverBg: 'rgba(255, 255, 255, 0.15)',
+                            btnHoverText: '#ffffff',
+                            btnHoverBorder: 'rgba(255, 255, 255, 0.25)',
+                            btnThemeBg: '#2563eb',
+                            btnThemeText: '#ffffff',
+                            btnThemeBorder: '#3b82f6',
+                            btnThemeHover: '#1d4ed8',
+                            btnCopyBg: '#0f766e',
+                            btnCopyText: '#ccfbf1',
+                            btnCopyBorder: '#14b8a6',
+                            btnCopyHover: '#0d9488',
+                            accentColor: '#3b82f6',
+                            badgeBg: '#2563eb',
+                            badgeText: '#ffffff',
+                            footerBg: '#0f172a'
+                        },
+                        'kakao-yellow': {
+                            bgBody: '#F5F2DC',
+                            cardBg: '#ffffff',
+                            headerBg: '#FEE500',
+                            headerBorder: '#E5CE00',
+                            textMain: '#191919',
+                            textMuted: '#555555',
+                            textareaBg: '#FAF9F5',
+                            textareaBorder: '#E0D5B5',
+                            borderColor: '#E5CE00',
+                            btnBg: 'rgba(25, 25, 25, 0.08)',
+                            btnText: '#191919',
+                            btnBorder: 'rgba(25, 25, 25, 0.18)',
+                            btnHoverBg: 'rgba(25, 25, 25, 0.16)',
+                            btnHoverText: '#191919',
+                            btnHoverBorder: 'rgba(25, 25, 25, 0.3)',
+                            btnThemeBg: '#191919',
+                            btnThemeText: '#FEE500',
+                            btnThemeBorder: '#191919',
+                            btnThemeHover: '#2e2e2e',
+                            btnCopyBg: '#382800',
+                            btnCopyText: '#FEE500',
+                            btnCopyBorder: '#191919',
+                            btnCopyHover: '#191919',
+                            accentColor: '#191919',
+                            badgeBg: '#191919',
+                            badgeText: '#FEE500',
+                            footerBg: '#FAF9F5'
+                        },
+                        'kakao-dark': {
+                            bgBody: '#141414',
+                            cardBg: '#222222',
+                            headerBg: '#2a2a2a',
+                            headerBorder: '#383838',
+                            textMain: '#f5f5f5',
+                            textMuted: '#a3a3a3',
+                            textareaBg: '#1a1a1a',
+                            textareaBorder: '#383838',
+                            borderColor: 'rgba(255, 255, 255, 0.12)',
+                            btnBg: 'rgba(255, 255, 255, 0.08)',
+                            btnText: '#f5f5f5',
+                            btnBorder: 'rgba(255, 255, 255, 0.15)',
+                            btnHoverBg: 'rgba(255, 255, 255, 0.15)',
+                            btnHoverText: '#ffffff',
+                            btnHoverBorder: 'rgba(255, 255, 255, 0.25)',
+                            btnThemeBg: '#FEE500',
+                            btnThemeText: '#181818',
+                            btnThemeBorder: '#FEE500',
+                            btnThemeHover: '#ebd200',
+                            btnCopyBg: 'rgba(255, 255, 255, 0.12)',
+                            btnCopyText: '#FEE500',
+                            btnCopyBorder: 'rgba(255, 255, 255, 0.2)',
+                            btnCopyHover: 'rgba(255, 255, 255, 0.2)',
+                            accentColor: '#FEE500',
+                            badgeBg: '#FEE500',
+                            badgeText: '#181818',
+                            footerBg: '#1a1a1a'
+                        },
+                        'toss-light': {
+                            bgBody: '#EBF0F7',
+                            cardBg: '#ffffff',
+                            headerBg: '#ffffff',
+                            headerBorder: '#E2E8F0',
+                            textMain: '#0F172A',
+                            textMuted: '#64748B',
+                            textareaBg: '#F8FAFC',
+                            textareaBorder: '#CBD5E1',
+                            borderColor: '#E2E8F0',
+                            btnBg: '#F1F5F9',
+                            btnText: '#334155',
+                            btnBorder: '#E2E8F0',
+                            btnHoverBg: '#E2E8F0',
+                            btnHoverText: '#0F172A',
+                            btnHoverBorder: '#CBD5E1',
+                            btnThemeBg: '#2563eb',
+                            btnThemeText: '#ffffff',
+                            btnThemeBorder: '#2563eb',
+                            btnThemeHover: '#1d4ed8',
+                            btnCopyBg: '#0f766e',
+                            btnCopyText: '#ccfbf1',
+                            btnCopyBorder: '#14b8a6',
+                            btnCopyHover: '#0d9488',
+                            accentColor: '#2563eb',
+                            badgeBg: '#EFF6FF',
+                            badgeText: '#1D4ED8',
+                            footerBg: '#F8FAFC'
+                        },
+                        'oled-black': {
+                            bgBody: '#000000',
+                            cardBg: '#080808',
+                            headerBg: '#121212',
+                            headerBorder: '#27272a',
+                            textMain: '#ffffff',
+                            textMuted: '#a1a1aa',
+                            textareaBg: '#000000',
+                            textareaBorder: '#27272a',
+                            borderColor: '#27272a',
+                            btnBg: 'rgba(255, 255, 255, 0.08)',
+                            btnText: '#ffffff',
+                            btnBorder: '#3f3f46',
+                            btnHoverBg: 'rgba(255, 255, 255, 0.16)',
+                            btnHoverText: '#ffffff',
+                            btnHoverBorder: '#71717a',
+                            btnThemeBg: '#9333ea',
+                            btnThemeText: '#ffffff',
+                            btnThemeBorder: '#a855f7',
+                            btnThemeHover: '#7e22ce',
+                            btnCopyBg: '#27272a',
+                            btnCopyText: '#e9d5ff',
+                            btnCopyBorder: '#3f3f46',
+                            btnCopyHover: '#3f3f46',
+                            accentColor: '#a855f7',
+                            badgeBg: '#9333ea',
+                            badgeText: '#ffffff',
+                            footerBg: '#000000'
+                        },
+                        'cyber-neon': {
+                            bgBody: '#050510',
+                            cardBg: '#110b24',
+                            headerBg: '#1f0e3d',
+                            headerBorder: 'rgba(236,72,153,0.35)',
+                            textMain: '#fdf2f8',
+                            textMuted: '#f472b6',
+                            textareaBg: '#0d081d',
+                            textareaBorder: 'rgba(236,72,153,0.3)',
+                            borderColor: 'rgba(236,72,153,0.35)',
+                            btnBg: 'rgba(236,72,153,0.15)',
+                            btnText: '#fce7f3',
+                            btnBorder: 'rgba(236,72,153,0.35)',
+                            btnHoverBg: 'rgba(236,72,153,0.25)',
+                            btnHoverText: '#ffffff',
+                            btnHoverBorder: 'rgba(236,72,153,0.5)',
+                            btnThemeBg: '#db2777',
+                            btnThemeText: '#ffffff',
+                            btnThemeBorder: '#ec4899',
+                            btnThemeHover: '#be185d',
+                            btnCopyBg: '#4c0519',
+                            btnCopyText: '#fecdd3',
+                            btnCopyBorder: '#9f1239',
+                            btnCopyHover: '#881337',
+                            accentColor: '#ec4899',
+                            badgeBg: '#db2777',
+                            badgeText: '#ffffff',
+                            footerBg: '#050510'
+                        },
+                        'emerald-mint': {
+                            bgBody: '#021a12',
+                            cardBg: '#06291e',
+                            headerBg: '#0b3b2c',
+                            headerBorder: 'rgba(16,185,129,0.35)',
+                            textMain: '#ecfdf5',
+                            textMuted: '#6ee7b7',
+                            textareaBg: '#031f16',
+                            textareaBorder: 'rgba(16,185,129,0.3)',
+                            borderColor: 'rgba(16,185,129,0.35)',
+                            btnBg: 'rgba(16,185,129,0.15)',
+                            btnText: '#d1fae5',
+                            btnBorder: 'rgba(16,185,129,0.35)',
+                            btnHoverBg: 'rgba(16,185,129,0.25)',
+                            btnHoverText: '#ffffff',
+                            btnHoverBorder: 'rgba(16,185,129,0.5)',
+                            btnThemeBg: '#059669',
+                            btnThemeText: '#ffffff',
+                            btnThemeBorder: '#10b981',
+                            btnThemeHover: '#047857',
+                            btnCopyBg: '#064e3b',
+                            btnCopyText: '#a7f3d0',
+                            btnCopyBorder: '#047857',
+                            btnCopyHover: '#065f46',
+                            accentColor: '#10b981',
+                            badgeBg: '#059669',
+                            badgeText: '#ffffff',
+                            footerBg: '#021a12'
+                        }
+                    };
+
+                    const WALLPAPER_PRESETS = {
+                        'orbs': 'linear-gradient(135deg, rgba(147, 51, 234, 0.45), rgba(79, 70, 229, 0.4), rgba(236, 72, 153, 0.45))',
+                        'mesh': 'linear-gradient(135deg, rgba(37, 99, 235, 0.45), rgba(20, 184, 166, 0.4), rgba(74, 222, 128, 0.4))',
+                        'grid': 'linear-gradient(to right, rgba(59,130,246,0.15) 1px, transparent 1px), linear-gradient(to bottom, rgba(59,130,246,0.15) 1px, transparent 1px)',
+                        'dots': 'radial-gradient(rgba(255,255,255,0.2) 1.5px, transparent 1.5px)',
+                        'vietnam': 'linear-gradient(135deg, rgba(220, 38, 38, 0.55), rgba(250, 204, 21, 0.35), rgba(22, 163, 74, 0.45))',
+                        'korea': 'linear-gradient(135deg, rgba(248, 250, 252, 0.55), rgba(147, 197, 253, 0.35), rgba(248, 113, 113, 0.45))',
+                        'cyberpunk': 'linear-gradient(135deg, rgba(217, 70, 239, 0.45), rgba(126, 34, 206, 0.45), rgba(6, 182, 212, 0.45))',
+                        'solid': 'none'
+                    };
+
+                    let currentTheme = localStorage.getItem('jinil_note_popout_theme_id') || 'toss-dark';
+                    let currentWallpaper = localStorage.getItem('jinil_note_popout_wp_id') || 'orbs';
+                    let isHighContrast = localStorage.getItem('jinil_note_popout_contrast') === 'true';
+                    let customBgUrl = localStorage.getItem('jinil_note_popout_custom_bg') || '';
+                    let currentFontSize = 16;
+
+                    const editor = document.getElementById('editor');
+                    const modalBackdrop = document.getElementById('themeModalBackdrop');
+
+                    function openThemeModal() {
+                        modalBackdrop.classList.add('show');
+                        updateModalActiveStates();
+                    }
+
+                    function closeThemeModal() {
+                        modalBackdrop.classList.remove('show');
+                    }
+
+                    function closeThemeModalOnBackdrop(e) {
+                        if (e.target === modalBackdrop) {
+                            closeThemeModal();
+                        }
+                    }
+
+                    function switchModalTab(tab) {
+                        const isTheme = tab === 'themes';
+                        document.getElementById('themeTabContent').style.display = isTheme ? 'block' : 'none';
+                        document.getElementById('wallpaperTabContent').style.display = isTheme ? 'none' : 'block';
+                        
+                        document.getElementById('tabThemeBtn').className = isTheme ? 'tab-btn active-theme' : 'tab-btn';
+                        document.getElementById('tabWpBtn').className = isTheme ? 'tab-btn' : 'tab-btn active-wp';
+                    }
+
+                    function selectTheme(themeId) {
+                        currentTheme = themeId;
+                        localStorage.setItem('jinil_note_popout_theme_id', themeId);
+                        applyThemeStyles();
+                        updateModalActiveStates();
+                    }
+
+                    function selectWallpaper(wpId) {
+                        currentWallpaper = wpId;
+                        customBgUrl = '';
+                        localStorage.setItem('jinil_note_popout_wp_id', wpId);
+                        localStorage.removeItem('jinil_note_popout_custom_bg');
+                        applyWallpaperStyles();
+                        updateModalActiveStates();
+                    }
+
+                    function toggleHighContrast() {
+                        isHighContrast = !isHighContrast;
+                        localStorage.setItem('jinil_note_popout_contrast', isHighContrast ? 'true' : 'false');
+                        applyThemeStyles();
+                        updateModalActiveStates();
+                    }
+
+                    function handleFileUpload(e) {
+                        const file = e.target.files[0];
+                        if (!file) return;
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                            customBgUrl = event.target.result;
+                            currentWallpaper = 'custom';
+                            localStorage.setItem('jinil_note_popout_custom_bg', customBgUrl);
+                            localStorage.setItem('jinil_note_popout_wp_id', 'custom');
+                            applyWallpaperStyles();
+                            updateModalActiveStates();
+                        };
+                        reader.readAsDataURL(file);
+                    }
+
+                    function handleUrlInput(e) {
+                        const url = e.target.value.trim();
+                        if (!url) return;
+                        customBgUrl = url;
+                        currentWallpaper = 'custom';
+                        localStorage.setItem('jinil_note_popout_custom_bg', customBgUrl);
+                        localStorage.setItem('jinil_note_popout_wp_id', 'custom');
+                        applyWallpaperStyles();
+                        updateModalActiveStates();
+                    }
+
+                    function applyThemeStyles() {
+                        const t = THEME_PRESETS[currentTheme] || THEME_PRESETS['toss-dark'];
+                        const root = document.documentElement;
+
+                        root.style.setProperty('--bg-body', t.bgBody);
+                        root.style.setProperty('--card-bg', t.cardBg);
+                        root.style.setProperty('--header-bg', t.headerBg);
+                        root.style.setProperty('--header-border', t.headerBorder);
+                        root.style.setProperty('--text-main', t.textMain);
+                        root.style.setProperty('--text-muted', t.textMuted);
+                        root.style.setProperty('--textarea-bg', t.textareaBg);
+                        root.style.setProperty('--textarea-border', t.textareaBorder);
+                        root.style.setProperty('--border-color', t.borderColor);
+                        root.style.setProperty('--btn-bg', t.btnBg);
+                        root.style.setProperty('--btn-text', t.btnText);
+                        root.style.setProperty('--btn-border', t.btnBorder);
+                        root.style.setProperty('--btn-hover-bg', t.btnHoverBg);
+                        root.style.setProperty('--btn-hover-text', t.btnHoverText);
+                        root.style.setProperty('--btn-hover-border', t.btnHoverBorder);
+                        root.style.setProperty('--btn-theme-bg', t.btnThemeBg);
+                        root.style.setProperty('--btn-theme-text', t.btnThemeText);
+                        root.style.setProperty('--btn-theme-border', t.btnThemeBorder);
+                        root.style.setProperty('--btn-theme-hover', t.btnThemeHover);
+                        root.style.setProperty('--btn-copy-bg', t.btnCopyBg);
+                        root.style.setProperty('--btn-copy-text', t.btnCopyText);
+                        root.style.setProperty('--btn-copy-border', t.btnCopyBorder);
+                        root.style.setProperty('--btn-copy-hover', t.btnCopyHover);
+                        root.style.setProperty('--accent-color', t.accentColor);
+                        root.style.setProperty('--badge-bg', t.badgeBg);
+                        root.style.setProperty('--badge-text', t.badgeText);
+                        root.style.setProperty('--footer-bg', t.footerBg);
+
+                        if (isHighContrast) {
+                            document.body.classList.add('high-contrast');
+                        } else {
+                            document.body.classList.remove('high-contrast');
+                        }
+                    }
+
+                    function applyWallpaperStyles() {
+                        if (customBgUrl) {
+                            document.body.style.backgroundImage = 'url("' + customBgUrl + '")';
+                            document.body.style.backgroundSize = 'cover';
+                            document.body.style.backgroundPosition = 'center';
+                        } else {
+                            const wpGradient = WALLPAPER_PRESETS[currentWallpaper];
+                            if (wpGradient && wpGradient !== 'none') {
+                                document.body.style.backgroundImage = wpGradient;
+                                if (currentWallpaper === 'grid') {
+                                    document.body.style.backgroundSize = '24px 24px';
+                                } else if (currentWallpaper === 'dots') {
+                                    document.body.style.backgroundSize = '18px 18px';
+                                } else {
+                                    document.body.style.backgroundSize = 'cover';
+                                }
+                            } else {
+                                document.body.style.backgroundImage = 'none';
+                            }
+                        }
+                    }
+
+                    function updateModalActiveStates() {
+                        // Theme list
+                        document.querySelectorAll('.theme-card').forEach(card => {
+                            const tId = card.getAttribute('data-theme');
+                            const isSelected = tId === currentTheme;
+                            card.className = isSelected ? 'theme-card active' : 'theme-card';
+                            const slot = card.querySelector('.check-slot');
+                            if (slot) {
+                                slot.innerHTML = isSelected ? '<div class="check-badge">✓</div>' : '<div class="radio-circle"></div>';
+                            }
+                        });
+
+                        // High Contrast button
+                        const contrastBtn = document.getElementById('contrastBtn');
+                        if (contrastBtn) {
+                            if (isHighContrast) contrastBtn.classList.add('on');
+                            else contrastBtn.classList.remove('on');
+                        }
+
+                        // Wallpaper grid
+                        document.querySelectorAll('.wp-card').forEach(card => {
+                            const wpId = card.getAttribute('data-wp');
+                            const isSelected = wpId === currentWallpaper && !customBgUrl;
+                            card.className = isSelected ? 'wp-card active' : 'wp-card';
+                            const slot = card.querySelector('.wp-slot');
+                            if (slot) {
+                                slot.innerHTML = isSelected ? '<div class="check-badge" style="background:#9333ea; width:16px; height:16px; font-size:9px;">✓</div>' : '';
+                            }
+                        });
+                    }
+
+                    function changeFontSize(delta) {
+                        currentFontSize = Math.min(36, Math.max(12, currentFontSize + delta));
+                        editor.style.fontSize = currentFontSize + 'px';
+                        document.getElementById('fontSizeDisplay').innerText = currentFontSize + 'px';
+                    }
+
+                    function updateStats() {
+                        const text = editor.value;
+                        document.getElementById('charCount').innerText = text.length + ' 글자';
+                        document.getElementById('wordCount').innerText = (text.trim() ? text.trim().split(/\\s+/).length : 0) + ' 단어';
+                        document.getElementById('lineCount').innerText = text.split('\\n').length + ' 줄';
+                    }
+
+                    function copyContent() {
+                        navigator.clipboard.writeText(editor.value);
+                        const btn = document.getElementById('copyBtn');
+                        btn.innerHTML = '<span>복사됨! ✓</span>';
+                        setTimeout(() => { btn.innerHTML = '<span>전체 복사</span>'; }, 2000);
+                    }
+
+                    editor.addEventListener('input', () => {
+                        updateStats();
+                        if (window.opener && !window.opener.closed) {
+                            window.opener.postMessage({
+                                type: 'JINIL_NOTE_CONTENT_UPDATE',
+                                content: editor.value
+                            }, '*');
+                        }
+                    });
+
+                    // Keyboard shortcuts
+                    window.addEventListener('keydown', (e) => {
+                        if (e.key === 'Escape') {
+                            if (modalBackdrop.classList.contains('show')) {
+                                closeThemeModal();
+                            } else {
+                                window.close();
+                            }
+                        }
+                    });
+
+                    // Initial Load
+                    applyThemeStyles();
+                    applyWallpaperStyles();
+                </script>
+            </body>
+            </html>
+        `);
+        popup.document.close();
     };
 
     // 10. Clipboard Copy Helper
@@ -1315,10 +2862,25 @@ export default function NotesModal({ isOpen, onClose, user }) {
 
                                 {/* SECTION 4: Free Text Content Editor */}
                                 <div className="space-y-2.5 pt-2">
-                                    <label className="text-sm font-bold text-gray-600 dark:text-slate-300 flex items-center gap-2">
-                                        <span className="text-gray-400">{Icons.general}</span>
-                                        <span>상세 메모 & 본문</span>
-                                    </label>
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm font-bold text-gray-600 dark:text-slate-300 flex items-center gap-2">
+                                            <span className="text-gray-400">{Icons.general}</span>
+                                            <span>상세 메모 & 본문</span>
+                                        </label>
+                                        <div className="flex items-center gap-1.5">
+                                            <button
+                                                type="button"
+                                                onClick={handleOpenExternalWindow}
+                                                className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 rounded-xl transition-all border border-blue-200/60 dark:border-blue-800/40 cursor-pointer shadow-xs active:scale-95 group"
+                                                title="상세 메모를 독립된 새 창 팝업으로 분리 및 편집"
+                                            >
+                                                <svg className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                </svg>
+                                                <span>새 창 분리</span>
+                                            </button>
+                                        </div>
+                                    </div>
                                     <textarea
                                         rows={9}
                                         disabled={isSelectedNoteTrashed}
@@ -1387,7 +2949,6 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         )}
                     </div>
                 </div>
-
             </div>
         </div>,
         document.body

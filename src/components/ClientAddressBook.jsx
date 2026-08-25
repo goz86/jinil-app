@@ -1,16 +1,24 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { db } from '../firebase';
-import { collection, query, onSnapshot, addDoc, updateDoc, deleteDoc, doc, orderBy, serverTimestamp } from 'firebase/firestore';
-import { supabase } from '../lib/supabase';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { notify } from '../lib/notify';
 import Swal from 'sweetalert2';
+import {
+    getCachedClients,
+    subscribeClients,
+    addClient,
+    updateClient,
+    deleteClient,
+    reorderClient,
+    markClientCopied
+} from '../services/clientAddressService';
 
 export default function ClientAddressBook({ user }) {
     const { t, lang } = useLanguage();
-    const [clients, setClients] = useState([]);
+    
+    // Instant 0ms load from cache on initial render
+    const [clients, setClients] = useState(() => getCachedClients());
     const [searchTerm, setSearchTerm] = useState('');
-    const [loading, setLoading] = useState(true);
+    const [loading, setLoading] = useState(() => getCachedClients().length === 0);
     const [showForm, setShowForm] = useState(false);
     const [editingId, setEditingId] = useState(null);
     const [sortField, setSortField] = useState('custom'); // 'custom', 'name', 'representative', etc.
@@ -66,83 +74,49 @@ export default function ClientAddressBook({ user }) {
         address: ''
     });
 
+    // Realtime background sync subscription
     useEffect(() => {
-        let isMounted = true;
+        const unsubscribe = subscribeClients((updatedClients) => {
+            setClients(updatedClients);
+            setLoading(false);
+        });
 
-        const loadCombinedClients = async () => {
-            let supabasePartners = [];
-
-            try {
-                const searchQueries = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '서울', '경기', '미지정', 'Open', '공장', '스튜디오', '컴퍼니', '타워', '빌딩', '마포', '성북', '동대문', '중구'];
-                const locationMap = new Map();
-
-                for (const qStr of searchQueries) {
-                    const { data: sbData, error: sbError } = await supabase.rpc('search_public_b2b_shipments', {
-                        p_query: qStr,
-                        p_limit: 200
-                    });
-
-                    if (!sbError && sbData) {
-                        sbData.forEach((s) => {
-                            const locName = (s.location_name || s.company_name || '').trim();
-                            if (!locName || locName === '미지정') return;
-
-                            const key = locName.toLowerCase();
-                            if (!locationMap.has(key)) {
-                                const compName = (s.company_name && s.company_name !== '미지정') ? s.company_name : '';
-                                locationMap.set(key, {
-                                    id: `sb-${s.id || locName}`,
-                                    isSupabase: true,
-                                    name: locName,
-                                    representative: compName || '',
-                                    contactName: s.recipient_name || '',
-                                    phone: s.courier_phone || '',
-                                    address: s.recipient_address || '',
-                                    sortIndex: 500,
-                                });
-                            }
-                        });
-                    }
-                }
-
-                supabasePartners = Array.from(locationMap.values());
-            } catch (err) {
-                console.error("Supabase RPC location search error:", err);
-            }
-
-            const q = query(collection(db, 'clients'));
-            onSnapshot(q, { includeMetadataChanges: true }, (snapshot) => {
-                const firestoreData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data(), isSupabase: false }));
-
-                // Combine Supabase partners and Firestore clients (avoid duplicates by name)
-                const existingFsNames = new Set(firestoreData.map(c => (c.name || '').trim().toLowerCase()));
-                const uniqueSupabase = supabasePartners.filter(p => !existingFsNames.has((p.name || '').trim().toLowerCase()));
-                let merged = [...firestoreData, ...uniqueSupabase];
-
-                merged.sort((a, b) => {
-                    if (sortField === 'custom') {
-                        const indexA = a.sortIndex !== undefined ? a.sortIndex : Number.MAX_SAFE_INTEGER;
-                        const indexB = b.sortIndex !== undefined ? b.sortIndex : Number.MAX_SAFE_INTEGER;
-                        if (indexA !== indexB) return indexA - indexB;
-                        return (a.name || '').localeCompare(b.name || '');
-                    } else {
-                        const valA = a[sortField] || '';
-                        const valB = b[sortField] || '';
-                        const cmp = valA.toString().localeCompare(valB.toString());
-                        return sortOrder === 'asc' ? cmp : -cmp;
-                    }
-                });
-
-                if (isMounted) {
-                    setClients(merged);
-                    setLoading(false);
-                }
-            });
+        return () => {
+            unsubscribe();
         };
+    }, []);
 
-        void loadCombinedClients();
-        return () => { isMounted = false; };
-    }, [sortField, sortOrder]);
+    // Filter & Sort clients with memoization for snappy performance
+    const sortedAndFilteredClients = useMemo(() => {
+        let list = [...clients];
+
+        if (sortField === 'custom') {
+            list.sort((a, b) => {
+                const indexA = a.sortIndex !== undefined ? a.sortIndex : Number.MAX_SAFE_INTEGER;
+                const indexB = b.sortIndex !== undefined ? b.sortIndex : Number.MAX_SAFE_INTEGER;
+                if (indexA !== indexB) return indexA - indexB;
+                return (a.name || '').localeCompare(b.name || '');
+            });
+        } else {
+            list.sort((a, b) => {
+                const valA = a[sortField] || '';
+                const valB = b[sortField] || '';
+                const cmp = valA.toString().localeCompare(valB.toString());
+                return sortOrder === 'asc' ? cmp : -cmp;
+            });
+        }
+
+        if (!searchTerm.trim()) return list;
+
+        const term = searchTerm.toLowerCase();
+        return list.filter(c =>
+            c.name?.toLowerCase().includes(term) ||
+            c.contactName?.toLowerCase().includes(term) ||
+            c.representative?.toLowerCase().includes(term) ||
+            c.phone?.includes(searchTerm) ||
+            c.address?.toLowerCase().includes(term)
+        );
+    }, [clients, sortField, sortOrder, searchTerm]);
 
     const showSupabaseNotice = (clientName) => {
         Swal.fire({
@@ -179,6 +153,7 @@ export default function ClientAddressBook({ user }) {
         e.preventDefault();
         try {
             if (editingId) {
+<<<<<<< HEAD
                 await updateDoc(doc(db, 'clients', editingId), {
                     ...formData,
                     updatedAt: new Date()
@@ -194,6 +169,14 @@ export default function ClientAddressBook({ user }) {
                     sortIndex: maxSortIndex + 1000,
                     createdAt: new Date()
                 });
+=======
+                // Optimistic UI update
+                setClients(prev => prev.map(c => c.id === editingId ? { ...c, ...formData } : c));
+                await updateClient(editingId, formData);
+                Swal.fire(t('success'), '', 'success');
+            } else {
+                await addClient(formData, clients);
+>>>>>>> 41aa338 (feat: pre-fetch client address cache, detached note window with Toss & Kakao themes, and taste-skill vector icons)
                 Swal.fire(t('success'), '', 'success');
             }
             setShowForm(false);
@@ -220,7 +203,7 @@ export default function ClientAddressBook({ user }) {
         e.preventDefault();
         if (draggedItemIndex === null || draggedItemIndex === targetIndex) return;
 
-        const newClients = [...clients];
+        const newClients = [...sortedAndFilteredClients];
         const draggedItem = newClients[draggedItemIndex];
 
         // If it's a Supabase item, sort changes in Firestore only apply if it's stored
@@ -230,6 +213,7 @@ export default function ClientAddressBook({ user }) {
         setClients(newClients);
         setDraggedItemIndex(null);
 
+<<<<<<< HEAD
         if (!draggedItem.isSupabase && !String(draggedItem.id).startsWith('sb-')) {
             try {
                 let newIndex;
@@ -249,6 +233,24 @@ export default function ClientAddressBook({ user }) {
             } catch (error) {
                 console.error("Reorder failed:", error);
             }
+=======
+        try {
+            let newIndex;
+            if (targetIndex === 0) {
+                newIndex = (newClients[1]?.sortIndex || 0) - 1000;
+            } else if (targetIndex === newClients.length - 1) {
+                newIndex = (newClients[newClients.length - 2]?.sortIndex || 0) + 1000;
+            } else {
+                const prevIndex = newClients[targetIndex - 1]?.sortIndex || 0;
+                const nextIndex = newClients[targetIndex + 1]?.sortIndex || 0;
+                newIndex = (prevIndex + nextIndex) / 2;
+            }
+
+            await reorderClient(draggedItem.id, newIndex);
+        } catch (error) {
+            console.error("Reorder failed:", error);
+            Swal.fire('Error', 'Failed to save order', 'error');
+>>>>>>> 41aa338 (feat: pre-fetch client address cache, detached note window with Toss & Kakao themes, and taste-skill vector icons)
         }
     };
 
@@ -266,20 +268,22 @@ export default function ClientAddressBook({ user }) {
             cancelText: t('no')
         });
         if (isConfirmed) {
+            // Optimistic update
+            setClients(prev => prev.filter(c => c.id !== id));
             try {
+<<<<<<< HEAD
                 await deleteDoc(doc(db, 'clients', id));
                 setClients((prev) => prev.filter((c) => c.id !== id));
             } catch (e) {
                 console.error('Delete client error:', e);
+=======
+                await deleteClient(id);
+            } catch (e) {
+                console.error("Delete client error:", e);
+>>>>>>> 41aa338 (feat: pre-fetch client address cache, detached note window with Toss & Kakao themes, and taste-skill vector icons)
             }
         }
     };
-
-    const filteredClients = clients.filter(c =>
-        c.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.contactName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        c.phone?.includes(searchTerm)
-    );
 
     const handleEdit = (client) => {
         if (client.isSupabase || String(client.id).startsWith('sb-')) {
@@ -295,11 +299,9 @@ export default function ClientAddressBook({ user }) {
         if (!text) return;
         navigator.clipboard.writeText(text);
 
-        try {
-            if (client && client.id) {
-                await updateDoc(doc(db, 'clients', client.id), { lastCopiedAt: new Date() });
-            }
-        } catch (e) {}
+        if (client && client.id) {
+            markClientCopied(client.id);
+        }
 
         // Toast notification
         const Toast = Swal.mixin({
@@ -309,8 +311,8 @@ export default function ClientAddressBook({ user }) {
             timer: 2000,
             timerProgressBar: true,
             didOpen: (toast) => {
-                toast.addEventListener('mouseenter', Swal.stopTimer)
-                toast.addEventListener('mouseleave', Swal.resumeTimer)
+                toast.addEventListener('mouseenter', Swal.stopTimer);
+                toast.addEventListener('mouseleave', Swal.resumeTimer);
             }
         });
 
@@ -331,11 +333,9 @@ export default function ClientAddressBook({ user }) {
 
         navigator.clipboard.writeText(textToCopy);
 
-        try {
-            if (client && client.id) {
-                await updateDoc(doc(db, 'clients', client.id), { lastCopiedAt: new Date() });
-            }
-        } catch (e) {}
+        if (client && client.id) {
+            markClientCopied(client.id);
+        }
 
         const Toast = Swal.mixin({
             toast: true,
@@ -344,8 +344,8 @@ export default function ClientAddressBook({ user }) {
             timer: 2000,
             timerProgressBar: true,
             didOpen: (toast) => {
-                toast.addEventListener('mouseenter', Swal.stopTimer)
-                toast.addEventListener('mouseleave', Swal.resumeTimer)
+                toast.addEventListener('mouseenter', Swal.stopTimer);
+                toast.addEventListener('mouseleave', Swal.resumeTimer);
             }
         });
 
@@ -487,9 +487,9 @@ export default function ClientAddressBook({ user }) {
                     <tbody className="divide-y divide-gray-100 dark:divide-slate-800">
                         {loading ? (
                             <tr><td colSpan="7" className="px-4 py-10 text-center text-gray-400 dark:text-slate-400 font-medium">{t('loading')}</td></tr>
-                        ) : filteredClients.length === 0 ? (
+                        ) : sortedAndFilteredClients.length === 0 ? (
                             <tr><td colSpan="7" className="px-4 py-10 text-center text-gray-400 dark:text-slate-400 font-medium">{t('noData')}</td></tr>
-                        ) : filteredClients.map((c, index) => {
+                        ) : sortedAndFilteredClients.map((c, index) => {
                             const getStatusObj = (client) => {
                                 let dates = [];
                                 if (client.updatedAt) dates.push(client.updatedAt.toDate ? client.updatedAt.toDate() : new Date(client.updatedAt));

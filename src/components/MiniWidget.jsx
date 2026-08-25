@@ -130,16 +130,75 @@ const PRESET_THEMES = [
     }
 ];
 
+// 🖼 Wallpaper Vector SVG Icons (Taste-Skill Anti-Slop)
+const WALLPAPER_ICONS = {
+    orbs: (
+        <svg className="w-4 h-4 text-purple-200 drop-shadow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="9" />
+            <path d="m4.93 4.93 4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24" />
+        </svg>
+    ),
+    mesh: (
+        <svg className="w-4 h-4 text-teal-200 drop-shadow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M2 12c3-4 6-4 10 0s7 4 10 0" />
+            <path d="M2 6c3-4 6-4 10 0s7 4 10 0" />
+            <path d="M2 18c3-4 6-4 10 0s7 4 10 0" />
+        </svg>
+    ),
+    grid: (
+        <svg className="w-4 h-4 text-blue-300 drop-shadow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect width="18" height="18" x="3" y="3" rx="2" />
+            <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
+        </svg>
+    ),
+    dots: (
+        <svg className="w-4 h-4 text-slate-200 drop-shadow" viewBox="0 0 24 24" fill="currentColor">
+            <circle cx="6" cy="6" r="2" />
+            <circle cx="12" cy="6" r="2" />
+            <circle cx="18" cy="6" r="2" />
+            <circle cx="6" cy="12" r="2" />
+            <circle cx="12" cy="12" r="2" />
+            <circle cx="18" cy="12" r="2" />
+            <circle cx="6" cy="18" r="2" />
+            <circle cx="12" cy="18" r="2" />
+            <circle cx="18" cy="18" r="2" />
+        </svg>
+    ),
+    vietnam: (
+        <svg className="w-4 h-4 text-yellow-300 drop-shadow" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+        </svg>
+    ),
+    korea: (
+        <svg className="w-4 h-4 drop-shadow" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.7)" strokeWidth="1.5" />
+            <path d="M12 3a4.5 4.5 0 0 0 0 9 4.5 4.5 0 0 1 0 9A9 9 0 0 0 12 3z" fill="#ef4444" />
+            <path d="M12 3a4.5 4.5 0 0 1 0 9 4.5 4.5 0 0 0 0 9A9 9 0 0 1 12 3z" fill="#3b82f6" />
+        </svg>
+    ),
+    cyberpunk: (
+        <svg className="w-4 h-4 text-pink-300 drop-shadow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" />
+        </svg>
+    ),
+    solid: (
+        <svg className="w-4 h-4 text-slate-300 drop-shadow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <rect width="18" height="18" x="3" y="3" rx="4" />
+            <path d="M3 14h18" />
+        </svg>
+    )
+};
+
 // 🖼 Wallpaper Effects & Patterns
 const PRESET_WALLPAPERS = [
-    { id: 'orbs', name: '은은한 오로라', english: 'Aurora Glow', bgPreview: 'bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-500', icon: '🌌' },
-    { id: 'mesh', name: '입체 메쉬', english: 'Mesh Wave', bgPreview: 'bg-gradient-to-br from-blue-600 via-teal-500 to-emerald-400', icon: '🌈' },
-    { id: 'grid', name: '하이테크 그리드', english: 'Tech Grid', bgPreview: 'bg-slate-900 border border-blue-500/40', icon: '⚡' },
-    { id: 'dots', name: '미니멀 도트', english: 'Dot Matrix', bgPreview: 'bg-slate-950 border border-slate-700', icon: '⚪' },
-    { id: 'vietnam', name: '베트남 에디션', english: 'Vietnam Star', bgPreview: 'bg-gradient-to-br from-red-600 to-red-800', icon: '★' },
-    { id: 'korea', name: '한국 에디션', english: 'Korea Taeguk', bgPreview: 'bg-gradient-to-r from-red-500 via-blue-600 to-slate-900', icon: '☯️' },
-    { id: 'cyberpunk', name: '네온 사이버', english: 'Cyberpunk HD', bgPreview: 'bg-gradient-to-tr from-fuchsia-600 via-purple-700 to-cyan-500', icon: '🌆' },
-    { id: 'solid', name: '플랫 솔리드', english: 'Clean Solid', bgPreview: 'bg-slate-800', icon: '🎨' },
+    { id: 'orbs', name: '은은한 오로라', english: 'Aurora Glow', bgPreview: 'bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-500' },
+    { id: 'mesh', name: '입체 메쉬', english: 'Mesh Wave', bgPreview: 'bg-gradient-to-br from-blue-600 via-teal-500 to-emerald-400' },
+    { id: 'grid', name: '하이테크 그리드', english: 'Tech Grid', bgPreview: 'bg-slate-900 border border-blue-500/40' },
+    { id: 'dots', name: '미니멀 도트', english: 'Dot Matrix', bgPreview: 'bg-slate-950 border border-slate-700' },
+    { id: 'vietnam', name: '베트남 에디션', english: 'Vietnam Star', bgPreview: 'bg-gradient-to-br from-red-600 to-red-800' },
+    { id: 'korea', name: '한국 에디션', english: 'Korea Taeguk', bgPreview: 'bg-gradient-to-r from-red-500 via-blue-600 to-slate-900' },
+    { id: 'cyberpunk', name: '네온 사이버', english: 'Cyberpunk HD', bgPreview: 'bg-gradient-to-tr from-fuchsia-600 via-purple-700 to-cyan-500' },
+    { id: 'solid', name: '플랫 솔리드', english: 'Clean Solid', bgPreview: 'bg-slate-800' },
 ];
 
 const MiniTaskItem = ({ task, toggleTask, savedAccounts = [], theme, isHighContrast }) => {
@@ -1216,24 +1275,36 @@ export default function MiniWidget() {
                             <button
                                 type="button"
                                 onClick={() => setThemeModalTab('themes')}
-                                className={`py-2 text-[11px] font-bold rounded-xl transition-all cursor-pointer ${
+                                className={`py-2 px-3 text-[11px] font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                                     themeModalTab === 'themes'
                                         ? 'bg-blue-600 text-white shadow-md'
                                         : 'text-gray-400 hover:text-white'
                                 }`}
                             >
-                                🎨 UI 테마 (Themes)
+                                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
+                                    <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
+                                    <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
+                                    <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
+                                    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2Z"/>
+                                </svg>
+                                <span>UI 테마 (Themes)</span>
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setThemeModalTab('wallpapers')}
-                                className={`py-2 text-[11px] font-bold rounded-xl transition-all cursor-pointer ${
+                                className={`py-2 px-3 text-[11px] font-bold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                                     themeModalTab === 'wallpapers'
                                         ? 'bg-purple-600 text-white shadow-md'
                                         : 'text-gray-400 hover:text-white'
                                 }`}
                             >
-                                🖼️ 배경화면 (Wallpapers)
+                                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <rect width="18" height="18" x="3" y="3" rx="2" />
+                                    <circle cx="9" cy="9" r="2" />
+                                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
+                                </svg>
+                                <span>배경화면 (Wallpapers)</span>
                             </button>
                         </div>
 
@@ -1312,7 +1383,7 @@ export default function MiniWidget() {
                                             <div
                                                 key={wp.id}
                                                 onClick={() => { setWallpaperId(wp.id); setCustomBgUrl(''); }}
-                                                className={`p-2 rounded-2xl border text-left cursor-pointer transition-all flex flex-col justify-between h-20 relative overflow-hidden group ${
+                                                className={`p-2.5 rounded-2xl border text-left cursor-pointer transition-all flex flex-col justify-between h-20 relative overflow-hidden group ${
                                                     isSelected
                                                         ? 'border-purple-500 bg-purple-500/25 ring-1 ring-purple-500 shadow-md'
                                                         : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20'
@@ -1322,7 +1393,9 @@ export default function MiniWidget() {
                                                 <div className={`absolute inset-0 ${wp.bgPreview} opacity-40 group-hover:opacity-60 transition-opacity`}></div>
 
                                                 <div className="relative z-10 flex items-center justify-between">
-                                                    <span className="text-base drop-shadow">{wp.icon}</span>
+                                                    <span className="flex items-center justify-center w-6 h-6 rounded-lg bg-black/30 backdrop-blur-xs border border-white/10">
+                                                        {WALLPAPER_ICONS[wp.id] || null}
+                                                    </span>
                                                     {isSelected && (
                                                         <span className="w-4 h-4 rounded-full bg-purple-500 text-white flex items-center justify-center text-[9px] font-bold">
                                                             ✓
@@ -1345,7 +1418,7 @@ export default function MiniWidget() {
                                         <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                                         </svg>
-                                        <span>📂 내 컴퓨터에서 이미지 업로드</span>
+                                        <span>내 컴퓨터에서 이미지 업로드</span>
                                         <input
                                             type="file"
                                             accept="image/*"

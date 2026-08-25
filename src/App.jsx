@@ -12,6 +12,7 @@ import DeliveryGallery from './components/DeliveryGallery';
 const AnalyticsModal = React.lazy(() => import('./components/AnalyticsModal'));
 import GenericModal from './components/GenericModal';
 import ClientAddressBook from './components/ClientAddressBook';
+import { preloadClients } from './services/clientAddressService';
 import InventoryManagement from './components/InventoryManagement';
 import LabelPrinter from './components/LabelPrinter';
 import StockTicker from './components/StockTicker';
@@ -98,6 +99,9 @@ function App() {
 
   // Realtime System Config Listener (Global Remote Lock & Announcements) + Local Fallback
   useEffect(() => {
+    // Preload Client Address Book in background for instant 0ms access
+    preloadClients();
+
     const syncLocalConfig = () => {
       try {
         const saved = localStorage.getItem('jinil_app_control');

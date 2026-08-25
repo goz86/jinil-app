@@ -405,6 +405,24 @@ function createWindow() {
     if (isDev) { mainWindow.loadURL('http://localhost:5173'); }
     else { mainWindow.loadFile(path.join(__dirname, '../dist/index.html')); }
 
+    // Standalone native window handler for "새 창 분리"
+    mainWindow.webContents.setWindowOpenHandler(({ url }) => {
+        return {
+            action: 'allow',
+            overrideBrowserWindowOptions: {
+                autoHideMenuBar: true,
+                icon: nativeImage.createFromPath(iconPath),
+                parent: null,
+                modal: false,
+                webPreferences: {
+                    nodeIntegration: false,
+                    contextIsolation: true,
+                    webSecurity: false
+                }
+            }
+        };
+    });
+
     mainWindow.once('ready-to-show', () => {
         mainWindow.show();
         createMiniWindow();
