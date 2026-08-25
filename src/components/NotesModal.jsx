@@ -168,12 +168,12 @@ export default function NotesModal({ isOpen, onClose, user }) {
     useEffect(() => {
         const handlePopupMessage = (event) => {
             if (event.data && event.data.type === 'JINIL_NOTE_CONTENT_UPDATE') {
-                const newContent = event.data.content;
-                setContent(newContent);
+                const cleaned = cleanContentForSave(event.data.content);
+                setContent(cleaned);
                 if (editorRef.current && !isEditorFocusedRef.current) {
-                    editorRef.current.innerHTML = newContent;
+                    editorRef.current.innerHTML = cleaned;
                 }
-                triggerAutoSave({ content: newContent });
+                triggerAutoSave({ content: cleaned });
             }
         };
         window.addEventListener('message', handlePopupMessage);
@@ -302,6 +302,33 @@ export default function NotesModal({ isOpen, onClose, user }) {
         }
     }, [selectedNoteId, notes]);
 
+    // Utility: Strip HTML tags to show clean text snippet in preview cards
+    const stripHtml = (html) => {
+        if (!html) return '';
+        if (!html.includes('<') && !html.includes('>')) return html.trim();
+        const tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        const text = (tmp.textContent || tmp.innerText || '').trim();
+        if (!text && html.includes('<img')) {
+            return '📷 [이미지]';
+        }
+        return text;
+    };
+
+    // Utility: Remove residual empty tags before saving so empty notes don't store <p><br></p>
+    const cleanContentForSave = (html) => {
+        if (!html) return '';
+        if (!html.includes('<') && !html.includes('>')) return html.trim();
+        const tmp = document.createElement('div');
+        tmp.innerHTML = html;
+        const text = (tmp.textContent || tmp.innerText || '').trim();
+        const hasImg = tmp.querySelector('img') !== null;
+        if (!text && !hasImg) {
+            return '';
+        }
+        return html;
+    };
+
     // 3. Filter notes based on activeCategory & searchQuery & isDeleted
     const filteredNotes = useMemo(() => {
         return notes.filter((note) => {
@@ -321,7 +348,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
                 const titleMatch = (note.title || '').toLowerCase().includes(queryStr);
                 const clientMatch = (note.clientName || '').toLowerCase().includes(queryStr) || (note.clientAddress || '').toLowerCase().includes(queryStr) || (note.clientPhone || '').includes(queryStr);
                 const accountMatch = (note.accountUsername || '').toLowerCase().includes(queryStr) || (note.accountUrl || '').toLowerCase().includes(queryStr);
-                const contentMatch = (note.content || '').toLowerCase().includes(queryStr);
+                const contentMatch = stripHtml(note.content || '').toLowerCase().includes(queryStr);
                 const tagMatch = Array.isArray(note.tags) && note.tags.some(t => t.toLowerCase().includes(queryStr));
                 const checklistMatch = Array.isArray(note.checklist) && note.checklist.some(item => item.text.toLowerCase().includes(queryStr));
 
@@ -2769,11 +2796,15 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                                         <span className="font-mono font-bold text-gray-800 dark:text-slate-200">{note.accountUsername}</span>
                                                     </div>
                                                 )}
-                                                {note.content && (
-                                                    <p className="text-xs md:text-sm text-gray-500 dark:text-slate-400 line-clamp-2 leading-relaxed font-normal">
-                                                        {note.content}
-                                                    </p>
-                                                )}
+                                                {(() => {
+                                                    const preview = stripHtml(note.content);
+                                                    if (!preview) return null;
+                                                    return (
+                                                        <p className="text-xs md:text-sm text-gray-500 dark:text-slate-400 line-clamp-2 leading-relaxed font-normal">
+                                                            {preview}
+                                                        </p>
+                                                    );
+                                                })()}
                                             </div>
 
                                             {/* Bottom: Badges & Timestamp */}
@@ -3458,16 +3489,18 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                                 isEditorFocusedRef.current = false;
                                                 saveCurrentSelection();
                                                 if (editorRef.current) {
-                                                    const html = editorRef.current.innerHTML;
-                                                    setContent(html);
-                                                    triggerAutoSave({ content: html });
+                                                    const rawHtml = editorRef.current.innerHTML;
+                                                    const cleaned = cleanContentForSave(rawHtml);
+                                                    setContent(cleaned);
+                                                    triggerAutoSave({ content: cleaned });
                                                 }
                                             }}
                                             onInput={(e) => {
                                                 saveCurrentSelection();
-                                                const html = e.currentTarget.innerHTML;
-                                                setContent(html);
-                                                triggerAutoSave({ content: html });
+                                                const rawHtml = e.currentTarget.innerHTML;
+                                                const cleaned = cleanContentForSave(rawHtml);
+                                                setContent(cleaned);
+                                                triggerAutoSave({ content: cleaned });
                                             }}
                                             onPaste={handlePasteImage}
                                             onKeyUp={saveCurrentSelection}
