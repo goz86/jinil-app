@@ -1,9 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import invoiceHtml from '../../public/invoice-app/index.html?raw';
-import { supabase } from '../lib/supabase';
-import { db } from '../firebase';
-import { collection, getDocs } from 'firebase/firestore';
+import { subscribeClients, getCachedClients } from '../services/clientAddressService';
 
 export default function InvoiceModal({ isOpen, onClose }) {
     const iframeRef = useRef(null);
@@ -11,84 +9,47 @@ export default function InvoiceModal({ isOpen, onClose }) {
     useEffect(() => {
         if (!isOpen) return;
 
-        const sendClientsToIframe = async () => {
-            const locationMap = new Map();
+        const sendClients = (clients) => {
+            if (!iframeRef.current || !iframeRef.current.contentWindow) return;
+            const normalized = (clients || []).map(c => ({
+                name: (c.name || c.company_name || '').trim(),
+                rep: c.representative || c.rep || c.contactName || '',
+                tel: c.phone || c.tel || c.courier_phone || '',
+                addr: c.address || c.addr || c.recipient_address || c.default_address || '',
+                biz: c.biz || c.business_number || c.bizNumber || '',
+                bizType: c.bizType || c.biz_type || '',
+                itemType: c.itemType || c.item_type || ''
+            })).filter(c => c.name);
 
-            // 1. Supabase RPC search_public_b2b_shipments (Same queries as ClientAddressBook.jsx)
-            try {
-                const searchQueries = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '10', '11', '12', '서울', '경기', '미지정', 'Open', '공장', '스튜디오', '컴퍼니', '타워', '빌딩', '마포', '성북', '동대문', '중구', '야드', '오픈'];
-                for (const qStr of searchQueries) {
-                    const { data: sbData, error: sbError } = await supabase.rpc('search_public_b2b_shipments', {
-                        p_query: qStr,
-                        p_limit: 200
-                    });
-
-                    if (!sbError && sbData) {
-                        sbData.forEach((s) => {
-                            const locName = (s.location_name || s.company_name || '').trim();
-                            if (!locName || locName === '미지정') return;
-
-                            const key = locName.toLowerCase();
-                            if (!locationMap.has(key)) {
-                                const compName = (s.company_name && s.company_name !== '미지정') ? s.company_name : '';
-                                locationMap.set(key, {
-                                    name: locName,
-                                    rep: compName || s.recipient_name || '',
-                                    tel: s.courier_phone || '',
-                                    addr: s.recipient_address || '',
-                                    biz: '',
-                                    bizType: '',
-                                    itemType: ''
-                                });
-                            }
-                        });
-                    }
-                }
-            } catch (err) {
-                console.error('[InvoiceModal] Supabase RPC fetch error:', err);
-            }
-
-            // 2. Fetch from Firebase Firestore 'clients' collection
-            try {
-                const snap = await getDocs(collection(db, 'clients'));
-                snap.forEach((docSnap) => {
-                    const d = docSnap.data();
-                    const locName = (d.name || d.location_name || d.company_name || '').trim();
-                    if (!locName) return;
-
-                    const key = locName.toLowerCase();
-                    if (!locationMap.has(key)) {
-                        locationMap.set(key, {
-                            name: locName,
-                            rep: d.representative || d.rep || '',
-                            tel: d.tel || d.phone || '',
-                            addr: d.addr || d.address || '',
-                            biz: d.biz || d.bizNumber || '',
-                            bizType: d.bizType || '',
-                            itemType: d.itemType || ''
-                        });
-                    }
-                });
-            } catch (err) {
-                console.error('[InvoiceModal] Firebase Firestore fetch error:', err);
-            }
-
-            const combinedClients = Array.from(locationMap.values());
-
-            // 4. Send message to iframe
-            if (iframeRef.current && iframeRef.current.contentWindow) {
-                iframeRef.current.contentWindow.postMessage({
-                    type: 'INIT_CLIENTS',
-                    clients: combinedClients
-                }, '*');
-            }
+            iframeRef.current.contentWindow.postMessage({
+                type: 'SET_CLIENT_ADDRESS_BOOK',
+                clients: normalized
+            }, '*');
         };
 
-        const timer = setTimeout(() => {
-            void sendClientsToIframe();
-        }, 300);
+        // Listen for iframe readiness or requests
+        const handleMessage = (e) => {
+            if (e.data && (e.data.type === 'IFRAME_READY' || e.data.type === 'GET_CLIENT_ADDRESS_BOOK')) {
+                sendClients(getCachedClients());
+            }
+        };
+        window.addEventListener('message', handleMessage);
 
-        return () => clearTimeout(timer);
+        // Realtime subscription from clientAddressService
+        const unsubscribe = subscribeClients((clients) => {
+            sendClients(clients);
+        });
+
+        // Backup timer to guarantee transmission after iframe renders
+        const timer1 = setTimeout(() => sendClients(getCachedClients()), 150);
+        const timer2 = setTimeout(() => sendClients(getCachedClients()), 600);
+
+        return () => {
+            window.removeEventListener('message', handleMessage);
+            unsubscribe();
+            clearTimeout(timer1);
+            clearTimeout(timer2);
+        };
     }, [isOpen]);
 
     if (!isOpen) return null;
