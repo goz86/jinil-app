@@ -215,6 +215,22 @@ export default function NotesModal({ isOpen, onClose, user }) {
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
+    // Listen for live updates from detached popout window
+    useEffect(() => {
+        const handlePopupMessage = (e) => {
+            if (e.data && e.data.type === 'JINIL_NOTE_CONTENT_UPDATE') {
+                const newHtml = e.data.content || '';
+                setContent(newHtml);
+                if (editorRef.current && editorRef.current.innerHTML !== newHtml) {
+                    editorRef.current.innerHTML = newHtml;
+                }
+                triggerAutoSave({ content: newHtml });
+            }
+        };
+        window.addEventListener('message', handlePopupMessage);
+        return () => window.removeEventListener('message', handlePopupMessage);
+    }, [selectedNoteId]);
+
     // 1. Subscribe to Firestore `shared_notes` collection
     useEffect(() => {
         if (!isOpen) return;
@@ -892,7 +908,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
     // Detached Browser Popup Window with MiniWidget-Style Toss & Kakao Theme & Wallpaper System
     const handleOpenExternalWindow = () => {
         const noteTitle = title || '메모 본문';
-        const noteText = content || '';
+        const noteHtml = content || '';
         const w = 840;
         const h = 740;
         const left = Math.max(0, Math.round((window.screen.width - w) / 2));
@@ -901,7 +917,6 @@ export default function NotesModal({ isOpen, onClose, user }) {
         if (!popup) return;
 
         const safeTitle = noteTitle.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const safeText = noteText.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
         popup.document.write(`
             <!DOCTYPE html>
@@ -1691,7 +1706,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     </div>
 
                     <div class="editor-wrap">
-                        <div id="editor" contenteditable="true" spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off" class="rich-editor">${safeText}</div>
+                        <div id="editor" contenteditable="true" spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off" class="rich-editor"></div>
                     </div>
 
                     <div class="footer" id="appFooter">
@@ -1700,11 +1715,11 @@ export default function NotesModal({ isOpen, onClose, user }) {
                             <span>메인 앱과 실시간 동기화 중</span>
                         </div>
                         <div class="stats-group">
-                            <span id="charCount">${noteText.length} 글자</span>
+                            <span id="charCount">0 글자</span>
                             <span>·</span>
-                            <span id="wordCount">${noteText.trim() ? noteText.trim().split(/\\s+/).length : 0} 단어</span>
+                            <span id="wordCount">0 단어</span>
                             <span>·</span>
-                            <span id="lineCount">${noteText.split('\\n').length} 줄</span>
+                            <span id="lineCount">0 줄</span>
                         </div>
                     </div>
                 </div>
@@ -2230,6 +2245,11 @@ export default function NotesModal({ isOpen, onClose, user }) {
 
                     const editor = document.getElementById('editor');
                     const modalBackdrop = document.getElementById('themeModalBackdrop');
+                    const initialHtml = ${JSON.stringify(noteHtml).replace(/</g, '\\u003c')};
+
+                    if (editor) {
+                        editor.innerHTML = initialHtml || '';
+                    }
 
                     function openThemeModal() {
                         modalBackdrop.classList.add('show');
@@ -2403,10 +2423,18 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     }
 
                     function updateStats() {
-                        const text = editor.innerText || '';
-                        document.getElementById('charCount').innerText = text.length + ' 글자';
-                        document.getElementById('wordCount').innerText = (text.trim() ? text.trim().split(/\s+/).length : 0) + ' 단어';
-                        document.getElementById('lineCount').innerText = text.split('\n').length + ' 줄';
+                        const text = (editor.innerText || '').replace(/\\r\\n/g, '\\n');
+                        const cleanText = text.trim();
+                        const charCount = text.replace(/\\n/g, '').length;
+                        const wordCount = cleanText ? cleanText.split(/\\s+/).length : 0;
+                        const lineCount = text ? text.split('\\n').length : 0;
+
+                        const charEl = document.getElementById('charCount');
+                        const wordEl = document.getElementById('wordCount');
+                        const lineEl = document.getElementById('lineCount');
+                        if (charEl) charEl.innerText = charCount + ' 글자';
+                        if (wordEl) wordEl.innerText = wordCount + ' 단어';
+                        if (lineEl) lineEl.innerText = lineCount + ' 줄';
                     }
 
                     function copyContent() {
@@ -2497,6 +2525,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     // Initial Load
                     applyThemeStyles();
                     applyWallpaperStyles();
+                    updateStats();
                 </script>
             </body>
             </html>
