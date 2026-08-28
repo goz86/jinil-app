@@ -656,6 +656,7 @@
             downloadBtn.innerHTML = '<span>저장 중...</span>';
 
             try {
+                // Try direct canvas render to Blob
                 const canvas = await html2canvas(poster, {
                     scale: 3, // 3x High Definition (~300 DPI)
                     useCORS: true,
@@ -663,20 +664,47 @@
                     backgroundColor: '#ffffff'
                 });
 
-                const link = document.createElement('a');
-                link.download = '진일라벨_WiFi_안내판_A4.png';
-                link.href = canvas.toDataURL('image/png', 1.0);
-                link.click();
+                if (canvas && canvas.toBlob) {
+                    canvas.toBlob((blob) => {
+                        if (blob) {
+                            const url = URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = '진일라벨_WiFi_QR_안내판_A4.png';
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            setTimeout(() => URL.revokeObjectURL(url), 1000);
+                        } else {
+                            fallbackDownload();
+                        }
+                    }, 'image/png', 1.0);
+                } else {
+                    fallbackDownload();
+                }
             } catch (err) {
-                alert('이미지 저장 중 오류가 발생했습니다: ' + err.message);
+                console.warn('Canvas render error, using fallback:', err);
+                fallbackDownload();
             } finally {
-                downloadBtn.innerHTML = `
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
-                    </svg>
-                    <span>고화질 PNG 저장</span>
-                `;
+                setTimeout(() => {
+                    downloadBtn.innerHTML = `
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                        </svg>
+                        <span>고화질 PNG 저장</span>
+                    `;
+                }, 800);
             }
+        }
+
+        // Direct static fallback download
+        function fallbackDownload() {
+            const link = document.createElement('a');
+            link.href = '/jinil_wifi_poster_a4.png';
+            link.download = '진일라벨_WiFi_QR_안내판_A4.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
     </script>
 </body>
