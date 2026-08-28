@@ -958,44 +958,34 @@ export default function NotesModal({ isOpen, onClose, user }) {
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>${safeTitle} - 진일 스티키 메모</title>
+                <title>${safeTitle} - 진일 메모</title>
                 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
                 <style>
                     * { box-sizing: border-box; margin: 0; padding: 0; }
                     
                     :root {
-                        --bg-body: #0b0f19;
-                        --card-bg: #0f172a;
-                        --header-bg: #1e293b;
-                        --header-border: #334155;
+                        --bg-body: #090d16;
+                        --card-bg: rgba(15, 23, 42, 0.94);
+                        --header-bg: rgba(30, 41, 59, 0.7);
+                        --header-border: rgba(255, 255, 255, 0.08);
                         --text-main: #f8fafc;
                         --text-muted: #94a3b8;
-                        --textarea-bg: #020617;
-                        --textarea-border: #1e293b;
-                        --border-color: rgba(255, 255, 255, 0.12);
-                        --btn-bg: rgba(255, 255, 255, 0.08);
+                        --textarea-bg: rgba(2, 6, 23, 0.6);
+                        --textarea-border: rgba(255, 255, 255, 0.08);
+                        --border-color: rgba(255, 255, 255, 0.1);
+                        --btn-bg: rgba(255, 255, 255, 0.06);
                         --btn-text: #e2e8f0;
-                        --btn-border: rgba(255, 255, 255, 0.15);
-                        --btn-hover-bg: rgba(255, 255, 255, 0.15);
+                        --btn-border: rgba(255, 255, 255, 0.12);
+                        --btn-hover-bg: rgba(255, 255, 255, 0.14);
                         --btn-hover-text: #ffffff;
                         --btn-hover-border: rgba(255, 255, 255, 0.25);
-                        --btn-theme-bg: #2563eb;
-                        --btn-theme-text: #ffffff;
-                        --btn-theme-border: #3b82f6;
-                        --btn-theme-hover: #1d4ed8;
-                        --btn-copy-bg: #0f766e;
-                        --btn-copy-text: #ccfbf1;
-                        --btn-copy-border: #14b8a6;
-                        --btn-copy-hover: #0d9488;
                         --accent-color: #3b82f6;
-                        --badge-bg: #2563eb;
-                        --badge-text: #ffffff;
-                        --footer-bg: #0f172a;
+                        --footer-bg: rgba(15, 23, 42, 0.85);
                         --window-opacity: 1;
                     }
 
                     body {
-                        padding: 10px;
+                        padding: 8px;
                         font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
                         background-color: var(--bg-body);
                         color: var(--text-main);
@@ -1007,6 +997,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         background-size: cover;
                         background-position: center;
                         background-repeat: no-repeat;
+                        -webkit-font-smoothing: antialiased;
                     }
 
                     .app-container {
@@ -1015,35 +1006,25 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         height: 100%;
                         background-color: var(--card-bg);
                         border: 1px solid var(--border-color);
-                        border-radius: 16px;
+                        border-radius: 14px;
                         overflow: hidden;
-                        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.45);
-                        backdrop-filter: blur(16px);
-                        -webkit-backdrop-filter: blur(16px);
+                        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.06);
+                        backdrop-filter: blur(20px);
+                        -webkit-backdrop-filter: blur(20px);
                         opacity: var(--window-opacity);
                         transition: opacity 0.2s ease, all 0.2s ease;
                     }
 
-                    .high-contrast .app-container {
-                        border-width: 2px !important;
-                        border-color: var(--accent-color) !important;
-                        box-shadow: 0 0 0 1px var(--accent-color), 0 25px 50px rgba(0,0,0,0.7) !important;
-                    }
-
-                    .high-contrast textarea {
-                        border-width: 2px !important;
-                        border-color: var(--accent-color) !important;
-                    }
-
+                    /* 🌟 Modern Minimalist Header */
                     .header {
                         display: flex;
                         justify-content: space-between;
                         align-items: center;
-                        padding: 10px 14px;
+                        padding: 8px 12px;
                         background-color: var(--header-bg);
                         border-bottom: 1px solid var(--header-border);
                         gap: 8px;
-                        min-height: 50px;
+                        min-height: 46px;
                         box-sizing: border-box;
                         transition: all 0.2s ease;
                         flex-shrink: 0;
@@ -1053,27 +1034,22 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     .title-group {
                         display: flex;
                         align-items: center;
-                        gap: 8px;
+                        gap: 7px;
                         min-width: 0;
                         flex: 1 1 auto;
                     }
 
-                    .badge {
-                        background-color: var(--badge-bg);
-                        color: var(--badge-text);
-                        font-size: 10.5px;
-                        font-weight: 800;
-                        padding: 3px 8px;
-                        border-radius: 6px;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.15);
-                        white-space: nowrap;
+                    .title-icon {
+                        width: 14px;
+                        height: 14px;
+                        color: var(--text-muted);
                         flex-shrink: 0;
-                        transition: all 0.2s;
                     }
 
                     .title-text {
-                        font-size: 14px;
-                        font-weight: 800;
+                        font-size: 13px;
+                        font-weight: 700;
+                        letter-spacing: -0.01em;
                         color: var(--text-main);
                         white-space: nowrap;
                         overflow: hidden;
@@ -1084,30 +1060,33 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     .toolbar {
                         display: flex;
                         align-items: center;
-                        gap: 5px;
+                        gap: 4px;
                         flex-wrap: nowrap;
                         flex-shrink: 0;
                     }
 
+                    /* 💎 Minimalist Unified Action Buttons */
                     .btn {
-                        height: 32px;
-                        padding: 0 10px;
-                        border-radius: 8px;
-                        font-weight: 700;
-                        font-size: 12px;
+                        height: 29px;
+                        padding: 0 8px;
+                        border-radius: 7px;
+                        font-weight: 600;
+                        font-size: 11.5px;
+                        letter-spacing: -0.01em;
                         cursor: pointer;
                         display: inline-flex;
                         align-items: center;
                         justify-content: center;
-                        gap: 4px;
+                        gap: 4.5px;
                         white-space: nowrap;
-                        transition: all 0.15s ease;
+                        transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
                         user-select: none;
                         box-sizing: border-box;
                         line-height: 1;
                         background-color: var(--btn-bg);
                         color: var(--btn-text);
                         border: 1px solid var(--btn-border);
+                        backdrop-filter: blur(6px);
                     }
 
                     .btn:hover {
@@ -1117,122 +1096,95 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         transform: translateY(-1px);
                     }
 
-                    /* 📌 Sticky Note Pin Toggle Button */
+                    .btn:active {
+                        transform: translateY(0);
+                    }
+
+                    .btn-svg {
+                        width: 13px;
+                        height: 13px;
+                        flex-shrink: 0;
+                    }
+
+                    /* 📌 Sticky Pin Button */
                     .btn-sticky {
-                        background: rgba(245, 158, 11, 0.12);
-                        color: #fbbf24;
-                        border: 1px solid rgba(245, 158, 11, 0.3);
-                        font-weight: 800;
+                        color: var(--btn-text);
                     }
 
-                    .btn-sticky:hover {
-                        background: rgba(245, 158, 11, 0.25);
-                        color: #fef08a;
-                        border-color: rgba(245, 158, 11, 0.5);
+                    .btn-sticky.active-sticky {
+                        background: rgba(245, 158, 11, 0.16) !important;
+                        color: #fbbf24 !important;
+                        border-color: rgba(245, 158, 11, 0.45) !important;
+                        box-shadow: 0 0 10px rgba(245, 158, 11, 0.2);
                     }
 
-                    .btn-sticky.active {
-                        background: linear-gradient(135deg, #d97706, #b45309);
-                        color: #ffffff;
-                        border-color: #f59e0b;
-                        box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+                    /* 🪟 Opacity Dial Button */
+                    .btn-trans {
+                        font-variant-numeric: tabular-nums;
                     }
 
-                    /* Taste-Skill Premium Opacity & Glass Transparency Button */
-                    .btn-opacity {
-                        background: rgba(255, 255, 255, 0.08);
-                        color: #cbd5e1;
-                        font-size: 11.5px;
-                        font-weight: 800;
-                        padding: 0 9px;
-                        gap: 5px;
-                        border: 1px solid var(--btn-border);
-                        transition: all 0.2s ease;
-                    }
-
-                    .btn-opacity:hover {
-                        background: rgba(255, 255, 255, 0.16);
-                        color: #ffffff;
-                        border-color: rgba(255, 255, 255, 0.28);
-                    }
-
-                    .btn-opacity.active-trans {
-                        background: rgba(59, 130, 246, 0.22) !important;
+                    .btn-trans.active-trans {
+                        background: rgba(59, 130, 246, 0.18) !important;
                         color: #93c5fd !important;
                         border-color: rgba(59, 130, 246, 0.45) !important;
-                        box-shadow: 0 0 10px rgba(59, 130, 246, 0.25);
+                        box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
                     }
 
-                    .btn-theme {
-                        background-color: var(--btn-theme-bg);
-                        color: var(--btn-theme-text);
-                        border: 1px solid var(--btn-theme-border);
-                        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-                    }
-
-                    .btn-theme:hover {
-                        background-color: var(--btn-theme-hover);
-                        color: var(--btn-theme-text);
-                        transform: translateY(-1px);
-                    }
-
-                    .btn-copy {
-                        background-color: var(--btn-copy-bg);
-                        color: var(--btn-copy-text);
-                        border: 1px solid var(--btn-copy-border);
-                    }
-
-                    .btn-copy:hover {
-                        background-color: var(--btn-copy-hover);
-                        color: var(--btn-copy-text);
-                    }
-
-                    .font-controls {
-                        height: 32px;
+                    /* 🔤 Minimalist Font Size Stepper Pill */
+                    .font-stepper {
+                        height: 29px;
                         display: inline-flex;
                         align-items: center;
                         background-color: var(--btn-bg);
-                        border-radius: 8px;
+                        border-radius: 7px;
                         border: 1px solid var(--btn-border);
-                        padding: 2px 3px;
+                        padding: 2px;
                         box-sizing: border-box;
                     }
 
-                    .font-controls button {
-                        height: 26px;
-                        padding: 0 6px;
+                    .font-stepper button {
+                        height: 23px;
+                        padding: 0 5px;
                         display: inline-flex;
                         align-items: center;
                         justify-content: center;
                         background: transparent;
                         border: none;
                         color: var(--btn-text);
-                        font-weight: 800;
-                        font-size: 11px;
+                        font-weight: 700;
+                        font-size: 10.5px;
                         cursor: pointer;
                         border-radius: 5px;
-                        transition: background 0.15s;
-                        line-height: 1;
+                        transition: background 0.15s, color 0.15s;
                     }
 
-                    .font-controls button:hover {
+                    .font-stepper button:hover {
                         background-color: var(--btn-hover-bg);
                         color: var(--btn-hover-text);
                     }
 
-                    .font-size-text {
-                        font-size: 11px;
+                    .font-display {
+                        font-size: 10.5px;
+                        font-weight: 700;
                         color: var(--text-muted);
                         padding: 0 3px;
-                        font-weight: bold;
                         user-select: none;
+                        font-variant-numeric: tabular-nums;
                     }
 
+                    /* Close button */
+                    .btn-close:hover {
+                        background-color: rgba(239, 68, 68, 0.18) !important;
+                        color: #fca5a5 !important;
+                        border-color: rgba(239, 68, 68, 0.35) !important;
+                    }
+
+                    /* 📝 Editor Container */
                     .editor-wrap {
                         flex: 1;
                         display: flex;
                         flex-direction: column;
-                        padding: 10px 14px;
+                        padding: 8px 12px;
                         min-height: 0;
                     }
 
@@ -1242,14 +1194,15 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         background-color: var(--textarea-bg);
                         border: 1px solid var(--textarea-border);
                         color: var(--text-main);
-                        border-radius: 12px;
-                        padding: 14px 16px;
+                        border-radius: 10px;
+                        padding: 12px 14px;
                         font-size: 15px;
                         line-height: 1.65;
+                        letter-spacing: -0.01em;
                         outline: none;
                         font-family: "Pretendard", sans-serif;
-                        box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
-                        transition: all 0.2s ease;
+                        box-shadow: inset 0 1px 3px rgba(0,0,0,0.12);
+                        transition: border-color 0.2s ease, box-shadow 0.2s ease;
                         overflow-y: auto;
                         min-height: 0;
                         cursor: text;
@@ -1260,19 +1213,35 @@ export default function NotesModal({ isOpen, onClose, user }) {
 
                     .rich-editor:focus {
                         border-color: var(--accent-color);
-                        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25), inset 0 2px 4px rgba(0,0,0,0.1);
+                        box-shadow: 0 0 0 2.5px rgba(59, 130, 246, 0.25), inset 0 1px 3px rgba(0,0,0,0.12);
                     }
 
                     .rich-editor:empty:before {
-                        content: "상세 내용을 작성하세요... (Ctrl+V로 con trỏ chuột dán ảnh trực tiếp)";
+                        content: "메모 내용을 입력하세요... (Ctrl+V로 이미지 직접 첨부)";
                         color: var(--text-muted);
+                        opacity: 0.6;
                         pointer-events: none;
                         display: block;
                     }
 
+                    /* Custom sleek scrollbar */
+                    .rich-editor::-webkit-scrollbar {
+                        width: 5px;
+                    }
+                    .rich-editor::-webkit-scrollbar-track {
+                        background: transparent;
+                    }
+                    .rich-editor::-webkit-scrollbar-thumb {
+                        background: rgba(255, 255, 255, 0.15);
+                        border-radius: 4px;
+                    }
+                    .rich-editor::-webkit-scrollbar-thumb:hover {
+                        background: rgba(255, 255, 255, 0.3);
+                    }
+
                     /* Inline pasted images */
                     .inline-image-block {
-                        margin: 10px 0;
+                        margin: 8px 0;
                         display: inline-block;
                         max-width: 100%;
                         user-select: none;
@@ -1288,14 +1257,15 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         display: block;
                     }
 
+                    /* 📊 Footer Status Bar */
                     .footer {
                         display: flex;
                         justify-content: space-between;
                         align-items: center;
-                        padding: 8px 14px;
+                        padding: 6px 12px;
                         background-color: var(--footer-bg);
                         border-top: 1px solid var(--header-border);
-                        font-size: 11.5px;
+                        font-size: 11px;
                         color: var(--text-muted);
                         gap: 8px;
                         flex-shrink: 0;
@@ -1305,152 +1275,133 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     .sync-status {
                         display: flex;
                         align-items: center;
-                        gap: 6px;
+                        gap: 5px;
                         min-width: 0;
                     }
 
                     .status-dot {
-                        width: 7px;
-                        height: 7px;
+                        width: 6px;
+                        height: 6px;
                         background-color: #10b981;
                         border-radius: 50%;
                         display: inline-block;
-                        box-shadow: 0 0 8px #10b981;
+                        box-shadow: 0 0 6px #10b981;
                         flex-shrink: 0;
                     }
 
                     .stats-group {
                         display: flex;
                         align-items: center;
-                        gap: 6px;
+                        gap: 4px;
                         white-space: nowrap;
                         flex-shrink: 0;
+                        font-variant-numeric: tabular-nums;
                     }
 
                     /* 🌟 ULTRA-COMPACT STICKY NOTE MODE STYLES */
                     body.sticky-mode {
-                        padding: 4px;
+                        padding: 3px;
                         background-color: transparent !important;
                     }
 
                     body.sticky-mode .app-container {
-                        border-radius: 14px;
-                        box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.12);
+                        border-radius: 12px;
+                        box-shadow: 0 16px 36px -4px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.1);
                     }
 
                     body.sticky-mode .header {
-                        padding: 6px 8px;
-                        min-height: 38px;
-                        height: 38px;
+                        padding: 4px 8px;
+                        min-height: 36px;
+                        height: 36px;
                         gap: 4px;
-                    }
-
-                    body.sticky-mode .badge {
-                        background: linear-gradient(135deg, #d97706, #b45309) !important;
-                        color: #ffffff !important;
-                        font-size: 9.5px;
-                        padding: 2px 6px;
                     }
 
                     body.sticky-mode .title-text {
                         font-size: 12px;
-                        max-width: 90px;
+                        max-width: 100px;
                     }
 
                     body.sticky-mode .btn {
-                        height: 26px;
-                        padding: 0 6px;
+                        height: 25px;
+                        padding: 0 5.5px;
                         font-size: 10.5px;
                         border-radius: 6px;
+                        gap: 3.5px;
                     }
 
-                    body.sticky-mode .font-controls,
+                    body.sticky-mode .btn-svg {
+                        width: 11.5px;
+                        height: 11.5px;
+                    }
+
+                    body.sticky-mode .font-stepper,
                     body.sticky-mode .btn-print,
-                    body.sticky-mode .font-size-text {
+                    body.sticky-mode .sync-text {
                         display: none !important;
                     }
 
                     body.sticky-mode .editor-wrap {
-                        padding: 6px 8px;
+                        padding: 4px 8px;
                     }
 
                     body.sticky-mode .rich-editor {
                         padding: 8px 10px;
-                        border-radius: 10px;
+                        border-radius: 8px;
                         font-size: 13.5px;
                         line-height: 1.55;
                     }
 
                     body.sticky-mode .footer {
-                        padding: 4px 8px;
+                        padding: 3px 8px;
                         font-size: 10px;
-                        min-height: 24px;
-                    }
-
-                    body.sticky-mode .sync-text {
-                        display: none;
+                        min-height: 22px;
                     }
 
                     /* 📱 Responsive optimizations */
-                    @media (max-width: 640px) {
-                        body { padding: 6px; }
-                        .header { padding: 8px 10px; min-height: 46px; gap: 6px; }
-                        .editor-wrap { padding: 8px 10px; }
-                        .rich-editor { padding: 10px 12px; font-size: 14px; }
-                        .btn { height: 30px; padding: 0 8px; font-size: 11px; }
-                        .font-controls { height: 30px; }
-                        .font-controls button { height: 24px; padding: 0 5px; font-size: 10px; }
-                        .font-size-text { font-size: 10px; }
-                        .footer { padding: 6px 10px; font-size: 11px; }
-                    }
-
-                    @media (max-width: 480px) {
+                    @media (max-width: 520px) {
                         body { padding: 4px; }
-                        .app-container { border-radius: 12px; }
-                        .header { padding: 6px 8px; min-height: 40px; gap: 4px; }
-                        .title-text { font-size: 12.5px; max-width: 80px; }
-                        .editor-wrap { padding: 6px 8px; }
-                        .rich-editor { padding: 8px 10px; border-radius: 8px; font-size: 13px; }
-                        .btn { height: 26px; padding: 0 5px; font-size: 10px; }
-                        .font-controls { display: none; }
+                        .header { padding: 5px 8px; min-height: 38px; gap: 4px; }
+                        .title-text { font-size: 12px; max-width: 90px; }
+                        .editor-wrap { padding: 5px 8px; }
+                        .rich-editor { padding: 8px 10px; font-size: 13.5px; }
+                        .btn { height: 26px; padding: 0 5px; font-size: 10.5px; }
+                        .font-stepper { display: none !important; }
+                        .btn-print { display: none !important; }
                         .sync-text { display: none; }
                         .footer { padding: 4px 8px; font-size: 10px; }
                     }
 
-                    /* 🎨 Toss / Kakao Theme Selector Modal Dialog Styles */
+                    /* 🎨 Theme Selector Modal Dialog */
                     .modal-backdrop {
                         position: fixed;
                         inset: 0;
-                        background: rgba(0, 0, 0, 0.65);
+                        background: rgba(0, 0, 0, 0.7);
                         backdrop-filter: blur(8px);
                         -webkit-backdrop-filter: blur(8px);
-                        display: flex;
+                        z-index: 9999;
+                        display: none;
                         align-items: center;
                         justify-content: center;
-                        z-index: 99999;
-                        opacity: 0;
-                        pointer-events: none;
-                        transition: opacity 0.2s ease;
                         padding: 16px;
+                        animation: fadeIn 0.15s ease;
                     }
 
                     .modal-backdrop.show {
-                        opacity: 1;
-                        pointer-events: auto;
+                        display: flex;
                     }
 
                     .theme-modal {
                         background: #0f172a;
-                        border: 1px solid rgba(255, 255, 255, 0.15);
-                        border-radius: 20px;
+                        border: 1px solid rgba(255, 255, 255, 0.12);
+                        border-radius: 16px;
                         width: 100%;
-                        max-width: 480px;
+                        max-width: 440px;
                         max-height: 85vh;
                         display: flex;
                         flex-direction: column;
-                        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+                        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
                         overflow: hidden;
-                        transform: scale(0.95);
+                        transform: scale(0.96);
                         transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
                     }
 
@@ -1459,8 +1410,8 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     }
 
                     .modal-header {
-                        padding: 16px 20px;
-                        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                        padding: 14px 18px;
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
                         display: flex;
                         justify-content: space-between;
                         align-items: center;
@@ -1474,19 +1425,18 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     }
 
                     .modal-icon {
-                        width: 32px;
-                        height: 32px;
-                        border-radius: 10px;
+                        width: 28px;
+                        height: 28px;
+                        border-radius: 8px;
                         background: linear-gradient(135deg, #2563eb, #7c3aed);
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
                     }
 
                     .modal-header h3 {
-                        font-size: 15px;
-                        font-weight: 800;
+                        font-size: 14px;
+                        font-weight: 700;
                         color: #ffffff;
                     }
 
@@ -1499,10 +1449,10 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         background: rgba(255, 255, 255, 0.08);
                         border: none;
                         color: #94a3b8;
-                        width: 28px;
-                        height: 28px;
-                        border-radius: 8px;
-                        font-size: 13px;
+                        width: 26px;
+                        height: 26px;
+                        border-radius: 6px;
+                        font-size: 12px;
                         cursor: pointer;
                         display: flex;
                         align-items: center;
@@ -1511,21 +1461,21 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     }
 
                     .modal-close-btn:hover {
-                        background: rgba(255, 255, 255, 0.2);
+                        background: rgba(255, 255, 255, 0.18);
                         color: #ffffff;
                     }
 
                     .tab-switcher {
                         display: flex;
-                        padding: 10px 16px 0;
+                        padding: 8px 16px 0;
                         background: #0f172a;
                         gap: 8px;
                         border-bottom: 1px solid rgba(255, 255, 255, 0.08);
                     }
 
                     .tab-btn {
-                        padding: 8px 14px;
-                        font-size: 12px;
+                        padding: 7px 12px;
+                        font-size: 11.5px;
                         font-weight: 700;
                         color: #94a3b8;
                         background: transparent;
@@ -1550,75 +1500,81 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     }
 
                     .modal-body {
-                        padding: 16px;
+                        padding: 14px 16px;
                         overflow-y: auto;
                         flex: 1;
                         display: flex;
                         flex-direction: column;
-                        gap: 14px;
+                        gap: 12px;
                     }
 
-                    .section-subtitle {
-                        font-size: 11.5px;
-                        font-weight: 700;
-                        color: #cbd5e1;
-                        margin-bottom: 8px;
+                    .theme-list {
+                        display: flex;
+                        flex-direction: column;
+                        gap: 7px;
+                    }
+
+                    .theme-card {
+                        background: #1e293b;
+                        border: 1px solid rgba(255, 255, 255, 0.08);
+                        border-radius: 10px;
+                        padding: 9px 12px;
+                        cursor: pointer;
+                        transition: all 0.15s ease;
                         display: flex;
                         align-items: center;
                         justify-content: space-between;
                     }
 
-                    .theme-grid {
-                        display: grid;
-                        grid-template-columns: repeat(2, 1fr);
-                        gap: 10px;
-                    }
-
-                    .theme-card {
-                        background: #1e293b;
-                        border: 2px solid rgba(255, 255, 255, 0.08);
-                        border-radius: 14px;
-                        padding: 12px;
-                        cursor: pointer;
-                        transition: all 0.18s ease;
-                        display: flex;
-                        flex-direction: column;
-                        gap: 8px;
-                        position: relative;
-                    }
-
                     .theme-card:hover {
-                        border-color: rgba(59, 130, 246, 0.5);
-                        transform: translateY(-2px);
-                        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                        border-color: rgba(59, 130, 246, 0.4);
+                        background: #273549;
                     }
 
                     .theme-card.active {
                         border-color: #3b82f6;
-                        background: rgba(59, 130, 246, 0.1);
+                        background: rgba(59, 130, 246, 0.12);
                     }
 
-                    .theme-preview-dots {
+                    .theme-card-left {
                         display: flex;
-                        gap: 5px;
                         align-items: center;
+                        gap: 10px;
                     }
 
-                    .preview-circle {
-                        width: 14px;
-                        height: 14px;
-                        border-radius: 50%;
-                        border: 1px solid rgba(255,255,255,0.2);
+                    .theme-mini-thumb {
+                        width: 24px;
+                        height: 24px;
+                        border-radius: 6px;
+                        border: 1px solid rgba(255, 255, 255, 0.15);
+                        overflow: hidden;
+                        display: flex;
+                        flex-direction: column;
                     }
 
-                    .theme-name {
+                    .theme-mini-header {
+                        height: 8px;
+                    }
+
+                    .theme-mini-body {
+                        flex: 1;
+                        padding: 2px;
+                    }
+
+                    .theme-mini-inner {
+                        width: 100%;
+                        height: 100%;
+                        border-radius: 2px;
+                    }
+
+                    .theme-card-name {
                         font-size: 12px;
-                        font-weight: 800;
+                        font-weight: 700;
                         color: #ffffff;
                     }
 
-                    .theme-desc {
-                        font-size: 10.5px;
+                    .theme-card-cat {
+                        font-size: 10px;
                         color: #94a3b8;
                     }
 
@@ -1636,10 +1592,10 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     }
 
                     .radio-circle {
-                        width: 14px;
-                        height: 14px;
+                        width: 16px;
+                        height: 16px;
                         border-radius: 50%;
-                        border: 1.5px solid rgba(255,255,255,0.3);
+                        border: 1.5px solid rgba(255, 255, 255, 0.2);
                     }
 
                     .wallpaper-grid {
@@ -1649,181 +1605,138 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     }
 
                     .wp-card {
-                        height: 60px;
+                        border: 1.5px solid rgba(255, 255, 255, 0.08);
                         border-radius: 10px;
-                        border: 2px solid rgba(255, 255, 255, 0.1);
+                        height: 70px;
                         cursor: pointer;
-                        transition: all 0.15s;
                         position: relative;
                         overflow: hidden;
                         display: flex;
-                        align-items: flex-end;
-                        padding: 6px;
+                        flex-direction: column;
+                        justify-content: space-between;
+                        padding: 6px 8px;
+                        transition: all 0.15s;
                     }
 
                     .wp-card:hover {
-                        transform: scale(1.03);
-                        border-color: #a855f7;
+                        border-color: rgba(168, 85, 247, 0.5);
+                        transform: translateY(-1px);
                     }
 
                     .wp-card.active {
                         border-color: #a855f7;
-                        box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.4);
+                        box-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
                     }
 
-                    .wp-name {
-                        font-size: 9.5px;
-                        font-weight: 800;
+                    .wp-card-bg {
+                        position: absolute;
+                        inset: 0;
+                        z-index: 0;
+                    }
+
+                    .wp-card-top, .wp-card-bot {
+                        position: relative;
+                        z-index: 1;
+                    }
+
+                    .wp-card-name {
+                        font-size: 10.5px;
+                        font-weight: 700;
                         color: #ffffff;
-                        text-shadow: 0 1px 3px rgba(0,0,0,0.9);
                     }
 
-                    .custom-bg-input-box {
-                        background: #1e293b;
-                        border: 1px solid rgba(255, 255, 255, 0.1);
-                        border-radius: 12px;
-                        padding: 12px;
+                    .upload-box {
                         display: flex;
                         flex-direction: column;
-                        gap: 8px;
+                        gap: 6px;
+                        padding: 10px;
+                        background: #1e293b;
+                        border-radius: 10px;
+                        border: 1px dashed rgba(255, 255, 255, 0.15);
                     }
 
-                    .custom-bg-input-box input[type="text"] {
-                        width: 100%;
-                        background: #0f172a;
-                        border: 1px solid rgba(255, 255, 255, 0.15);
-                        border-radius: 8px;
-                        padding: 7px 10px;
-                        font-size: 11.5px;
-                        color: #ffffff;
-                        outline: none;
-                    }
-
-                    .custom-bg-input-box input[type="text"]:focus {
-                        border-color: #a855f7;
-                    }
-
-                    .file-label-btn {
-                        display: inline-flex;
+                    .upload-label {
+                        display: flex;
                         align-items: center;
                         justify-content: center;
                         gap: 6px;
+                        padding: 6px;
                         background: rgba(255, 255, 255, 0.08);
-                        border: 1px solid rgba(255, 255, 255, 0.2);
-                        color: #ffffff;
-                        border-radius: 8px;
-                        padding: 6px 12px;
+                        border-radius: 6px;
+                        color: #e2e8f0;
                         font-size: 11px;
                         font-weight: 700;
                         cursor: pointer;
-                        transition: background 0.15s;
                     }
 
-                    .file-label-btn:hover {
-                        background: rgba(255, 255, 255, 0.15);
-                    }
-
-                    .contrast-toggle-btn {
-                        display: flex;
-                        align-items: center;
-                        justify-content: space-between;
-                        padding: 10px 14px;
-                        background: #1e293b;
+                    .url-input {
+                        background: rgba(0, 0, 0, 0.3);
                         border: 1px solid rgba(255, 255, 255, 0.1);
-                        border-radius: 12px;
-                        cursor: pointer;
-                        transition: all 0.15s;
-                    }
-
-                    .contrast-toggle-btn:hover {
-                        background: #334155;
-                    }
-
-                    .toggle-pill {
-                        width: 38px;
-                        height: 20px;
-                        background: rgba(255,255,255,0.2);
-                        border-radius: 20px;
-                        position: relative;
-                        transition: background 0.2s;
-                    }
-
-                    .toggle-circle {
-                        width: 14px;
-                        height: 14px;
-                        background: #ffffff;
-                        border-radius: 50%;
-                        position: absolute;
-                        top: 3px;
-                        left: 3px;
-                        transition: transform 0.2s;
-                    }
-
-                    .contrast-toggle-btn.on .toggle-pill {
-                        background: #3b82f6;
-                    }
-
-                    .contrast-toggle-btn.on .toggle-circle {
-                        transform: translateX(18px);
-                    }
-
-                    .modal-footer {
-                        padding: 12px 20px;
-                        border-top: 1px solid rgba(255, 255, 255, 0.1);
-                        background: #1e293b;
-                        display: flex;
-                        justify-content: flex-end;
+                        border-radius: 6px;
+                        padding: 6px 8px;
+                        font-size: 11px;
+                        color: #ffffff;
+                        outline: none;
                     }
 
                     .apply-btn {
                         background: linear-gradient(135deg, #2563eb, #7c3aed);
                         color: #ffffff;
                         border: none;
-                        padding: 8px 18px;
-                        border-radius: 10px;
+                        padding: 9px 18px;
+                        border-radius: 9px;
                         font-size: 12px;
                         font-weight: 800;
                         cursor: pointer;
-                        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
-                        transition: all 0.15s;
-                    }
-
-                    .apply-btn:hover {
-                        background: linear-gradient(135deg, #1d4ed8, #6d28d9);
-                        transform: translateY(-1px);
+                        margin: 10px 16px 14px;
                     }
                 </style>
             </head>
             <body class="${isSticky ? 'sticky-mode' : ''}">
                 <div class="app-container" id="appContainer">
+                    <!-- Modern Minimalist Header -->
                     <div class="header" id="appHeader">
                         <div class="title-group">
-                            <span class="badge" id="appBadge">${isSticky ? '<svg style="width:10px;height:10px;display:inline-block;vertical-align:-1px;margin-right:3px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v8M5 5l14 14M19 5l-4 4M5 19l4-4M15 15l4 4"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>스티키' : '새 창 메모'}</span>
-                            <div class="title-text" id="appTitle">${safeTitle}</div>
-                        </div>
-
-                        <div class="toolbar">
-                            <!-- 📌 Sticky Note Pin Toggle Button -->
-                            <button id="stickyToggleBtn" class="btn btn-sticky ${isSticky ? 'active' : ''}" onclick="toggleStickyMode()" title="스티키 노트 모드 전환 (Alt+S)">
-                                <svg style="width:13px; height:13px; flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <span id="appBadgeIcon">
+                                ${isSticky ? `
+                                <svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="color:#fbbf24;">
                                     <path d="M12 2v8M5 5l14 14M19 5l-4 4M5 19l4-4M15 15l4 4"/>
                                     <circle cx="12" cy="12" r="3" fill="currentColor"/>
                                 </svg>
-                                <span id="stickyBtnText">${isSticky ? '스티키 ON' : '스티키'}</span>
+                                ` : `
+                                <svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                    <line x1="16" y1="13" x2="8" y2="13"/>
+                                    <line x1="16" y1="17" x2="8" y2="17"/>
+                                </svg>
+                                `}
+                            </span>
+                            <div class="title-text" id="appTitle" title="${safeTitle}">${safeTitle}</div>
+                        </div>
+
+                        <div class="toolbar">
+                            <!-- 📌 Sticky Pin Mode Toggle Button -->
+                            <button id="stickyToggleBtn" class="btn btn-sticky ${isSticky ? 'active-sticky' : ''}" onclick="toggleStickyMode()" title="스티키 모드 전환 (Alt+S)">
+                                <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 2v8M5 5l14 14M19 5l-4 4M5 19l4-4M15 15l4 4"/>
+                                    <circle cx="12" cy="12" r="3" fill="currentColor"/>
+                                </svg>
+                                <span id="stickyBtnText">${isSticky ? 'ON' : '스티키'}</span>
                             </button>
 
-                            <!-- 🪟 Taste-Skill Premium Opacity & Glass Transparency Toggle Button -->
-                            <button id="opacityBtn" class="btn btn-opacity" onclick="cycleOpacity()" title="창 투명도 / Glass Opacity 조절 (Alt+O)">
-                                <svg style="width:13px; height:13px; flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <!-- 🪟 Taste-Skill Premium Opacity & Glass Transparency Button -->
+                            <button id="opacityBtn" class="btn btn-trans" onclick="cycleOpacity()" title="창 투명도 조절 (Alt+O)">
+                                <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                     <circle cx="12" cy="12" r="9" />
-                                    <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" fill-opacity="0.4" />
+                                    <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" fill-opacity="0.45" />
                                 </svg>
                                 <span id="opacityValText">100%</span>
                             </button>
 
-                            <!-- Theme & Wallpaper Settings Button -->
-                            <button class="btn btn-theme" onclick="openThemeModal()" title="테마 및 배경화면 설정">
-                                <svg style="width:13px; height:13px; flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <!-- 🎨 Theme Settings Button -->
+                            <button class="btn" onclick="openThemeModal()" title="테마 설정 (Alt+T)">
+                                <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                     <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
                                     <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
                                     <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
@@ -1832,315 +1745,216 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                 </svg>
                             </button>
 
-                            <!-- Font Size Controls (Hidden in sticky mode) -->
-                            <div class="font-controls">
-                                <button onclick="changeFontSize(-2)" title="글자 크기 축소">A-</button>
-                                <span id="fontSizeDisplay" class="font-size-text">16px</span>
-                                <button onclick="changeFontSize(2)" title="글자 크기 확대">A+</button>
+                            <!-- 🔤 Font Stepper (Hidden in sticky mode) -->
+                            <div class="font-stepper">
+                                <button onclick="changeFontSize(-2)" title="글자 축소">A-</button>
+                                <span id="fontSizeDisplay" class="font-display">16px</span>
+                                <button onclick="changeFontSize(2)" title="글자 확대">A+</button>
                             </div>
 
-                            <!-- Copy Button -->
-                            <button id="copyBtn" class="btn btn-copy" onclick="copyContent()" title="전체 복사">
-                                <span>복사</span>
+                            <!-- 📋 Copy Button -->
+                            <button id="copyBtn" class="btn" onclick="copyContent()" title="전체 복사 (Ctrl+Shift+C)">
+                                <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                                </svg>
+                                <span id="copyBtnText">복사</span>
                             </button>
 
-                            <!-- Print Button (Hidden in sticky mode) -->
+                            <!-- 🖨️ Print Button (Hidden in sticky mode) -->
                             <button class="btn btn-print" onclick="window.print()" title="인쇄">
-                                <span>인쇄</span>
+                                <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="6 9 6 2 18 2 18 9"></polyline>
+                                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+                                    <rect x="6" y="14" width="12" height="8"></rect>
+                                </svg>
                             </button>
 
-                            <!-- Close Button -->
-                            <button class="btn" onclick="window.close()" title="창 닫기">
-                                <span>✕</span>
+                            <!-- ✕ Close Button -->
+                            <button class="btn btn-close" onclick="window.close()" title="창 닫기 (Esc)">
+                                <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                                </svg>
                             </button>
                         </div>
                     </div>
 
+                    <!-- Editor Wrap -->
                     <div class="editor-wrap">
                         <div id="editor" contenteditable="true" spellcheck="false" autocorrect="off" autocapitalize="off" autocomplete="off" class="rich-editor"></div>
                     </div>
 
+                    <!-- Footer Status Bar -->
                     <div class="footer" id="appFooter">
                         <div class="sync-status">
                             <span class="status-dot"></span>
-                            <span class="sync-text">메인 앱과 실시간 동기화 중</span>
+                            <span class="sync-text">실시간 동기화</span>
                         </div>
                         <div class="stats-group">
-                            <span id="charCount">0 글자</span>
+                            <span id="charCount">0자</span>
                             <span>·</span>
-                            <span id="wordCount">0 단어</span>
+                            <span id="wordCount">0단어</span>
                             <span>·</span>
-                            <span id="lineCount">0 줄</span>
+                            <span id="lineCount">0줄</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- 🎨 MiniWidget Toss & Kakao Theme & Wallpaper Modal Dialog -->
+                <!-- Theme & Wallpaper Modal Dialog -->
                 <div id="themeModalBackdrop" class="modal-backdrop" onclick="closeThemeModalOnBackdrop(event)">
                     <div class="theme-modal">
-                        <!-- Modal Header -->
                         <div class="modal-header">
                             <div class="modal-title-wrap">
                                 <div class="modal-icon">
-                                    <svg style="width:16px; height:16px;" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <svg style="width:15px; height:15px;" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                         <path d="M7 21a4 4 0 0 1-4-4V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v12a4 4 0 0 1-4 4zm0 0h12a2 2 0 0 0 2-2v-4a2 2 0 0 0-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 0 1 2.828 0l2.829 2.829a2 2 0 0 1 0 2.828l-8.486 8.485M7 17h.01" />
                                     </svg>
                                 </div>
                                 <div>
-                                    <h3>테마 및 배경화면 설정</h3>
-                                    <p>Toss & Kakao 프리미엄 디자인</p>
+                                    <h3>테마 및 배경 설정</h3>
+                                    <p>미니멀 프리미엄 디자인</p>
                                 </div>
                             </div>
                             <button class="modal-close-btn" onclick="closeThemeModal()">✕</button>
                         </div>
 
-                        <!-- Tab Switcher -->
                         <div class="tab-switcher">
-                            <button id="tabThemeBtn" class="tab-btn active-theme" onclick="switchModalTab('themes')">
-                                <svg style="width:13px; height:13px; display:inline-block; vertical-align:middle; margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
-                                    <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
-                                    <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
-                                    <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
-                                    <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2Z"/>
-                                </svg>
-                                <span>UI 테마 (Themes)</span>
-                            </button>
-                            <button id="tabWpBtn" class="tab-btn" onclick="switchModalTab('wallpapers')">
-                                <svg style="width:13px; height:13px; display:inline-block; vertical-align:middle; margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect width="18" height="18" x="3" y="3" rx="2" />
-                                    <circle cx="9" cy="9" r="2" />
-                                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21" />
-                                </svg>
-                                <span>배경화면 (Wallpapers)</span>
-                            </button>
+                            <button id="tabThemeBtn" class="tab-btn active-theme" onclick="switchModalTab('themes')">UI 테마</button>
+                            <button id="tabWpBtn" class="tab-btn" onclick="switchModalTab('wallpapers')">배경화면</button>
                         </div>
 
-                        <!-- Tab 1: UI Themes -->
+                        <!-- Tab 1: Themes -->
                         <div id="themeTabContent">
-                            <div class="theme-list">
-                                <!-- Toss Dark -->
-                                <div class="theme-card" data-theme="toss-dark" onclick="selectTheme('toss-dark')">
-                                    <div class="theme-card-left">
-                                        <div class="theme-mini-thumb" style="background:#0b0f19;">
-                                            <div class="theme-mini-header" style="background:#1e293b;"></div>
-                                            <div class="theme-mini-body"><div class="theme-mini-inner" style="background:#3b82f6;"></div></div>
+                            <div class="modal-body">
+                                <div class="theme-list">
+                                    <div class="theme-card" data-theme="toss-dark" onclick="selectTheme('toss-dark')">
+                                        <div class="theme-card-left">
+                                            <div class="theme-mini-thumb" style="background:#090d16;">
+                                                <div class="theme-mini-header" style="background:#1e293b;"></div>
+                                                <div class="theme-mini-body"><div class="theme-mini-inner" style="background:#3b82f6;"></div></div>
+                                            </div>
+                                            <div>
+                                                <div class="theme-card-name">다크 슬레이트 (Dark Slate)</div>
+                                                <div class="theme-card-cat">기본 추천 · Linear Style</div>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <div class="theme-card-name">토스 다크 (Toss Dark Navy)</div>
-                                            <div class="theme-card-cat">Toss Style</div>
-                                        </div>
+                                        <div class="check-slot"></div>
                                     </div>
-                                    <div class="check-slot"></div>
-                                </div>
 
-                                <!-- Kakao Yellow -->
-                                <div class="theme-card" data-theme="kakao-yellow" onclick="selectTheme('kakao-yellow')">
-                                    <div class="theme-card-left">
-                                        <div class="theme-mini-thumb" style="background:#FAF9F5;">
-                                            <div class="theme-mini-header" style="background:#FEE500;"></div>
-                                            <div class="theme-mini-body"><div class="theme-mini-inner" style="background:#191919;"></div></div>
+                                    <div class="theme-card" data-theme="toss-light" onclick="selectTheme('toss-light')">
+                                        <div class="theme-card-left">
+                                            <div class="theme-mini-thumb" style="background:#f8fafc;">
+                                                <div class="theme-mini-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0;"></div>
+                                                <div class="theme-mini-body"><div class="theme-mini-inner" style="background:#2563eb;"></div></div>
+                                            </div>
+                                            <div>
+                                                <div class="theme-card-name">모던 라이트 (Modern Light)</div>
+                                                <div class="theme-card-cat">화이트 · Apple Style</div>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <div class="theme-card-name">카카오 옐로우 (Kakao Classic)</div>
-                                            <div class="theme-card-cat">Kakao Style</div>
-                                        </div>
+                                        <div class="check-slot"></div>
                                     </div>
-                                    <div class="check-slot"></div>
-                                </div>
 
-                                <!-- Kakao Dark -->
-                                <div class="theme-card" data-theme="kakao-dark" onclick="selectTheme('kakao-dark')">
-                                    <div class="theme-card-left">
-                                        <div class="theme-mini-thumb" style="background:#181818;">
-                                            <div class="theme-mini-header" style="background:#222222;"></div>
-                                            <div class="theme-mini-body"><div class="theme-mini-inner" style="background:#FEE500;"></div></div>
+                                    <div class="theme-card" data-theme="oled-black" onclick="selectTheme('oled-black')">
+                                        <div class="theme-card-left">
+                                            <div class="theme-mini-thumb" style="background:#000000;">
+                                                <div class="theme-mini-header" style="background:#111111;"></div>
+                                                <div class="theme-mini-body"><div class="theme-mini-inner" style="background:#ffffff;"></div></div>
+                                            </div>
+                                            <div>
+                                                <div class="theme-card-name">OLED 블랙 (True Black)</div>
+                                                <div class="theme-card-cat">고대비 미니멀</div>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <div class="theme-card-name">카카오 다크 (Kakao Charcoal)</div>
-                                            <div class="theme-card-cat">Kakao Style</div>
-                                        </div>
+                                        <div class="check-slot"></div>
                                     </div>
-                                    <div class="check-slot"></div>
-                                </div>
 
-                                <!-- Toss Light -->
-                                <div class="theme-card" data-theme="toss-light" onclick="selectTheme('toss-light')">
-                                    <div class="theme-card-left">
-                                        <div class="theme-mini-thumb" style="background:#F8FAFC;">
-                                            <div class="theme-mini-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0;"></div>
-                                            <div class="theme-mini-body"><div class="theme-mini-inner" style="background:#2563eb;"></div></div>
+                                    <div class="theme-card" data-theme="kakao-yellow" onclick="selectTheme('kakao-yellow')">
+                                        <div class="theme-card-left">
+                                            <div class="theme-mini-thumb" style="background:#FAF9F5;">
+                                                <div class="theme-mini-header" style="background:#FEE500;"></div>
+                                                <div class="theme-mini-body"><div class="theme-mini-inner" style="background:#191919;"></div></div>
+                                            </div>
+                                            <div>
+                                                <div class="theme-card-name">카카오 웜 (Warm Cream)</div>
+                                                <div class="theme-card-cat">부드러운 크림 옐로우</div>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <div class="theme-card-name">토스 화이트 (Toss Light Blue)</div>
-                                            <div class="theme-card-cat">Toss Style</div>
-                                        </div>
+                                        <div class="check-slot"></div>
                                     </div>
-                                    <div class="check-slot"></div>
-                                </div>
 
-                                <!-- OLED Black -->
-                                <div class="theme-card" data-theme="oled-black" onclick="selectTheme('oled-black')">
-                                    <div class="theme-card-left">
-                                        <div class="theme-mini-thumb" style="background:#000000;">
-                                            <div class="theme-mini-header" style="background:#121212;"></div>
-                                            <div class="theme-mini-body"><div class="theme-mini-inner" style="background:#a855f7;"></div></div>
+                                    <div class="theme-card" data-theme="kakao-dark" onclick="selectTheme('kakao-dark')">
+                                        <div class="theme-card-left">
+                                            <div class="theme-mini-thumb" style="background:#141414;">
+                                                <div class="theme-mini-header" style="background:#222222;"></div>
+                                                <div class="theme-mini-body"><div class="theme-mini-inner" style="background:#f59e0b;"></div></div>
+                                            </div>
+                                            <div>
+                                                <div class="theme-card-name">차콜 엠버 (Charcoal Amber)</div>
+                                                <div class="theme-card-cat">고급스러운 다크 골드</div>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <div class="theme-card-name">OLED 트루 블랙 (Deep Contrast)</div>
-                                            <div class="theme-card-cat">Minimal</div>
-                                        </div>
+                                        <div class="check-slot"></div>
                                     </div>
-                                    <div class="check-slot"></div>
-                                </div>
 
-                                <!-- Neon Magenta -->
-                                <div class="theme-card" data-theme="cyber-neon" onclick="selectTheme('cyber-neon')">
-                                    <div class="theme-card-left">
-                                        <div class="theme-mini-thumb" style="background:#050510;">
-                                            <div class="theme-mini-header" style="background:#1f0e3d;"></div>
-                                            <div class="theme-mini-body"><div class="theme-mini-inner" style="background:#ec4899;"></div></div>
+                                    <div class="theme-card" data-theme="emerald-mint" onclick="selectTheme('emerald-mint')">
+                                        <div class="theme-card-left">
+                                            <div class="theme-mini-thumb" style="background:#021a12;">
+                                                <div class="theme-mini-header" style="background:#0b3b2c;"></div>
+                                                <div class="theme-mini-body"><div class="theme-mini-inner" style="background:#10b981;"></div></div>
+                                            </div>
+                                            <div>
+                                                <div class="theme-card-name">에메랄드 민트 (Emerald Forest)</div>
+                                                <div class="theme-card-cat">편안한 딥그린</div>
+                                            </div>
                                         </div>
-                                        <div>
-                                            <div class="theme-card-name">네온 사이버 (Neon Magenta)</div>
-                                            <div class="theme-card-cat">Vibrant</div>
-                                        </div>
+                                        <div class="check-slot"></div>
                                     </div>
-                                    <div class="check-slot"></div>
                                 </div>
-
-                                <!-- Emerald Mint -->
-                                <div class="theme-card" data-theme="emerald-mint" onclick="selectTheme('emerald-mint')">
-                                    <div class="theme-card-left">
-                                        <div class="theme-mini-thumb" style="background:#021a12;">
-                                            <div class="theme-mini-header" style="background:#0b3b2c;"></div>
-                                            <div class="theme-mini-body"><div class="theme-mini-inner" style="background:#10b981;"></div></div>
-                                        </div>
-                                        <div>
-                                            <div class="theme-card-name">에메랄드 민트 (Forest Fresh)</div>
-                                            <div class="theme-card-cat">Vibrant</div>
-                                        </div>
-                                    </div>
-                                    <div class="check-slot"></div>
-                                </div>
-                            </div>
-
-                            <!-- High Contrast Toggle -->
-                            <div class="contrast-section">
-                                <div>
-                                    <div class="contrast-title">선명한 고대비 모드 (High Contrast)</div>
-                                    <div class="contrast-sub">폰트와 테두리의 명암비를 극대화합니다.</div>
-                                </div>
-                                <button id="contrastBtn" class="switch-btn" onclick="toggleHighContrast()">
-                                    <div class="switch-knob"></div>
-                                </button>
                             </div>
                         </div>
 
                         <!-- Tab 2: Wallpapers -->
                         <div id="wallpaperTabContent" style="display: none;">
-                            <div class="wallpaper-grid">
-                                <div class="wp-card" data-wp="orbs" onclick="selectWallpaper('orbs')">
-                                    <div class="wp-card-bg" style="background: linear-gradient(135deg, #9333ea, #4f46e5, #ec4899);"></div>
-                                    <div class="wp-card-top">
-                                        <span class="wp-icon" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);">
-                                            <svg style="width:14px;height:14px;color:#e9d5ff;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <circle cx="12" cy="12" r="9" />
-                                                <path d="m4.93 4.93 4.24 4.24M14.83 9.17l4.24-4.24M14.83 14.83l4.24 4.24M9.17 14.83l-4.24 4.24" />
-                                            </svg>
-                                        </span>
-                                        <span class="wp-slot"></span>
+                            <div class="modal-body">
+                                <div class="wallpaper-grid">
+                                    <div class="wp-card" data-wp="orbs" onclick="selectWallpaper('orbs')">
+                                        <div class="wp-card-bg" style="background: linear-gradient(135deg, #7c3aed, #2563eb, #ec4899);"></div>
+                                        <div class="wp-card-bot"><div class="wp-card-name">오로라</div></div>
                                     </div>
-                                    <div class="wp-card-bot"><div class="wp-card-name">은은한 오로라</div><div class="wp-card-eng">Aurora Glow</div></div>
+                                    <div class="wp-card" data-wp="mesh" onclick="selectWallpaper('mesh')">
+                                        <div class="wp-card-bg" style="background: linear-gradient(135deg, #1e40af, #0d9488, #16a34a);"></div>
+                                        <div class="wp-card-bot"><div class="wp-card-name">그라디언트</div></div>
+                                    </div>
+                                    <div class="wp-card" data-wp="grid" onclick="selectWallpaper('grid')">
+                                        <div class="wp-card-bg" style="background: #0f172a; background-image: linear-gradient(to right, rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.08) 1px, transparent 1px); background-size: 14px 14px;"></div>
+                                        <div class="wp-card-bot"><div class="wp-card-name">그리드</div></div>
+                                    </div>
+                                    <div class="wp-card" data-wp="dots" onclick="selectWallpaper('dots')">
+                                        <div class="wp-card-bg" style="background: #0f172a; background-image: radial-gradient(rgba(255,255,255,0.15) 1px, transparent 1px); background-size: 12px 12px;"></div>
+                                        <div class="wp-card-bot"><div class="wp-card-name">도트</div></div>
+                                    </div>
+                                    <div class="wp-card" data-wp="sunset" onclick="selectWallpaper('sunset')">
+                                        <div class="wp-card-bg" style="background: linear-gradient(135deg, #ea580c, #db2777, #7c3aed);"></div>
+                                        <div class="wp-card-bot"><div class="wp-card-name">선셋</div></div>
+                                    </div>
+                                    <div class="wp-card" data-wp="none" onclick="selectWallpaper('none')">
+                                        <div class="wp-card-bg" style="background: rgba(255,255,255,0.05);"></div>
+                                        <div class="wp-card-bot"><div class="wp-card-name">배경 없음</div></div>
+                                    </div>
                                 </div>
 
-                                <div class="wp-card" data-wp="mesh" onclick="selectWallpaper('mesh')">
-                                    <div class="wp-card-bg" style="background: linear-gradient(135deg, #2563eb, #14b8a6, #4ade80);"></div>
-                                    <div class="wp-card-top">
-                                        <span class="wp-icon" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);">
-                                            <svg style="width:14px;height:14px;color:#99f6e4;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M2 12c3-4 6-4 10 0s7 4 10 0M2 6c3-4 6-4 10 0s7 4 10 0M2 18c3-4 6-4 10 0s7 4 10 0" />
-                                            </svg>
-                                        </span>
-                                        <span class="wp-slot"></span>
-                                    </div>
-                                    <div class="wp-card-bot"><div class="wp-card-name">입체 메쉬</div><div class="wp-card-eng">Mesh Wave</div></div>
+                                <div class="upload-box">
+                                    <label class="upload-label" for="wpFileInput">
+                                        <svg style="width:13px;height:13px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
+                                        </svg>
+                                        <span>PC에서 배경 사진 업로드</span>
+                                    </label>
+                                    <input type="file" id="wpFileInput" accept="image/*" style="display: none;" onchange="handleFileUpload(event)">
+                                    <input type="text" class="url-input" placeholder="웹 이미지 URL (https://...)" onchange="handleUrlInput(event)">
                                 </div>
-
-                                <div class="wp-card" data-wp="grid" onclick="selectWallpaper('grid')">
-                                    <div class="wp-card-bg" style="background: #0f172a; border: 1px solid #3b82f6;"></div>
-                                    <div class="wp-card-top">
-                                        <span class="wp-icon" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);">
-                                            <svg style="width:14px;height:14px;color:#93c5fd;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <rect width="18" height="18" x="3" y="3" rx="2" />
-                                                <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
-                                            </svg>
-                                        </span>
-                                        <span class="wp-slot"></span>
-                                    </div>
-                                    <div class="wp-card-bot"><div class="wp-card-name">하이테크 그리드</div><div class="wp-card-eng">Tech Grid</div></div>
-                                </div>
-
-                                <div class="wp-card" data-wp="dots" onclick="selectWallpaper('dots')">
-                                    <div class="wp-card-bg" style="background: #020617;"></div>
-                                    <div class="wp-card-top">
-                                        <span class="wp-icon" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);">
-                                            <svg style="width:14px;height:14px;color:#fbcfe8;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <circle cx="12" cy="12" r="1" />
-                                                <circle cx="19" cy="12" r="1" />
-                                                <circle cx="5" cy="12" r="1" />
-                                                <circle cx="12" cy="19" r="1" />
-                                                <circle cx="19" cy="19" r="1" />
-                                                <circle cx="5" cy="19" r="1" />
-                                                <circle cx="12" cy="5" r="1" />
-                                                <circle cx="19" cy="5" r="1" />
-                                                <circle cx="5" cy="5" r="1" />
-                                            </svg>
-                                        </span>
-                                        <span class="wp-slot"></span>
-                                    </div>
-                                    <div class="wp-card-bot"><div class="wp-card-name">도트 매트릭스</div><div class="wp-card-eng">Modern Dots</div></div>
-                                </div>
-
-                                <div class="wp-card" data-wp="sunset" onclick="selectWallpaper('sunset')">
-                                    <div class="wp-card-bg" style="background: linear-gradient(135deg, #f97316, #db2777, #7c3aed);"></div>
-                                    <div class="wp-card-top">
-                                        <span class="wp-icon" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);">
-                                            <svg style="width:14px;height:14px;color:#fed7aa;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
-                                                <circle cx="12" cy="12" r="4" />
-                                            </svg>
-                                        </span>
-                                        <span class="wp-slot"></span>
-                                    </div>
-                                    <div class="wp-card-bot"><div class="wp-card-name">노을 그라디언트</div><div class="wp-card-eng">Sunset</div></div>
-                                </div>
-
-                                <div class="wp-card" data-wp="none" onclick="selectWallpaper('none')">
-                                    <div class="wp-card-bg" style="background: rgba(255,255,255,0.05);"></div>
-                                    <div class="wp-card-top">
-                                        <span class="wp-icon" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);">
-                                            <svg style="width:14px;height:14px;color:#cbd5e1;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <circle cx="12" cy="12" r="10" />
-                                                <path d="m4.93 4.93 14.14 14.14" />
-                                            </svg>
-                                        </span>
-                                        <span class="wp-slot"></span>
-                                    </div>
-                                    <div class="wp-card-bot"><div class="wp-card-name">배경 없음</div><div class="wp-card-eng">Clean Slate</div></div>
-                                </div>
-                            </div>
-
-                            <!-- Custom Wallpaper -->
-                            <div class="upload-box">
-                                <label class="upload-label" for="wpFileInput">
-                                    <svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
-                                    </svg>
-                                    <span>내 PC에서 배경 이미지 업로드</span>
-                                </label>
-                                <input type="file" id="wpFileInput" accept="image/*" style="display: none;" onchange="handleFileUpload(event)">
-                                <input type="text" class="url-input" placeholder="웹 이미지 URL 붙여넣기 (https://...)" onchange="handleUrlInput(event)">
                             </div>
                         </div>
 
@@ -2151,82 +1965,55 @@ export default function NotesModal({ isOpen, onClose, user }) {
                 <script>
                     const THEME_PRESETS = {
                         'toss-dark': {
-                            bgBody: '#0b0f19', cardBg: '#0f172a', headerBg: '#1e293b', headerBorder: '#334155',
-                            textMain: '#f8fafc', textMuted: '#94a3b8', textareaBg: '#020617', textareaBorder: '#1e293b',
-                            borderColor: 'rgba(255, 255, 255, 0.12)', btnBg: 'rgba(255, 255, 255, 0.08)', btnText: '#e2e8f0',
-                            btnBorder: 'rgba(255, 255, 255, 0.15)', btnHoverBg: 'rgba(255, 255, 255, 0.15)', btnHoverText: '#ffffff',
-                            btnHoverBorder: 'rgba(255, 255, 255, 0.25)', btnThemeBg: '#2563eb', btnThemeText: '#ffffff',
-                            btnThemeBorder: '#3b82f6', btnThemeHover: '#1d4ed8', btnCopyBg: '#0f766e', btnCopyText: '#ccfbf1',
-                            btnCopyBorder: '#14b8a6', btnCopyHover: '#0d9488', accentColor: '#3b82f6', badgeBg: '#2563eb',
-                            badgeText: '#ffffff', footerBg: '#0f172a'
-                        },
-                        'kakao-yellow': {
-                            bgBody: '#FAF9F5', cardBg: '#FAF9F5', headerBg: '#FEE500', headerBorder: '#E6CF00',
-                            textMain: '#191919', textMuted: '#666666', textareaBg: '#FFFFFF', textareaBorder: '#E5E2D8',
-                            borderColor: 'rgba(0, 0, 0, 0.08)', btnBg: 'rgba(0, 0, 0, 0.06)', btnText: '#191919',
-                            btnBorder: 'rgba(0, 0, 0, 0.12)', btnHoverBg: 'rgba(0, 0, 0, 0.12)', btnHoverText: '#000000',
-                            btnHoverBorder: 'rgba(0, 0, 0, 0.2)', btnThemeBg: '#191919', btnThemeText: '#FEE500',
-                            btnThemeBorder: '#000000', btnThemeHover: '#333333', btnCopyBg: '#FEE500', btnCopyText: '#191919',
-                            btnCopyBorder: '#E6CF00', btnCopyHover: '#EBD400', accentColor: '#191919', badgeBg: '#191919',
-                            badgeText: '#FEE500', footerBg: '#F5F3EB'
-                        },
-                        'kakao-dark': {
-                            bgBody: '#121212', cardBg: '#181818', headerBg: '#222222', headerBorder: '#2E2E2E',
-                            textMain: '#FFFFFF', textMuted: '#888888', textareaBg: '#101010', textareaBorder: '#282828',
-                            borderColor: 'rgba(255, 255, 255, 0.08)', btnBg: 'rgba(255, 255, 255, 0.06)', btnText: '#CCCCCC',
-                            btnBorder: 'rgba(255, 255, 255, 0.12)', btnHoverBg: 'rgba(255, 255, 255, 0.12)', btnHoverText: '#FFFFFF',
-                            btnHoverBorder: 'rgba(255, 255, 255, 0.2)', btnThemeBg: '#FEE500', btnThemeText: '#191919',
-                            btnThemeBorder: '#FEE500', btnThemeHover: '#EBD400', btnCopyBg: '#2A2A2A', btnCopyText: '#FEE500',
-                            btnCopyBorder: '#3E3E3E', btnCopyHover: '#353535', accentColor: '#FEE500', badgeBg: '#FEE500',
-                            badgeText: '#191919', footerBg: '#141414'
+                            bgBody: '#090d16', cardBg: 'rgba(15, 23, 42, 0.94)', headerBg: 'rgba(30, 41, 59, 0.75)', headerBorder: 'rgba(255, 255, 255, 0.08)',
+                            textMain: '#f8fafc', textMuted: '#94a3b8', textareaBg: 'rgba(2, 6, 23, 0.65)', textareaBorder: 'rgba(255, 255, 255, 0.08)',
+                            borderColor: 'rgba(255, 255, 255, 0.1)', btnBg: 'rgba(255, 255, 255, 0.06)', btnText: '#e2e8f0',
+                            btnBorder: 'rgba(255, 255, 255, 0.12)', btnHoverBg: 'rgba(255, 255, 255, 0.14)', btnHoverText: '#ffffff',
+                            btnHoverBorder: 'rgba(255, 255, 255, 0.25)', accentColor: '#3b82f6', footerBg: 'rgba(15, 23, 42, 0.85)'
                         },
                         'toss-light': {
-                            bgBody: '#EEF2F6', cardBg: '#F8FAFC', headerBg: '#FFFFFF', headerBorder: '#E2E8F0',
-                            textMain: '#0F172A', textMuted: '#64748B', textareaBg: '#FFFFFF', textareaBorder: '#E2E8F0',
-                            borderColor: 'rgba(0, 0, 0, 0.08)', btnBg: 'rgba(0, 0, 0, 0.04)', btnText: '#334155',
-                            btnBorder: 'rgba(0, 0, 0, 0.1)', btnHoverBg: 'rgba(0, 0, 0, 0.08)', btnHoverText: '#0F172A',
-                            btnHoverBorder: 'rgba(0, 0, 0, 0.18)', btnThemeBg: '#2563EB', btnThemeText: '#FFFFFF',
-                            btnThemeBorder: '#1D4ED8', btnThemeHover: '#1E40AF', btnCopyBg: '#0284C7', btnCopyText: '#FFFFFF',
-                            btnCopyBorder: '#0369A1', btnCopyHover: '#075985', accentColor: '#2563EB', badgeBg: '#2563EB',
-                            badgeText: '#FFFFFF', footerBg: '#F1F5F9'
+                            bgBody: '#f1f5f9', cardBg: 'rgba(255, 255, 255, 0.96)', headerBg: 'rgba(248, 250, 252, 0.9)', headerBorder: 'rgba(0, 0, 0, 0.07)',
+                            textMain: '#0f172a', textMuted: '#64748b', textareaBg: '#ffffff', textareaBorder: 'rgba(0, 0, 0, 0.09)',
+                            borderColor: 'rgba(0, 0, 0, 0.1)', btnBg: 'rgba(0, 0, 0, 0.04)', btnText: '#334155',
+                            btnBorder: 'rgba(0, 0, 0, 0.08)', btnHoverBg: 'rgba(0, 0, 0, 0.08)', btnHoverText: '#0f172a',
+                            btnHoverBorder: 'rgba(0, 0, 0, 0.16)', accentColor: '#2563eb', footerBg: 'rgba(248, 250, 252, 0.95)'
                         },
                         'oled-black': {
-                            bgBody: '#000000', cardBg: '#000000', headerBg: '#0A0A0A', headerBorder: '#1A1A1A',
-                            textMain: '#FFFFFF', textMuted: '#777777', textareaBg: '#000000', textareaBorder: '#1F1F1F',
-                            borderColor: '#222222', btnBg: '#111111', btnText: '#DDDDDD', btnBorder: '#2A2A2A',
-                            btnHoverBg: '#222222', btnHoverText: '#FFFFFF', btnHoverBorder: '#444444',
-                            btnThemeBg: '#A855F7', btnThemeText: '#FFFFFF', btnThemeBorder: '#9333EA', btnThemeHover: '#7E22CE',
-                            btnCopyBg: '#1E1B4B', btnCopyText: '#C7D2FE', btnCopyBorder: '#3730A3', btnCopyHover: '#312E81',
-                            accentColor: '#A855F7', badgeBg: '#A855F7', badgeText: '#FFFFFF', footerBg: '#050505'
+                            bgBody: '#000000', cardBg: '#050505', headerBg: '#0e0e0e', headerBorder: 'rgba(255, 255, 255, 0.1)',
+                            textMain: '#ffffff', textMuted: '#888888', textareaBg: '#000000', textareaBorder: 'rgba(255, 255, 255, 0.1)',
+                            borderColor: 'rgba(255, 255, 255, 0.15)', btnBg: 'rgba(255, 255, 255, 0.08)', btnText: '#e5e5e5',
+                            btnBorder: 'rgba(255, 255, 255, 0.15)', btnHoverBg: 'rgba(255, 255, 255, 0.18)', btnHoverText: '#ffffff',
+                            btnHoverBorder: 'rgba(255, 255, 255, 0.3)', accentColor: '#ffffff', footerBg: '#080808'
                         },
-                        'cyber-neon': {
-                            bgBody: '#050510', cardBg: '#0A081D', headerBg: '#130C2E', headerBorder: '#2D1B69',
-                            textMain: '#F0E6FF', textMuted: '#9D8BC9', textareaBg: '#060412', textareaBorder: '#231553',
-                            borderColor: 'rgba(236, 72, 153, 0.25)', btnBg: 'rgba(168, 85, 247, 0.12)', btnText: '#E9D5FF',
-                            btnBorder: 'rgba(168, 85, 247, 0.3)', btnHoverBg: 'rgba(168, 85, 247, 0.25)', btnHoverText: '#FFFFFF',
-                            btnHoverBorder: 'rgba(168, 85, 247, 0.5)', btnThemeBg: '#EC4899', btnThemeText: '#FFFFFF',
-                            btnThemeBorder: '#DB2777', btnThemeHover: '#BE185D', btnCopyBg: '#06B6D4', btnCopyText: '#ECFEFF',
-                            btnCopyBorder: '#0891B2', btnCopyHover: '#0E7490', accentColor: '#EC4899', badgeBg: '#EC4899',
-                            badgeText: '#FFFFFF', footerBg: '#080517'
+                        'kakao-yellow': {
+                            bgBody: '#f7f5ed', cardBg: 'rgba(253, 252, 248, 0.96)', headerBg: '#FEE500', headerBorder: 'rgba(0, 0, 0, 0.08)',
+                            textMain: '#191919', textMuted: '#666666', textareaBg: '#ffffff', textareaBorder: '#e6e3d8',
+                            borderColor: 'rgba(0, 0, 0, 0.08)', btnBg: 'rgba(0, 0, 0, 0.06)', btnText: '#191919',
+                            btnBorder: 'rgba(0, 0, 0, 0.1)', btnHoverBg: 'rgba(0, 0, 0, 0.12)', btnHoverText: '#000000',
+                            btnHoverBorder: 'rgba(0, 0, 0, 0.2)', accentColor: '#191919', footerBg: '#f2efe4'
+                        },
+                        'kakao-dark': {
+                            bgBody: '#111111', cardBg: 'rgba(20, 20, 20, 0.96)', headerBg: '#1c1c1c', headerBorder: 'rgba(255, 255, 255, 0.07)',
+                            textMain: '#f5f5f5', textMuted: '#8c8c8c', textareaBg: '#141414', textareaBorder: 'rgba(255, 255, 255, 0.08)',
+                            borderColor: 'rgba(255, 255, 255, 0.08)', btnBg: 'rgba(255, 255, 255, 0.06)', btnText: '#d4d4d4',
+                            btnBorder: 'rgba(255, 255, 255, 0.1)', btnHoverBg: 'rgba(255, 255, 255, 0.14)', btnHoverText: '#ffffff',
+                            btnHoverBorder: 'rgba(255, 255, 255, 0.22)', accentColor: '#f59e0b', footerBg: '#141414'
                         },
                         'emerald-mint': {
-                            bgBody: '#021A12', cardBg: '#04271C', headerBg: '#083B2C', headerBorder: '#0F5741',
-                            textMain: '#E6FBF2', textMuted: '#7DD3B6', textareaBg: '#01130D', textareaBorder: '#0B4734',
-                            borderColor: 'rgba(16, 185, 129, 0.2)', btnBg: 'rgba(16, 185, 129, 0.1)', btnText: '#A7F3D0',
-                            btnBorder: 'rgba(16, 185, 129, 0.25)', btnHoverBg: 'rgba(16, 185, 129, 0.22)', btnHoverText: '#FFFFFF',
-                            btnHoverBorder: 'rgba(16, 185, 129, 0.4)', btnThemeBg: '#10B981', btnThemeText: '#022C22',
-                            btnThemeBorder: '#059669', btnThemeHover: '#047857', btnCopyBg: '#0D9488', btnCopyText: '#F0FDFA',
-                            btnCopyBorder: '#14B8A6', btnCopyHover: '#0F766E', accentColor: '#10B981', badgeBg: '#10B981',
-                            badgeText: '#022C22', footerBg: '#031F16'
+                            bgBody: '#02160f', cardBg: 'rgba(4, 34, 25, 0.94)', headerBg: 'rgba(8, 48, 36, 0.8)', headerBorder: 'rgba(16, 185, 129, 0.15)',
+                            textMain: '#e6fbf2', textMuted: '#7dd3b6', textareaBg: 'rgba(1, 20, 14, 0.7)', textareaBorder: 'rgba(16, 185, 129, 0.12)',
+                            borderColor: 'rgba(16, 185, 129, 0.18)', btnBg: 'rgba(16, 185, 129, 0.08)', btnText: '#a7f3d0',
+                            btnBorder: 'rgba(16, 185, 129, 0.2)', btnHoverBg: 'rgba(16, 185, 129, 0.18)', btnHoverText: '#ffffff',
+                            btnHoverBorder: 'rgba(16, 185, 129, 0.35)', accentColor: '#10b981', footerBg: 'rgba(3, 27, 19, 0.9)'
                         }
                     };
 
                     const WALLPAPER_PRESETS = {
-                        'orbs': 'radial-gradient(circle at 10% 20%, rgba(147, 51, 234, 0.45) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.4) 0%, transparent 45%), radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.25) 0%, transparent 60%)',
-                        'mesh': 'linear-gradient(135deg, rgba(37, 99, 235, 0.4) 0%, rgba(20, 184, 166, 0.35) 50%, rgba(74, 222, 128, 0.25) 100%)',
-                        'grid': 'linear-gradient(to right, rgba(59, 130, 246, 0.12) 1px, transparent 1px), linear-gradient(to bottom, rgba(59, 130, 246, 0.12) 1px, transparent 1px)',
-                        'dots': 'radial-gradient(rgba(255, 255, 255, 0.15) 1.5px, transparent 1.5px)',
-                        'sunset': 'linear-gradient(135deg, rgba(249, 115, 22, 0.35) 0%, rgba(219, 39, 119, 0.35) 50%, rgba(124, 58, 237, 0.4) 100%)',
+                        'orbs': 'radial-gradient(circle at 10% 20%, rgba(124, 58, 237, 0.35) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(219, 39, 119, 0.3) 0%, transparent 45%), radial-gradient(circle at 50% 50%, rgba(37, 99, 235, 0.2) 0%, transparent 60%)',
+                        'mesh': 'linear-gradient(135deg, rgba(30, 64, 175, 0.3) 0%, rgba(13, 148, 136, 0.25) 50%, rgba(22, 163, 74, 0.2) 100%)',
+                        'grid': 'linear-gradient(to right, rgba(255, 255, 255, 0.06) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.06) 1px, transparent 1px)',
+                        'dots': 'radial-gradient(rgba(255, 255, 255, 0.12) 1px, transparent 1px)',
+                        'sunset': 'linear-gradient(135deg, rgba(234, 88, 12, 0.25) 0%, rgba(219, 39, 119, 0.25) 50%, rgba(124, 58, 237, 0.3) 100%)',
                         'none': 'none'
                     };
 
@@ -2234,7 +2021,6 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     let currentTheme = localStorage.getItem('jinil_note_popout_theme_id') || 'toss-dark';
                     let currentWallpaper = localStorage.getItem('jinil_note_popout_wp_id') || 'orbs';
                     let customBgUrl = localStorage.getItem('jinil_note_popout_custom_bg') || '';
-                    let isHighContrast = localStorage.getItem('jinil_note_popout_contrast') === 'true';
                     let currentFontSize = isStickyMode ? 14 : 16;
                     let opacityLevels = [1.0, 0.88, 0.72, 0.55];
                     let currentOpacityIdx = 0;
@@ -2289,15 +2075,15 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         isStickyMode = !isStickyMode;
                         localStorage.setItem('jinil_notes_is_sticky', isStickyMode ? 'true' : 'false');
                         
-                        const appBadge = document.getElementById('appBadge');
+                        const appBadgeIcon = document.getElementById('appBadgeIcon');
                         const stickyToggleBtn = document.getElementById('stickyToggleBtn');
                         const stickyBtnText = document.getElementById('stickyBtnText');
 
                         if (isStickyMode) {
                             document.body.classList.add('sticky-mode');
-                            stickyToggleBtn.classList.add('active');
-                            stickyBtnText.innerText = '스티키 ON';
-                            appBadge.innerHTML = '<svg style="width:10px;height:10px;display:inline-block;vertical-align:-1px;margin-right:3px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v8M5 5l14 14M19 5l-4 4M5 19l4-4M15 15l4 4"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>스티키';
+                            stickyToggleBtn.classList.add('active-sticky');
+                            stickyBtnText.innerText = 'ON';
+                            appBadgeIcon.innerHTML = '<svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="color:#fbbf24;"><path d="M12 2v8M5 5l14 14M19 5l-4 4M5 19l4-4M15 15l4 4"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>';
 
                             // Resize to compact sticky bounds
                             let targetW = 380;
@@ -2312,9 +2098,9 @@ export default function NotesModal({ isOpen, onClose, user }) {
                             window.resizeTo(targetW, targetH);
                         } else {
                             document.body.classList.remove('sticky-mode');
-                            stickyToggleBtn.classList.remove('active');
+                            stickyToggleBtn.classList.remove('active-sticky');
                             stickyBtnText.innerText = '스티키';
-                            appBadge.innerText = '새 창 메모';
+                            appBadgeIcon.innerHTML = '<svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>';
 
                             // Resize back to standard bounds
                             let targetW = 840;
@@ -2397,13 +2183,6 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         updateModalActiveStates();
                     }
 
-                    function toggleHighContrast() {
-                        isHighContrast = !isHighContrast;
-                        localStorage.setItem('jinil_note_popout_contrast', isHighContrast ? 'true' : 'false');
-                        applyThemeStyles();
-                        updateModalActiveStates();
-                    }
-
                     function handleFileUpload(e) {
                         const file = e.target.files[0];
                         if (!file) return;
@@ -2449,24 +2228,8 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         root.style.setProperty('--btn-hover-bg', t.btnHoverBg);
                         root.style.setProperty('--btn-hover-text', t.btnHoverText);
                         root.style.setProperty('--btn-hover-border', t.btnHoverBorder);
-                        root.style.setProperty('--btn-theme-bg', t.btnThemeBg);
-                        root.style.setProperty('--btn-theme-text', t.btnThemeText);
-                        root.style.setProperty('--btn-theme-border', t.btnThemeBorder);
-                        root.style.setProperty('--btn-theme-hover', t.btnThemeHover);
-                        root.style.setProperty('--btn-copy-bg', t.btnCopyBg);
-                        root.style.setProperty('--btn-copy-text', t.btnCopyText);
-                        root.style.setProperty('--btn-copy-border', t.btnCopyBorder);
-                        root.style.setProperty('--btn-copy-hover', t.btnCopyHover);
                         root.style.setProperty('--accent-color', t.accentColor);
-                        root.style.setProperty('--badge-bg', t.badgeBg);
-                        root.style.setProperty('--badge-text', t.badgeText);
                         root.style.setProperty('--footer-bg', t.footerBg);
-
-                        if (isHighContrast) {
-                            document.body.classList.add('high-contrast');
-                        } else {
-                            document.body.classList.remove('high-contrast');
-                        }
                     }
 
                     function applyWallpaperStyles() {
@@ -2479,9 +2242,9 @@ export default function NotesModal({ isOpen, onClose, user }) {
                             if (wpGradient && wpGradient !== 'none') {
                                 document.body.style.backgroundImage = wpGradient;
                                 if (currentWallpaper === 'grid') {
-                                    document.body.style.backgroundSize = '24px 24px';
+                                    document.body.style.backgroundSize = '14px 14px';
                                 } else if (currentWallpaper === 'dots') {
-                                    document.body.style.backgroundSize = '18px 18px';
+                                    document.body.style.backgroundSize = '12px 12px';
                                 } else {
                                     document.body.style.backgroundSize = 'cover';
                                 }
@@ -2502,20 +2265,10 @@ export default function NotesModal({ isOpen, onClose, user }) {
                             }
                         });
 
-                        const contrastBtn = document.getElementById('contrastBtn');
-                        if (contrastBtn) {
-                            if (isHighContrast) contrastBtn.classList.add('on');
-                            else contrastBtn.classList.remove('on');
-                        }
-
                         document.querySelectorAll('.wp-card').forEach(card => {
                             const wpId = card.getAttribute('data-wp');
                             const isSelected = wpId === currentWallpaper && !customBgUrl;
                             card.className = isSelected ? 'wp-card active' : 'wp-card';
-                            const slot = card.querySelector('.wp-slot');
-                            if (slot) {
-                                slot.innerHTML = isSelected ? '<div class="check-badge" style="background:#9333ea; width:16px; height:16px; font-size:9px;">✓</div>' : '';
-                            }
                         });
                     }
 
@@ -2527,25 +2280,27 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     }
 
                     function updateStats() {
-                        const text = (editor.innerText || '').replace(/\\r\\n/g, '\\n');
+                        const text = (editor.innerText || '').replace(/\r\n/g, '\n');
                         const cleanText = text.trim();
-                        const charCount = text.replace(/\\n/g, '').length;
-                        const wordCount = cleanText ? cleanText.split(/\\s+/).length : 0;
-                        const lineCount = text ? text.split('\\n').length : 0;
+                        const charCount = text.replace(/\n/g, '').length;
+                        const wordCount = cleanText ? cleanText.split(/\s+/).length : 0;
+                        const lineCount = text ? text.split('\n').length : 0;
 
                         const charEl = document.getElementById('charCount');
                         const wordEl = document.getElementById('wordCount');
                         const lineEl = document.getElementById('lineCount');
-                        if (charEl) charEl.innerText = charCount + ' 글자';
-                        if (wordEl) wordEl.innerText = wordCount + ' 단어';
-                        if (lineEl) lineEl.innerText = lineCount + ' 줄';
+                        if (charEl) charEl.innerText = charCount + '자';
+                        if (wordEl) wordEl.innerText = wordCount + '단어';
+                        if (lineEl) lineEl.innerText = lineCount + '줄';
                     }
 
                     function copyContent() {
                         navigator.clipboard.writeText(editor.innerText || '');
-                        const btn = document.getElementById('copyBtn');
-                        btn.innerHTML = '<span>복사됨! ✓</span>';
-                        setTimeout(() => { btn.innerHTML = '<span>전체 복사</span>'; }, 2000);
+                        const copyBtnText = document.getElementById('copyBtnText');
+                        if (copyBtnText) copyBtnText.innerText = '완료!';
+                        setTimeout(() => { 
+                            if (copyBtnText) copyBtnText.innerText = '복사'; 
+                        }, 1800);
                     }
 
                     editor.addEventListener('input', () => {
