@@ -951,6 +951,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
         if (!popup) return;
 
         const safeTitle = noteTitle.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const safeJsonData = JSON.stringify({ content: noteHtml, isSticky: isSticky }).replace(/<\/script>/gi, '<\\/script>');
 
         popup.document.write(`
             <!DOCTYPE html>
@@ -1383,7 +1384,6 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         align-items: center;
                         justify-content: center;
                         padding: 16px;
-                        animation: fadeIn 0.15s ease;
                     }
 
                     .modal-backdrop.show {
@@ -1693,6 +1693,11 @@ export default function NotesModal({ isOpen, onClose, user }) {
                 </style>
             </head>
             <body class="${isSticky ? 'sticky-mode' : ''}">
+                <!-- Safe Raw Note Data payload -->
+                <script id="initialNoteData" type="application/json">
+                    ${safeJsonData}
+                </script>
+
                 <div class="app-container" id="appContainer">
                     <!-- Modern Minimalist Header -->
                     <div class="header" id="appHeader">
@@ -1717,7 +1722,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
 
                         <div class="toolbar">
                             <!-- 📌 Sticky Pin Mode Toggle Button -->
-                            <button id="stickyToggleBtn" class="btn btn-sticky ${isSticky ? 'active-sticky' : ''}" onclick="toggleStickyMode()" title="스티키 모드 전환 (Alt+S)">
+                            <button id="stickyToggleBtn" class="btn btn-sticky ${isSticky ? 'active-sticky' : ''}" onclick="window.toggleStickyMode()" title="스티키 모드 전환 (Alt+S)">
                                 <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round">
                                     <path d="M12 2v8M5 5l14 14M19 5l-4 4M5 19l4-4M15 15l4 4"/>
                                     <circle cx="12" cy="12" r="3" fill="currentColor"/>
@@ -1726,7 +1731,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
                             </button>
 
                             <!-- 🪟 Taste-Skill Premium Opacity & Glass Transparency Button -->
-                            <button id="opacityBtn" class="btn btn-trans" onclick="cycleOpacity()" title="창 투명도 조절 (Alt+O)">
+                            <button id="opacityBtn" class="btn btn-trans" onclick="window.cycleOpacity()" title="창 투명도 조절 (Alt+O)">
                                 <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                     <circle cx="12" cy="12" r="9" />
                                     <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" fill-opacity="0.45" />
@@ -1735,7 +1740,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
                             </button>
 
                             <!-- 🎨 Theme Settings Button -->
-                            <button class="btn" onclick="openThemeModal()" title="테마 설정 (Alt+T)">
+                            <button class="btn" onclick="window.openThemeModal()" title="테마 설정 (Alt+T)">
                                 <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                     <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
                                     <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
@@ -1747,13 +1752,13 @@ export default function NotesModal({ isOpen, onClose, user }) {
 
                             <!-- 🔤 Font Stepper (Hidden in sticky mode) -->
                             <div class="font-stepper">
-                                <button onclick="changeFontSize(-2)" title="글자 축소">A-</button>
+                                <button onclick="window.changeFontSize(-2)" title="글자 축소">A-</button>
                                 <span id="fontSizeDisplay" class="font-display">16px</span>
-                                <button onclick="changeFontSize(2)" title="글자 확대">A+</button>
+                                <button onclick="window.changeFontSize(2)" title="글자 확대">A+</button>
                             </div>
 
                             <!-- 📋 Copy Button -->
-                            <button id="copyBtn" class="btn" onclick="copyContent()" title="전체 복사 (Ctrl+Shift+C)">
+                            <button id="copyBtn" class="btn" onclick="window.copyContent()" title="전체 복사 (Ctrl+Shift+C)">
                                 <svg class="btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
@@ -1802,7 +1807,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
                 </div>
 
                 <!-- Theme & Wallpaper Modal Dialog -->
-                <div id="themeModalBackdrop" class="modal-backdrop" onclick="closeThemeModalOnBackdrop(event)">
+                <div id="themeModalBackdrop" class="modal-backdrop" onclick="window.closeThemeModalOnBackdrop(event)">
                     <div class="theme-modal">
                         <div class="modal-header">
                             <div class="modal-title-wrap">
@@ -1816,19 +1821,19 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                     <p>미니멀 프리미엄 디자인</p>
                                 </div>
                             </div>
-                            <button class="modal-close-btn" onclick="closeThemeModal()">✕</button>
+                            <button class="modal-close-btn" onclick="window.closeThemeModal()">✕</button>
                         </div>
 
                         <div class="tab-switcher">
-                            <button id="tabThemeBtn" class="tab-btn active-theme" onclick="switchModalTab('themes')">UI 테마</button>
-                            <button id="tabWpBtn" class="tab-btn" onclick="switchModalTab('wallpapers')">배경화면</button>
+                            <button id="tabThemeBtn" class="tab-btn active-theme" onclick="window.switchModalTab('themes')">UI 테마</button>
+                            <button id="tabWpBtn" class="tab-btn" onclick="window.switchModalTab('wallpapers')">배경화면</button>
                         </div>
 
                         <!-- Tab 1: Themes -->
                         <div id="themeTabContent">
                             <div class="modal-body">
                                 <div class="theme-list">
-                                    <div class="theme-card" data-theme="toss-dark" onclick="selectTheme('toss-dark')">
+                                    <div class="theme-card" data-theme="toss-dark" onclick="window.selectTheme('toss-dark')">
                                         <div class="theme-card-left">
                                             <div class="theme-mini-thumb" style="background:#090d16;">
                                                 <div class="theme-mini-header" style="background:#1e293b;"></div>
@@ -1842,7 +1847,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                         <div class="check-slot"></div>
                                     </div>
 
-                                    <div class="theme-card" data-theme="toss-light" onclick="selectTheme('toss-light')">
+                                    <div class="theme-card" data-theme="toss-light" onclick="window.selectTheme('toss-light')">
                                         <div class="theme-card-left">
                                             <div class="theme-mini-thumb" style="background:#f8fafc;">
                                                 <div class="theme-mini-header" style="background:#ffffff; border-bottom:1px solid #e2e8f0;"></div>
@@ -1856,7 +1861,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                         <div class="check-slot"></div>
                                     </div>
 
-                                    <div class="theme-card" data-theme="oled-black" onclick="selectTheme('oled-black')">
+                                    <div class="theme-card" data-theme="oled-black" onclick="window.selectTheme('oled-black')">
                                         <div class="theme-card-left">
                                             <div class="theme-mini-thumb" style="background:#000000;">
                                                 <div class="theme-mini-header" style="background:#111111;"></div>
@@ -1870,7 +1875,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                         <div class="check-slot"></div>
                                     </div>
 
-                                    <div class="theme-card" data-theme="kakao-yellow" onclick="selectTheme('kakao-yellow')">
+                                    <div class="theme-card" data-theme="kakao-yellow" onclick="window.selectTheme('kakao-yellow')">
                                         <div class="theme-card-left">
                                             <div class="theme-mini-thumb" style="background:#FAF9F5;">
                                                 <div class="theme-mini-header" style="background:#FEE500;"></div>
@@ -1884,7 +1889,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                         <div class="check-slot"></div>
                                     </div>
 
-                                    <div class="theme-card" data-theme="kakao-dark" onclick="selectTheme('kakao-dark')">
+                                    <div class="theme-card" data-theme="kakao-dark" onclick="window.selectTheme('kakao-dark')">
                                         <div class="theme-card-left">
                                             <div class="theme-mini-thumb" style="background:#141414;">
                                                 <div class="theme-mini-header" style="background:#222222;"></div>
@@ -1898,10 +1903,10 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                         <div class="check-slot"></div>
                                     </div>
 
-                                    <div class="theme-card" data-theme="emerald-mint" onclick="selectTheme('emerald-mint')">
+                                    <div class="theme-card" data-theme="emerald-mint" onclick="window.selectTheme('emerald-mint')">
                                         <div class="theme-card-left">
-                                            <div class="theme-mini-thumb" style="background:#021a12;">
-                                                <div class="theme-mini-header" style="background:#0b3b2c;"></div>
+                                            <div class="theme-mini-thumb" style="background:#02160f;">
+                                                <div class="theme-mini-header" style="background:#083024;"></div>
                                                 <div class="theme-mini-body"><div class="theme-mini-inner" style="background:#10b981;"></div></div>
                                             </div>
                                             <div>
@@ -1919,27 +1924,27 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         <div id="wallpaperTabContent" style="display: none;">
                             <div class="modal-body">
                                 <div class="wallpaper-grid">
-                                    <div class="wp-card" data-wp="orbs" onclick="selectWallpaper('orbs')">
+                                    <div class="wp-card" data-wp="orbs" onclick="window.selectWallpaper('orbs')">
                                         <div class="wp-card-bg" style="background: linear-gradient(135deg, #7c3aed, #2563eb, #ec4899);"></div>
                                         <div class="wp-card-bot"><div class="wp-card-name">오로라</div></div>
                                     </div>
-                                    <div class="wp-card" data-wp="mesh" onclick="selectWallpaper('mesh')">
+                                    <div class="wp-card" data-wp="mesh" onclick="window.selectWallpaper('mesh')">
                                         <div class="wp-card-bg" style="background: linear-gradient(135deg, #1e40af, #0d9488, #16a34a);"></div>
                                         <div class="wp-card-bot"><div class="wp-card-name">그라디언트</div></div>
                                     </div>
-                                    <div class="wp-card" data-wp="grid" onclick="selectWallpaper('grid')">
+                                    <div class="wp-card" data-wp="grid" onclick="window.selectWallpaper('grid')">
                                         <div class="wp-card-bg" style="background: #0f172a; background-image: linear-gradient(to right, rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(to bottom, rgba(255,255,255,0.08) 1px, transparent 1px); background-size: 14px 14px;"></div>
                                         <div class="wp-card-bot"><div class="wp-card-name">그리드</div></div>
                                     </div>
-                                    <div class="wp-card" data-wp="dots" onclick="selectWallpaper('dots')">
+                                    <div class="wp-card" data-wp="dots" onclick="window.selectWallpaper('dots')">
                                         <div class="wp-card-bg" style="background: #0f172a; background-image: radial-gradient(rgba(255,255,255,0.15) 1px, transparent 1px); background-size: 12px 12px;"></div>
                                         <div class="wp-card-bot"><div class="wp-card-name">도트</div></div>
                                     </div>
-                                    <div class="wp-card" data-wp="sunset" onclick="selectWallpaper('sunset')">
+                                    <div class="wp-card" data-wp="sunset" onclick="window.selectWallpaper('sunset')">
                                         <div class="wp-card-bg" style="background: linear-gradient(135deg, #ea580c, #db2777, #7c3aed);"></div>
                                         <div class="wp-card-bot"><div class="wp-card-name">선셋</div></div>
                                     </div>
-                                    <div class="wp-card" data-wp="none" onclick="selectWallpaper('none')">
+                                    <div class="wp-card" data-wp="none" onclick="window.selectWallpaper('none')">
                                         <div class="wp-card-bg" style="background: rgba(255,255,255,0.05);"></div>
                                         <div class="wp-card-bot"><div class="wp-card-name">배경 없음</div></div>
                                     </div>
@@ -1952,13 +1957,13 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                         </svg>
                                         <span>PC에서 배경 사진 업로드</span>
                                     </label>
-                                    <input type="file" id="wpFileInput" accept="image/*" style="display: none;" onchange="handleFileUpload(event)">
-                                    <input type="text" class="url-input" placeholder="웹 이미지 URL (https://...)" onchange="handleUrlInput(event)">
+                                    <input type="file" id="wpFileInput" accept="image/*" style="display: none;" onchange="window.handleFileUpload(event)">
+                                    <input type="text" class="url-input" placeholder="웹 이미지 URL (https://...)" onchange="window.handleUrlInput(event)">
                                 </div>
                             </div>
                         </div>
 
-                        <button class="apply-btn" onclick="closeThemeModal()">설정 완료</button>
+                        <button class="apply-btn" onclick="window.closeThemeModal()">설정 완료</button>
                     </div>
                 </div>
 
@@ -2035,10 +2040,21 @@ export default function NotesModal({ isOpen, onClose, user }) {
 
                     const editor = document.getElementById('editor');
                     const modalBackdrop = document.getElementById('themeModalBackdrop');
-                    const initialHtml = ${JSON.stringify(noteHtml).replace(/</g, '\\u003c')};
+
+                    // Read content safely from JSON payload
+                    let initialContent = '';
+                    try {
+                        const rawDataEl = document.getElementById('initialNoteData');
+                        if (rawDataEl) {
+                            const parsed = JSON.parse(rawDataEl.textContent || '{}');
+                            initialContent = parsed.content || '';
+                        }
+                    } catch(e) {
+                        console.error('Failed to parse note content payload:', e);
+                    }
 
                     if (editor) {
-                        editor.innerHTML = initialHtml || '';
+                        editor.innerHTML = initialContent || '';
                     }
 
                     // Window Bounds (Size & Position) Auto-saver
@@ -2081,9 +2097,11 @@ export default function NotesModal({ isOpen, onClose, user }) {
 
                         if (isStickyMode) {
                             document.body.classList.add('sticky-mode');
-                            stickyToggleBtn.classList.add('active-sticky');
-                            stickyBtnText.innerText = 'ON';
-                            appBadgeIcon.innerHTML = '<svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="color:#fbbf24;"><path d="M12 2v8M5 5l14 14M19 5l-4 4M5 19l4-4M15 15l4 4"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>';
+                            if (stickyToggleBtn) stickyToggleBtn.classList.add('active-sticky');
+                            if (stickyBtnText) stickyBtnText.innerText = 'ON';
+                            if (appBadgeIcon) {
+                                appBadgeIcon.innerHTML = '<svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="color:#fbbf24;"><path d="M12 2v8M5 5l14 14M19 5l-4 4M5 19l4-4M15 15l4 4"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>';
+                            }
 
                             // Resize to compact sticky bounds
                             let targetW = 380;
@@ -2098,9 +2116,11 @@ export default function NotesModal({ isOpen, onClose, user }) {
                             window.resizeTo(targetW, targetH);
                         } else {
                             document.body.classList.remove('sticky-mode');
-                            stickyToggleBtn.classList.remove('active-sticky');
-                            stickyBtnText.innerText = '스티키';
-                            appBadgeIcon.innerHTML = '<svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>';
+                            if (stickyToggleBtn) stickyToggleBtn.classList.remove('active-sticky');
+                            if (stickyBtnText) stickyBtnText.innerText = '스티키';
+                            if (appBadgeIcon) {
+                                appBadgeIcon.innerHTML = '<svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>';
+                            }
 
                             // Resize back to standard bounds
                             let targetW = 840;
@@ -2144,12 +2164,12 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     }
 
                     function openThemeModal() {
-                        modalBackdrop.classList.add('show');
+                        if (modalBackdrop) modalBackdrop.classList.add('show');
                         updateModalActiveStates();
                     }
 
                     function closeThemeModal() {
-                        modalBackdrop.classList.remove('show');
+                        if (modalBackdrop) modalBackdrop.classList.remove('show');
                     }
 
                     function closeThemeModalOnBackdrop(e) {
@@ -2160,11 +2180,15 @@ export default function NotesModal({ isOpen, onClose, user }) {
 
                     function switchModalTab(tab) {
                         const isTheme = tab === 'themes';
-                        document.getElementById('themeTabContent').style.display = isTheme ? 'block' : 'none';
-                        document.getElementById('wallpaperTabContent').style.display = isTheme ? 'none' : 'block';
+                        const themeContent = document.getElementById('themeTabContent');
+                        const wpContent = document.getElementById('wallpaperTabContent');
+                        const tabThemeBtn = document.getElementById('tabThemeBtn');
+                        const tabWpBtn = document.getElementById('tabWpBtn');
                         
-                        document.getElementById('tabThemeBtn').className = isTheme ? 'tab-btn active-theme' : 'tab-btn';
-                        document.getElementById('tabWpBtn').className = isTheme ? 'tab-btn' : 'tab-btn active-wp';
+                        if (themeContent) themeContent.style.display = isTheme ? 'block' : 'none';
+                        if (wpContent) wpContent.style.display = isTheme ? 'none' : 'block';
+                        if (tabThemeBtn) tabThemeBtn.className = isTheme ? 'tab-btn active-theme' : 'tab-btn';
+                        if (tabWpBtn) tabWpBtn.className = isTheme ? 'tab-btn' : 'tab-btn active-wp';
                     }
 
                     function selectTheme(themeId) {
@@ -2242,9 +2266,9 @@ export default function NotesModal({ isOpen, onClose, user }) {
                             if (wpGradient && wpGradient !== 'none') {
                                 document.body.style.backgroundImage = wpGradient;
                                 if (currentWallpaper === 'grid') {
-                                    document.body.style.backgroundSize = '14px 14px';
+                                    document.body.style.backgroundSize = '24px 24px';
                                 } else if (currentWallpaper === 'dots') {
-                                    document.body.style.backgroundSize = '12px 12px';
+                                    document.body.style.backgroundSize = '18px 18px';
                                 } else {
                                     document.body.style.backgroundSize = 'cover';
                                 }
@@ -2274,17 +2298,18 @@ export default function NotesModal({ isOpen, onClose, user }) {
 
                     function changeFontSize(delta) {
                         currentFontSize = Math.min(36, Math.max(12, currentFontSize + delta));
-                        editor.style.fontSize = currentFontSize + 'px';
+                        if (editor) editor.style.fontSize = currentFontSize + 'px';
                         const el = document.getElementById('fontSizeDisplay');
                         if (el) el.innerText = currentFontSize + 'px';
                     }
 
                     function updateStats() {
-                        const text = (editor.innerText || '').replace(/\r\n/g, '\n');
+                        if (!editor) return;
+                        const text = (editor.innerText || '').replace(/\\r\\n/g, '\\n');
                         const cleanText = text.trim();
-                        const charCount = text.replace(/\n/g, '').length;
-                        const wordCount = cleanText ? cleanText.split(/\s+/).length : 0;
-                        const lineCount = text ? text.split('\n').length : 0;
+                        const charCount = text.replace(/\\n/g, '').length;
+                        const wordCount = cleanText ? cleanText.split(/\\s+/).length : 0;
+                        const lineCount = text ? text.split('\\n').length : 0;
 
                         const charEl = document.getElementById('charCount');
                         const wordEl = document.getElementById('wordCount');
@@ -2295,6 +2320,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     }
 
                     function copyContent() {
+                        if (!editor) return;
                         navigator.clipboard.writeText(editor.innerText || '');
                         const copyBtnText = document.getElementById('copyBtnText');
                         if (copyBtnText) copyBtnText.innerText = '완료!';
@@ -2303,77 +2329,79 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         }, 1800);
                     }
 
-                    editor.addEventListener('input', () => {
-                        updateStats();
-                        if (window.opener && !window.opener.closed) {
-                            window.opener.postMessage({
-                                type: 'JINIL_NOTE_CONTENT_UPDATE',
-                                content: editor.innerHTML
-                            }, '*');
-                        }
-                    });
+                    if (editor) {
+                        editor.addEventListener('input', () => {
+                            updateStats();
+                            if (window.opener && !window.opener.closed) {
+                                window.opener.postMessage({
+                                    type: 'JINIL_NOTE_CONTENT_UPDATE',
+                                    content: editor.innerHTML
+                                }, '*');
+                            }
+                        });
 
-                    // Clipboard Paste Listener for Inline Images in Detached Window
-                    editor.addEventListener('paste', (e) => {
-                        const items = (e.clipboardData || window.clipboardData)?.items;
-                        if (!items) return;
-                        for (let i = 0; i < items.length; i++) {
-                            const item = items[i];
-                            if (item.type && item.type.indexOf('image') !== -1) {
-                                const file = item.getAsFile();
-                                if (file) {
-                                    e.preventDefault();
-                                    const reader = new FileReader();
-                                    reader.onload = (re) => {
-                                        const sel = window.getSelection();
-                                        let range = (sel && sel.rangeCount > 0) ? sel.getRangeAt(0) : null;
+                        // Clipboard Paste Listener for Inline Images in Detached Window
+                        editor.addEventListener('paste', (e) => {
+                            const items = (e.clipboardData || window.clipboardData)?.items;
+                            if (!items) return;
+                            for (let i = 0; i < items.length; i++) {
+                                const item = items[i];
+                                if (item.type && item.type.indexOf('image') !== -1) {
+                                    const file = item.getAsFile();
+                                    if (file) {
+                                        e.preventDefault();
+                                        const reader = new FileReader();
+                                        reader.onload = (re) => {
+                                            const sel = window.getSelection();
+                                            let range = (sel && sel.rangeCount > 0) ? sel.getRangeAt(0) : null;
 
-                                        const imgContainer = document.createElement('div');
-                                        imgContainer.className = 'inline-image-block';
-                                        imgContainer.contentEditable = 'false';
+                                            const imgContainer = document.createElement('div');
+                                            imgContainer.className = 'inline-image-block';
+                                            imgContainer.contentEditable = 'false';
 
-                                        const img = document.createElement('img');
-                                        img.src = re.target.result;
-                                        img.alt = file.name || '이미지';
-                                        imgContainer.appendChild(img);
+                                            const img = document.createElement('img');
+                                            img.src = re.target.result;
+                                            img.alt = file.name || '이미지';
+                                            imgContainer.appendChild(img);
 
-                                        const emptyLine = document.createElement('p');
-                                        emptyLine.innerHTML = '<br>';
+                                            const emptyLine = document.createElement('p');
+                                            emptyLine.innerHTML = '<br>';
 
-                                        if (range && editor.contains(range.commonAncestorContainer)) {
-                                            range.deleteContents();
-                                            range.insertNode(emptyLine);
-                                            range.insertNode(imgContainer);
+                                            if (range && editor.contains(range.commonAncestorContainer)) {
+                                                range.deleteContents();
+                                                range.insertNode(emptyLine);
+                                                range.insertNode(imgContainer);
 
-                                            const newRange = document.createRange();
-                                            newRange.setStart(emptyLine, 0);
-                                            newRange.collapse(true);
-                                            sel.removeAllRanges();
-                                            sel.addRange(newRange);
-                                        } else {
-                                            editor.appendChild(imgContainer);
-                                            editor.appendChild(emptyLine);
-                                        }
+                                                const newRange = document.createRange();
+                                                newRange.setStart(emptyLine, 0);
+                                                newRange.collapse(true);
+                                                sel.removeAllRanges();
+                                                sel.addRange(newRange);
+                                            } else {
+                                                editor.appendChild(imgContainer);
+                                                editor.appendChild(emptyLine);
+                                            }
 
-                                        updateStats();
-                                        if (window.opener && !window.opener.closed) {
-                                            window.opener.postMessage({
-                                                type: 'JINIL_NOTE_CONTENT_UPDATE',
-                                                content: editor.innerHTML
-                                            }, '*');
-                                        }
-                                    };
-                                    reader.readAsDataURL(file);
-                                    return;
+                                            updateStats();
+                                            if (window.opener && !window.opener.closed) {
+                                                window.opener.postMessage({
+                                                    type: 'JINIL_NOTE_CONTENT_UPDATE',
+                                                    content: editor.innerHTML
+                                                }, '*');
+                                            }
+                                        };
+                                        reader.readAsDataURL(file);
+                                        return;
+                                    }
                                 }
                             }
-                        }
-                    });
+                        });
+                    }
 
                     // Keyboard shortcuts: Esc, Alt+S (Toggle Sticky), Alt+O (Cycle Opacity)
                     window.addEventListener('keydown', (e) => {
                         if (e.key === 'Escape') {
-                            if (modalBackdrop.classList.contains('show')) {
+                            if (modalBackdrop && modalBackdrop.classList.contains('show')) {
                                 closeThemeModal();
                             } else {
                                 window.close();
@@ -2387,6 +2415,21 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         }
                     });
 
+                    // Expose functions on window for inline handlers
+                    window.toggleStickyMode = toggleStickyMode;
+                    window.cycleOpacity = cycleOpacity;
+                    window.openThemeModal = openThemeModal;
+                    window.closeThemeModal = closeThemeModal;
+                    window.closeThemeModalOnBackdrop = closeThemeModalOnBackdrop;
+                    window.switchModalTab = switchModalTab;
+                    window.selectTheme = selectTheme;
+                    window.selectWallpaper = selectWallpaper;
+                    window.handleFileUpload = handleFileUpload;
+                    window.handleUrlInput = handleUrlInput;
+                    window.changeFontSize = changeFontSize;
+                    window.copyContent = copyContent;
+                    window.updateStats = updateStats;
+
                     // Initial Load
                     applyThemeStyles();
                     applyWallpaperStyles();
@@ -2394,8 +2437,20 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     updateStats();
                 </script>
             </body>
+        </html>
         `);
         popup.document.close();
+
+        // Direct fallback injection into editor
+        try {
+            const popupEditor = popup.document.getElementById('editor');
+            if (popupEditor && !popupEditor.innerHTML && noteHtml) {
+                popupEditor.innerHTML = noteHtml;
+                if (typeof popup.updateStats === 'function') {
+                    popup.updateStats();
+                }
+            }
+        } catch (e) {}
     };
 
     // 10. Clipboard Copy Helper
