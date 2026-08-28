@@ -1138,13 +1138,29 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
                     }
 
-                    /* 👁️ Opacity Button */
+                    /* Taste-Skill Premium Opacity & Glass Transparency Button */
                     .btn-opacity {
                         background: rgba(255, 255, 255, 0.08);
                         color: #cbd5e1;
-                        font-size: 11px;
+                        font-size: 11.5px;
                         font-weight: 800;
-                        padding: 0 8px;
+                        padding: 0 9px;
+                        gap: 5px;
+                        border: 1px solid var(--btn-border);
+                        transition: all 0.2s ease;
+                    }
+
+                    .btn-opacity:hover {
+                        background: rgba(255, 255, 255, 0.16);
+                        color: #ffffff;
+                        border-color: rgba(255, 255, 255, 0.28);
+                    }
+
+                    .btn-opacity.active-trans {
+                        background: rgba(59, 130, 246, 0.22) !important;
+                        color: #93c5fd !important;
+                        border-color: rgba(59, 130, 246, 0.45) !important;
+                        box-shadow: 0 0 10px rgba(59, 130, 246, 0.25);
                     }
 
                     .btn-theme {
@@ -1782,7 +1798,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
                 <div class="app-container" id="appContainer">
                     <div class="header" id="appHeader">
                         <div class="title-group">
-                            <span class="badge" id="appBadge">${isSticky ? '📌 스티키' : '새 창 메모'}</span>
+                            <span class="badge" id="appBadge">${isSticky ? '<svg style="width:10px;height:10px;display:inline-block;vertical-align:-1px;margin-right:3px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v8M5 5l14 14M19 5l-4 4M5 19l4-4M15 15l4 4"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>스티키' : '새 창 메모'}</span>
                             <div class="title-text" id="appTitle">${safeTitle}</div>
                         </div>
 
@@ -1796,9 +1812,13 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                 <span id="stickyBtnText">${isSticky ? '스티키 ON' : '스티키'}</span>
                             </button>
 
-                            <!-- 👁️ Opacity Transparency Toggle Button -->
-                            <button id="opacityBtn" class="btn btn-opacity" onclick="cycleOpacity()" title="창 투명도 조절 (Alt+O)">
-                                <span>👁️ 100%</span>
+                            <!-- 🪟 Taste-Skill Premium Opacity & Glass Transparency Toggle Button -->
+                            <button id="opacityBtn" class="btn btn-opacity" onclick="cycleOpacity()" title="창 투명도 / Glass Opacity 조절 (Alt+O)">
+                                <svg style="width:13px; height:13px; flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <circle cx="12" cy="12" r="9" />
+                                    <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" fill-opacity="0.4" />
+                                </svg>
+                                <span id="opacityValText">100%</span>
                             </button>
 
                             <!-- Theme & Wallpaper Settings Button -->
@@ -2277,7 +2297,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
                             document.body.classList.add('sticky-mode');
                             stickyToggleBtn.classList.add('active');
                             stickyBtnText.innerText = '스티키 ON';
-                            appBadge.innerText = '📌 스티키';
+                            appBadge.innerHTML = '<svg style="width:10px;height:10px;display:inline-block;vertical-align:-1px;margin-right:3px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 2v8M5 5l14 14M19 5l-4 4M5 19l4-4M15 15l4 4"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>스티키';
 
                             // Resize to compact sticky bounds
                             let targetW = 380;
@@ -2312,7 +2332,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         savePopupBounds();
                     }
 
-                    // 👁️ Cycle Window Transparency
+                    // Cycle Window Transparency
                     function cycleOpacity() {
                         currentOpacityIdx = (currentOpacityIdx + 1) % opacityLevels.length;
                         const opacityVal = opacityLevels[currentOpacityIdx];
@@ -2324,14 +2344,15 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         const opacityVal = opacityLevels[currentOpacityIdx];
                         document.documentElement.style.setProperty('--window-opacity', opacityVal.toString());
                         const opacityBtn = document.getElementById('opacityBtn');
+                        const opacityValText = document.getElementById('opacityValText');
+                        if (opacityValText) {
+                            opacityValText.innerText = Math.round(opacityVal * 100) + '%';
+                        }
                         if (opacityBtn) {
-                            opacityBtn.innerHTML = '<span>👁️ ' + Math.round(opacityVal * 100) + '%</span>';
                             if (opacityVal < 0.95) {
-                                opacityBtn.style.background = 'rgba(59, 130, 246, 0.25)';
-                                opacityBtn.style.color = '#93c5fd';
+                                opacityBtn.classList.add('active-trans');
                             } else {
-                                opacityBtn.style.background = 'rgba(255, 255, 255, 0.08)';
-                                opacityBtn.style.color = '#cbd5e1';
+                                opacityBtn.classList.remove('active-trans');
                             }
                         }
                     }
