@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>진일라벨 무료 Wi-Fi 바탕화면 (1920x1080 / 4K)</title>
+    <!-- Professional Google & Pretendard Typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700;800;900&family=Plus+Jakarta+Sans:wght@700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --font-sans: "Pretendard Variable", "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            --font-display: "Plus Jakarta Sans", "Pretendard Variable", sans-serif;
+            --font-mono: "JetBrains Mono", ui-monospace, monospace;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: #060b17;
+            color: #1e293b;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 16px;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Top Action Bar */
+        .action-bar {
+            width: 100%;
+            max-width: 1280px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 12px 24px;
+            border-radius: 16px;
+            margin-bottom: 20px;
+            box-shadow: 0 12px 30px -6px rgba(0, 0, 0, 0.5);
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .bar-title {
+            color: #f8fafc;
+            font-size: 15px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bar-title svg {
+            color: #38bdf8;
+        }
+
+        .bar-badge {
+            font-family: var(--font-display);
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+
+        .btn-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn {
+            font-family: var(--font-sans);
+            height: 38px;
+            padding: 0 18px;
+            border-radius: 10px;
+            font-size: 13.5px;
+            font-weight: 700;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+            transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+            user-select: none;
+        }
+
+        .btn-download-fhd {
+            background: linear-gradient(135deg, #0284c7, #2563eb);
+            color: #ffffff;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+        }
+        .btn-download-fhd:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.6);
+        }
+
+        .btn-download-4k {
+            background: rgba(255, 255, 255, 0.1);
+            color: #f8fafc;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        .btn-download-4k:hover {
+            background: rgba(255, 255, 255, 0.18);
+            transform: translateY(-1px);
+        }
+
+        /* 🖥️ 16:9 Wallpaper Container */
+        .wallpaper-wrapper {
+            width: 100%;
+            max-width: 1280px;
+            position: relative;
+            box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.7);
+            border-radius: 16px;
+            overflow: hidden;
+            background: #020617;
+        }
+
+        .wallpaper-fhd {
+            width: 1920px;
+            height: 1080px;
+            background: radial-gradient(circle at 50% 20%, #0369a1 0%, #0284c7 25%, #034873 60%, #071e3d 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            padding: 44px 70px 36px;
+            position: relative;
+            transform-origin: top left;
+            overflow: hidden;
+            box-shadow: inset 0 0 100px rgba(0, 0, 0, 0.35);
+        }
+
+        /* Ambient glowing background waves */
+        .bg-glow-1 {
+            position: absolute;
+            top: -150px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 900px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(56, 189, 248, 0.4) 0%, rgba(2, 132, 199, 0) 70%);
+            pointer-events: none;
+        }
+
+        .bg-glow-2 {
+            position: absolute;
+            bottom: -100px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 1400px;
+            height: 350px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.3) 0%, rgba(2, 6, 23, 0) 75%);
+            pointer-events: none;
+        }
+
+        /* 1. Header Section */
+        .header-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .wifi-plate {
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #ffffff 0%, #f0f9ff 65%, #e0f2fe 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 14px 35px rgba(0, 0, 0, 0.35), inset 0 -6px 12px rgba(2, 132, 199, 0.25), inset 0 6px 12px #ffffff;
+            border: 7px solid #ffffff;
+            margin-bottom: 12px;
+        }
+
+        .wifi-plate svg {
+            width: 88px;
+            height: 88px;
+            color: #0284c7;
+            filter: drop-shadow(0 3px 6px rgba(2, 132, 199, 0.35));
+        }
+
+        .main-title-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            margin-bottom: 6px;
+        }
+
+        .main-title {
+            font-family: var(--font-sans);
+            font-size: 54px;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            color: #ffffff;
+            text-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+            line-height: 1.1;
+        }
+
+        .free-badge {
+            font-family: var(--font-display);
+            background: #ffffff;
+            color: #0284c7;
+            font-size: 22px;
+            font-weight: 900;
+            padding: 5px 16px;
+            border-radius: 30px;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+            letter-spacing: -0.01em;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .free-badge svg {
+            color: #0284c7;
+        }
+
+        .sub-title {
+            font-family: var(--font-display);
+            font-size: 20px;
+            font-weight: 800;
+            color: #bae6fd;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        /* 2. Middle Dual QR Code Board */
+        .qr-board {
+            width: 100%;
+            max-width: 1420px;
+            background: #ffffff;
+            border-radius: 28px;
+            padding: 24px 36px 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            position: relative;
+            z-index: 2;
+        }
+
+        .qr-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 28px;
+        }
+
+        .qr-card {
+            border: 4px solid #e2e8f0;
+            border-radius: 22px;
+            padding: 18px 24px 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .qr-card.card-5g {
+            border-color: #38bdf8;
+            background: linear-gradient(180deg, #f0f9ff 0%, #ffffff 100%);
+        }
+
+        .qr-card.card-24g {
+            border-color: #818cf8;
+            background: linear-gradient(180deg, #eef2ff 0%, #ffffff 100%);
+        }
+
+        .card-header-badge {
+            font-family: var(--font-display);
+            padding: 6px 18px;
+            border-radius: 14px;
+            font-size: 20px;
+            font-weight: 800;
+            margin-bottom: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            line-height: 1;
+            letter-spacing: -0.01em;
+        }
+
+        .badge-5g {
+            background: #0284c7;
+            color: #ffffff;
+        }
+
+        .badge-24g {
+            background: #4f46e5;
+            color: #ffffff;
+        }
+
+        .ssid-name {
+            font-family: var(--font-sans);
+            font-size: 25px;
+            font-weight: 900;
+            color: #0f172a;
+            letter-spacing: -0.025em;
+            margin-bottom: 12px;
+            background: #ffffff;
+            padding: 6px 20px;
+            border-radius: 12px;
+            border: 1.5px solid #cbd5e1;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+            width: 85%;
+            word-break: break-all;
+        }
+
+        .qr-image-wrap {
+            width: 200px;
+            height: 200px;
+            background: #ffffff;
+            padding: 10px;
+            border-radius: 16px;
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+
+        .qr-image-wrap svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .qr-desc-box {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .qr-desc-text {
+            font-family: var(--font-sans);
+            font-size: 17px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .card-5g .qr-desc-text {
+            color: #0369a1;
+        }
+        .card-5g svg {
+            color: #0284c7;
+        }
+
+        .card-24g .qr-desc-text {
+            color: #4338ca;
+        }
+        .card-24g svg {
+            color: #4f46e5;
+        }
+
+        /* 3. Password Section */
+        .password-section {
+            background: #0f172a;
+            border-radius: 18px;
+            padding: 12px 28px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            color: #ffffff;
+            gap: 16px;
+        }
+
+        .pw-label-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .pw-label-group svg {
+            color: #fde047;
+        }
+
+        .pw-label {
+            font-family: var(--font-sans);
+            font-size: 20px;
+            font-weight: 800;
+            color: #94a3b8;
+            letter-spacing: -0.02em;
+        }
+
+        .pw-value {
+            font-family: var(--font-mono);
+            font-size: 32px;
+            font-weight: 900;
+            color: #fde047;
+            letter-spacing: 0.08em;
+            background: rgba(255, 255, 255, 0.08);
+            padding: 4px 18px;
+            border-radius: 10px;
+            border: 1.5px solid rgba(253, 224, 71, 0.35);
+        }
+
+        .scan-guide {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-align: right;
+        }
+
+        .scan-guide svg {
+            color: #38bdf8;
+            flex-shrink: 0;
+        }
+
+        .scan-guide-text {
+            font-family: var(--font-sans);
+            font-size: 16px;
+            font-weight: 600;
+            color: #38bdf8;
+            letter-spacing: -0.02em;
+            line-height: 1.35;
+        }
+
+        .scan-guide-text strong {
+            font-weight: 800;
+            color: #ffffff;
+        }
+
+        /* 4. Bottom Footer */
+        .bottom-banner {
+            width: 100%;
+            max-width: 1420px;
+            background: rgba(0, 0, 0, 0.45);
+            border-radius: 16px;
+            padding: 10px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            position: relative;
+            z-index: 2;
+        }
+
+        .caution-text {
+            font-family: var(--font-sans);
+            font-size: 14px;
+            font-weight: 700;
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            letter-spacing: -0.02em;
+        }
+
+        .caution-text svg {
+            color: #fde047;
+            flex-shrink: 0;
+        }
+
+        .company-tag {
+            font-family: var(--font-sans);
+            font-size: 14px;
+            font-weight: 700;
+            color: #bae6fd;
+            letter-spacing: 0.02em;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 🛠️ Header Control Bar -->
+    <div class="action-bar">
+        <div class="bar-title">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+                <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+                <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+                <line x1="12" y1="20" x2="12.01" y2="20" stroke-width="3"/>
+            </svg>
+            <span>진일라벨 Wi-Fi 바탕화면 (1920 × 1080)</span>
+            <span class="bar-badge">16:9 FHD / 4K</span>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-download-fhd" onclick="downloadWallpaper(1920, 1080, '진일라벨_WiFi_배경화면_1920x1080.png')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
+                </svg>
+                <span>1920 × 1080 다운로드</span>
+            </button>
+            <button class="btn btn-download-4k" onclick="downloadWallpaper(3840, 2160, '진일라벨_WiFi_배경화면_4K_3840x2160.png')">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+                <span>4K 초고화질 저장</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- 🖥️ 16:9 FHD Wallpaper Canvas Frame -->
+    <div class="wallpaper-wrapper" id="wallpaperWrap">
+        <div class="wallpaper-fhd" id="wallpaperFHD">
+            <div class="bg-glow-1"></div>
+            <div class="bg-glow-2"></div>
+
+            <!-- 1. Header Section -->
+            <div class="header-section">
+                <div class="wifi-plate">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12.55a11 11 0 0 1 14.08 0"/>
+                        <path d="M1.42 9a16 16 0 0 1 21.16 0"/>
+                        <path d="M8.53 16.11a6 6 0 0 1 6.95 0"/>
+                        <line x1="12" y1="20" x2="12.01" y2="20" stroke-width="4"/>
+                    </svg>
+                </div>
+
+                <div class="main-title-wrap">
+                    <h1 class="main-title">무료 와이파이</h1>
+                    <div class="free-badge">
+                        <span>Free</span>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
+                        </svg>
+                    </div>
+                </div>
+                <div class="sub-title">JINIL LABEL FREE WI-FI ZONE</div>
+            </div>
+
+            <!-- 2. Dual QR Code Card Board -->
+            <div class="qr-board">
+                <div class="qr-grid">
+                    <!-- 5G Card -->
+                    <div class="qr-card card-5g">
+                        <div class="card-header-badge badge-5g">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+                            </svg>
+                            <span>5G 초고속 접속</span>
+                        </div>
+                        <div class="ssid-name">진일라벨_5G</div>
+                        <div class="qr-image-wrap" id="qr5gArea"></div>
+                        <div class="qr-desc-box">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m12 14 4-4"/>
+                                <path d="M3.34 19a10 10 0 1 1 17.32 0"/>
+                            </svg>
+                            <span class="qr-desc-text">가까운 곳에서 속도가 가장 빠릅니다</span>
+                        </div>
+                    </div>
+
+                    <!-- 2.4G Card -->
+                    <div class="qr-card card-24g">
+                        <div class="card-header-badge badge-24g">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="2"/>
+                                <path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/>
+                            </svg>
+                            <span>2.4G 광범위 접속</span>
+                        </div>
+                        <div class="ssid-name">진일라벨_2.4G</div>
+                        <div class="qr-image-wrap" id="qr24gArea"></div>
+                        <div class="qr-desc-box">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M2 20h.01"/>
+                                <path d="M7 20v-4"/>
+                                <path d="M12 20v-8"/>
+                                <path d="M17 20V4"/>
+                            </svg>
+                            <span class="qr-desc-text">벽이 있거나 멀리서도 잘 터집니다</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Password Bar -->
+                <div class="password-section">
+                    <div class="pw-label-group">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M2 18v3c0 .6.4 1 1 1h4v-3h3v-3h2l1.4-1.4a6.5 6.5 0 1 0-4-4Z"/>
+                            <circle cx="16.5" cy="7.5" r=".5" fill="currentColor"/>
+                        </svg>
+                        <span class="pw-label">무선랜 암호</span>
+                        <span class="pw-value">GIH62@3185</span>
+                    </div>
+                    <div class="scan-guide">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                            <circle cx="12" cy="13" r="3"/>
+                        </svg>
+                        <div class="scan-guide-text">
+                            카메라로 QR 코드를 비추면<br><strong>비밀번호 입력 없이 자동 연결</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Bottom Banner -->
+            <div class="bottom-banner">
+                <div class="caution-text">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/>
+                        <path d="M12 16v-4"/>
+                        <path d="M12 8h.01"/>
+                    </svg>
+                    <span>Wi-Fi 연결이 원활하지 않을 경우, 기기의 Wi-Fi를 껐다 켜거나 비밀번호를 직접 입력해주세요.</span>
+                </div>
+                <div class="company-tag">
+                    (주)진일라벨 고객 및 방문객 전용 무료 무선 인터넷 서비스
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // High Precision Vector QR Codes
+        const qr5gSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 31 31" shape-rendering="crispEdges" width="100%" height="100%"><path fill="#ffffff" d="M0 0h31v31H0z"/><path stroke="#0f172a" d="M1 1.5h7m1 0h1m3 0h2m1 0h1m1 0h2m1 0h1m1 0h7M1 2.5h1m5 0h1m3 0h1m3 0h1m1 0h4m2 0h1m5 0h1M1 3.5h1m1 0h3m1 0h1m2 0h2m1 0h1m1 0h1m1 0h1m2 0h1m2 0h1m1 0h3m1 0h1M1 4.5h1m1 0h3m1 0h1m1 0h5m2 0h3m1 0h2m1 0h1m1 0h3m1 0h1M1 5.5h1m1 0h3m1 0h1m1 0h1m2 0h3m4 0h1m1 0h1m1 0h1m1 0h3m1 0h1M1 6.5h1m5 0h1m1 0h1m5 0h1m5 0h1m1 0h1m5 0h1M1 7.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M9 8.5h1m1 0h1m1 0h4m2 0h3M1 9.5h1m3 0h1m1 0h4m3 0h2m2 0h1m2 0h6m2 0h1M2 10.5h1m1 0h3m1 0h1m2 0h1m2 0h3m3 0h1m3 0h1m2 0h3M1 11.5h1m2 0h5m1 0h2m2 0h1m1 0h1m3 0h3m1 0h2m1 0h1M2 12.5h2m5 0h1m3 0h1m1 0h1m1 0h4m1 0h1m2 0h2M1 13.5h3m1 0h6m2 0h2m7 0h1m6 0h1M1 14.5h3m1 0h1m4 0h5m1 0h2m2 0h1m1 0h2m5 0h1M1 15.5h2m4 0h4m3 0h1m1 0h1m1 0h5m2 0h1m1 0h1m1 0h1M1 16.5h1m2 0h1m3 0h1m1 0h2m2 0h2m1 0h2m3 0h3m1 0h2m1 0h1M2 17.5h4m1 0h1m3 0h1m3 0h1m2 0h1m3 0h1m1 0h1m1 0h1m1 0h1M1 18.5h1m2 0h2m2 0h2m1 0h1m2 0h1m6 0h1m3 0h1m1 0h1m1 0h1M5 19.5h3m2 0h1m2 0h2m2 0h1m2 0h1m7 0h2M6 20.5h1m1 0h1m2 0h6m2 0h4m3 0h1M1 21.5h4m2 0h1m1 0h1m1 0h3m1 0h1m1 0h3m1 0h6m2 0h1M9 22.5h2m3 0h1m5 0h2m3 0h1m2 0h1M1 23.5h7m1 0h2m2 0h1m3 0h3m1 0h1m1 0h1m1 0h3m1 0h1M1 24.5h1m5 0h1m4 0h1m3 0h1m1 0h4m3 0h2m2 0h1M1 25.5h1m1 0h3m1 0h1m1 0h2m3 0h2m1 0h1m1 0h1m1 0h8M1 26.5h1m1 0h3m1 0h1m2 0h1m2 0h5m1 0h1m2 0h3m1 0h2M1 27.5h1m1 0h3m1 0h1m3 0h1m2 0h1m1 0h2m3 0h5m1 0h3M1 28.5h1m5 0h1m2 0h2m1 0h1m2 0h1m2 0h2m1 0h1m2 0h1m2 0h1M1 29.5h7m1 0h2m2 0h1m4 0h2m2 0h1m2 0h1m1 0h1"/></svg>`;
+        const qr24gSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 35 35" shape-rendering="crispEdges" width="100%" height="100%"><path fill="#ffffff" d="M0 0h35v35H0z"/><path stroke="#0f172a" d="M1 1.5h7m2 0h6m2 0h1m1 0h1m2 0h2m2 0h7M1 2.5h1m5 0h1m3 0h1m2 0h2m1 0h2m1 0h1m2 0h1m1 0h1m1 0h1m5 0h1M1 3.5h1m1 0h3m1 0h1m1 0h1m4 0h1m3 0h4m2 0h2m1 0h1m1 0h3m1 0h1M1 4.5h1m1 0h3m1 0h1m1 0h1m3 0h1m1 0h3m2 0h6m1 0h1m1 0h3m1 0h1M1 5.5h1m1 0h3m1 0h1m1 0h1m3 0h1m2 0h1m1 0h2m5 0h1m1 0h1m1 0h3m1 0h1M1 6.5h1m5 0h1m1 0h1m2 0h2m1 0h5m1 0h2m2 0h1m1 0h1m5 0h1M1 7.5h7m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h1m1 0h7M9 8.5h2m2 0h1m1 0h2m5 0h1m2 0h1M1 9.5h1m1 0h5m3 0h3m2 0h4m2 0h2m1 0h1m1 0h5M5 10.5h2m10 0h1m1 0h1m1 0h2m7 0h3M1 11.5h3m3 0h3m3 0h1m2 0h1m2 0h4m1 0h2m3 0h3m1 0h1M2 12.5h1m3 0h1m1 0h6m1 0h3m2 0h1m1 0h3m1 0h2m1 0h3M1 13.5h2m1 0h1m2 0h1m3 0h1m1 0h1m2 0h1m2 0h2m1 0h1m1 0h1m4 0h1m2 0h1M2 14.5h3m1 0h1m1 0h2m5 0h4m2 0h1m1 0h4m1 0h1m1 0h2m1 0h1M3 15.5h1m1 0h3m1 0h2m1 0h1m1 0h2m2 0h3m2 0h2m4 0h1m1 0h1M4 16.5h2m2 0h1m1 0h2m1 0h2m2 0h5m2 0h2m1 0h2m3 0h2M1 17.5h2m1 0h1m2 0h1m1 0h2m8 0h5m1 0h1m2 0h2m1 0h1m1 0h1M2 18.5h2m2 0h1m4 0h2m1 0h6m1 0h1m2 0h4m4 0h2M1 19.5h1m1 0h1m2 0h2m1 0h1m2 0h1m1 0h5m1 0h2m1 0h2m3 0h1m1 0h1m1 0h1M1 20.5h1m3 0h1m3 0h2m4 0h1m2 0h2m4 0h4m2 0h1M4 21.5h1m2 0h5m1 0h1m1 0h3m2 0h4m3 0h2m1 0h1m1 0h1M1 22.5h1m1 0h3m3 0h1m3 0h1m1 0h2m2 0h1m4 0h2m2 0h1m2 0h2M1 23.5h1m1 0h1m1 0h3m5 0h2m1 0h2m3 0h2m1 0h1m3 0h1m1 0h1m1 0h1M1 24.5h1m3 0h2m1 0h5m3 0h1m1 0h1m4 0h5m2 0h3M1 25.5h1m4 0h2m3 0h1m1 0h4m1 0h1m2 0h3m1 0h5m2 0h1M9 26.5h7m1 0h1m2 0h1m1 0h4m3 0h3m1 0h1M1 27.5h7m3 0h1m2 0h1m4 0h2m1 0h1m1 0h2m1 0h1m1 0h1m3 0h1M1 28.5h1m5 0h1m1 0h1m1 0h3m6 0h4m1 0h1m3 0h5M1 29.5h1m1 0h3m1 0h1m1 0h3m1 0h1m2 0h1m2 0h2m1 0h1m2 0h6M1 30.5h1m1 0h3m1 0h1m1 0h2m1 0h2m2 0h2m3 0h1m1 0h3m1 0h3m1 0h1M1 31.5h1m1 0h3m1 0h1m1 0h4m5 0h3m3 0h4m1 0h2M1 32.5h1m5 0h1m2 0h1m1 0h1m4 0h1m2 0h2m1 0h3m2 0h2m1 0h1m1 0h1M1 33.5h7m1 0h1m2 0h1m1 0h1m3 0h3m1 0h6m1 0h1"/></svg>`;
+
+        document.getElementById('qr5gArea').innerHTML = qr5gSvg;
+        document.getElementById('qr24gArea').innerHTML = qr24gSvg;
+
+        // Auto scale preview to fit window
+        function resizePreview() {
+            const wrap = document.getElementById('wallpaperWrap');
+            const fhd = document.getElementById('wallpaperFHD');
+            const wrapW = wrap.clientWidth;
+            const scale = wrapW / 1920;
+            fhd.style.transform = `scale(${scale})`;
+            wrap.style.height = `${1080 * scale}px`;
+        }
+
+        window.addEventListener('resize', resizePreview);
+        window.addEventListener('load', resizePreview);
+        resizePreview();
+
+        // Download Wallpaper with custom resolution (1080p / 4K)
+        async function downloadWallpaper(targetWidth, targetHeight, filename) {
+            const fhd = document.getElementById('wallpaperFHD');
+            const btn = event.currentTarget;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<span>생성 중...</span>';
+
+            try {
+                // Temporarily reset transform for clean render
+                const currentTransform = fhd.style.transform;
+                fhd.style.transform = 'none';
+
+                const scale = targetWidth / 1920;
+                const canvas = await html2canvas(fhd, {
+                    scale: scale,
+                    width: 1920,
+                    height: 1080,
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#020617'
+                });
+
+                fhd.style.transform = currentTransform;
+
+                canvas.toBlob((blob) => {
+                    if (blob) {
+                        const url = URL.createObjectURL(blob);
+                        const link = document.createElement('a');
+                        link.href = url;
+                        link.download = filename;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    }
+                }, 'image/png', 1.0);
+            } catch (err) {
+                alert('다운로드 중 오류: ' + err.message);
+            } finally {
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                }, 800);
+            }
+        }
+    </script>
+</body>
+</html>
