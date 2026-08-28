@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import invoiceHtml from '../../public/invoice-app/index.html?raw';
 import { subscribeClients, getCachedClients } from '../services/clientAddressService';
 
 export default function InvoiceModal({ isOpen, onClose }) {
@@ -27,10 +26,35 @@ export default function InvoiceModal({ isOpen, onClose }) {
             }, '*');
         };
 
+        const sendHistory = () => {
+            if (!iframeRef.current || !iframeRef.current.contentWindow) return;
+            try {
+                const saved = localStorage.getItem('jinil_invoice_history');
+                if (saved) {
+                    const history = JSON.parse(saved);
+                    if (Array.isArray(history)) {
+                        iframeRef.current.contentWindow.postMessage({
+                            type: 'SET_INVOICE_HISTORY',
+                            history: history
+                        }, '*');
+                    }
+                }
+            } catch (e) {}
+        };
+
         // Listen for iframe readiness or requests
         const handleMessage = (e) => {
-            if (e.data && (e.data.type === 'IFRAME_READY' || e.data.type === 'GET_CLIENT_ADDRESS_BOOK')) {
+            if (!e.data) return;
+            if (e.data.type === 'IFRAME_READY' || e.data.type === 'GET_CLIENT_ADDRESS_BOOK') {
                 sendClients(getCachedClients());
+                sendHistory();
+            }
+            if (e.data.type === 'SAVE_INVOICE_HISTORY' || e.data.type === 'SYNC_INVOICE_HISTORY') {
+                if (Array.isArray(e.data.history)) {
+                    try {
+                        localStorage.setItem('jinil_invoice_history', JSON.stringify(e.data.history));
+                    } catch (err) {}
+                }
             }
         };
         window.addEventListener('message', handleMessage);
@@ -41,8 +65,14 @@ export default function InvoiceModal({ isOpen, onClose }) {
         });
 
         // Backup timer to guarantee transmission after iframe renders
-        const timer1 = setTimeout(() => sendClients(getCachedClients()), 150);
-        const timer2 = setTimeout(() => sendClients(getCachedClients()), 600);
+        const timer1 = setTimeout(() => {
+            sendClients(getCachedClients());
+            sendHistory();
+        }, 200);
+        const timer2 = setTimeout(() => {
+            sendClients(getCachedClients());
+            sendHistory();
+        }, 700);
 
         return () => {
             window.removeEventListener('message', handleMessage);
@@ -103,7 +133,7 @@ export default function InvoiceModal({ isOpen, onClose }) {
                 <div className="flex-1 w-full h-full bg-slate-50 dark:bg-slate-900 p-0 overflow-hidden">
                     <iframe
                         ref={iframeRef}
-                        srcDoc={invoiceHtml}
+                        src="/invoice-app/index.html"
                         title="거래명세서 발행"
                         className="w-full h-full border-none"
                     />

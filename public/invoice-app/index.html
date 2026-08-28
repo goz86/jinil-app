@@ -655,7 +655,7 @@
         </button>
 
         <!-- Print Button -->
-        <button class="btn" onclick="window.print()">
+        <button class="btn" onclick="saveCurrentToHistory(); window.print();">
           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
           <span>인쇄</span>
         </button>
@@ -856,6 +856,7 @@
   function removeAllItems() {
     if (confirm('모든 품목을 삭제하시겠습니까?')) {
       items = [{ date: '', name: '', spec: '', qty: 1, price: 0, sub: 0, note: '' }];
+      activeInvoiceHistoryId = null;
       renderItemTable();
       renderStatement();
       showToast('전체 품목이 삭제되었습니다.');
@@ -1403,26 +1404,50 @@
   async function saveFileLocally(blob, filename) {
     if (customDirHandle) {
       try {
-        const fileHandle = await customDirHandle.getFileHandle(filename, { create: true });
-        const writable = await fileHandle.createWritable();
-        await writable.write(blob);
-        await writable.close();
-        showToast(`'${customDirName}' 폴더에 '${filename}' 저장 완료!`);
-        return;
+        let targetName = filename;
+        let fileHandle;
+        try {
+          fileHandle = await customDirHandle.getFileHandle(targetName, { create: true });
+          const writable = await fileHandle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+          showToast(`'${customDirName}' 폴더에 '${targetName}' 저장 완료!`);
+          return;
+        } catch (lockedErr) {
+          // Khi file đang được mở trong Excel/ứng dụng khác (bị khóa ghi), tự động lưu với hậu tố thời gian
+          const extDot = filename.lastIndexOf('.');
+          const base = extDot > 0 ? filename.substring(0, extDot) : filename;
+          const ext = extDot > 0 ? filename.substring(extDot) : '';
+          const timeSuffix = new Date().toTimeString().split(' ')[0].replace(/:/g, '');
+          targetName = `${base}_${timeSuffix}${ext}`;
+          
+          fileHandle = await customDirHandle.getFileHandle(targetName, { create: true });
+          const writable = await fileHandle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+          showToast(`(파일 열림 감지) '${targetName}'(으)로 새로 저장 완료!`);
+          return;
+        }
       } catch (err) {
-        console.error('File System Access Write failed, falling back to download', err);
+        console.warn('File System Access Write failed, falling back to download', err);
       }
     }
 
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    showToast(`'${filename}' 다운로드 완료!`);
+    try {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      // Đợi 30 giây mới giải phóng URL để tránh trình duyệt hủy tải xuống ở lần xuất tiếp theo
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+      showToast(`'${filename}' 다운로드 완료!`);
+    } catch (err) {
+      console.error('Download error:', err);
+      showToast('다운로드 처리 중 오류가 발생했습니다.');
+    }
   }
 
   // Xuất file ảnh PNG (1 tờ duy nhất)
@@ -1531,7 +1556,7 @@
     }
   }
 
-  // Xuất file Excel 서식 거래명세표 (Dynamic Excel Formulas + Rich Styling)
+  // Xuất file Excel 서식 거래명세표 (Dynamic Excel Formulas + Pre-calculated Results + Rich Styling)
   async function exportExcel() {
     saveCurrentToHistory();
     if (typeof ExcelJS === 'undefined') {
@@ -1698,6 +1723,9 @@
       const startRow = 15;
       const itemRowsCount = Math.max(items.length, 10); // Minimum 10 rows for clean presentation
 
+      let computedSubtotalSum = 0;
+      let computedTaxSum = 0;
+
       for (let i = 0; i < itemRowsCount; i++) {
         const rNum = startRow + i;
         const row = sheet.getRow(rNum);
@@ -1725,16 +1753,21 @@
         row.getCell(5).numFmt = '#,##0';
         row.getCell(5).alignment = { vertical: 'middle', horizontal: 'right' };
 
-        // 공급가액 (Col F) - Excel Formula `=D{rNum}*E{rNum}`
+        // 공급가액 (Col F) - Excel Formula `=D{rNum}*E{rNum}` + Pre-calculated Result
         const subCalc = itemData.sub !== undefined && itemData.sub !== null && itemData.sub !== ''
           ? Number(itemData.sub)
-          : qtyNum * priceNum;
+          : Math.round(qtyNum * priceNum);
+        
+        computedSubtotalSum += subCalc;
+
         row.getCell(6).value = { formula: `D${rNum}*E${rNum}`, result: subCalc };
         row.getCell(6).numFmt = '#,##0';
         row.getCell(6).alignment = { vertical: 'middle', horizontal: 'right' };
 
-        // 세액 (Col G) - Excel Formula `=IF(${includeTax}, ROUND(F{rNum}*0.1, 0), 0)`
+        // 세액 (Col G) - Excel Formula `=ROUND(F{rNum}*0.1, 0)` + Pre-calculated Result
         const taxCalc = includeTax ? Math.round(subCalc * 0.1) : 0;
+        computedTaxSum += taxCalc;
+
         row.getCell(7).value = {
           formula: includeTax ? `ROUND(F${rNum}*0.1, 0)` : '0',
           result: taxCalc
@@ -1753,6 +1786,7 @@
       }
 
       const endRow = startRow + itemRowsCount - 1;
+      const computedGrandTotalSum = computedSubtotalSum + (includeTax ? computedTaxSum : 0);
 
       // 5. Totals & Summary Rows
       // Subtotal Row
@@ -1765,7 +1799,7 @@
       subtotalLabel.alignment = { vertical: 'middle', horizontal: 'right' };
 
       const subtotalVal = sheet.getCell(`F${subtotalRowNum}`);
-      subtotalVal.value = { formula: `SUM(F${startRow}:F${endRow})` };
+      subtotalVal.value = { formula: `SUM(F${startRow}:F${endRow})`, result: computedSubtotalSum };
       subtotalVal.numFmt = '#,##0';
       subtotalVal.font = { name: '맑은 고딕', size: 11, bold: true };
       subtotalVal.alignment = { vertical: 'middle', horizontal: 'right' };
@@ -1784,7 +1818,7 @@
         taxLabel.alignment = { vertical: 'middle', horizontal: 'right' };
 
         const taxVal = sheet.getCell(`F${grandTotalRowNum}`);
-        taxVal.value = { formula: `SUM(G${startRow}:G${endRow})` };
+        taxVal.value = { formula: `SUM(G${startRow}:G${endRow})`, result: computedTaxSum };
         taxVal.numFmt = '#,##0';
         taxVal.font = { name: '맑은 고딕', size: 11, bold: true };
         taxVal.alignment = { vertical: 'middle', horizontal: 'right' };
@@ -1807,8 +1841,8 @@
       sheet.mergeCells(`F${grandTotalRowNum}:H${grandTotalRowNum}`);
       const grandVal = sheet.getCell(`F${grandTotalRowNum}`);
       grandVal.value = includeTax
-        ? { formula: `F${subtotalRowNum}+F${subtotalRowNum + 1}` }
-        : { formula: `F${subtotalRowNum}` };
+        ? { formula: `F${subtotalRowNum}+F${subtotalRowNum + 1}`, result: computedGrandTotalSum }
+        : { formula: `F${subtotalRowNum}`, result: computedGrandTotalSum };
       grandVal.numFmt = '#,##0 "원"';
       grandVal.font = { name: '맑은 고딕', size: 13, bold: true, color: { argb: '1A6B3A' } };
       grandVal.fill = headerFill;
@@ -1957,6 +1991,9 @@
   }
 
   // Lắng nghe dữ liệu danh sách 거래처 từ React Parent Component (InvoiceModal)
+  let activeInvoiceHistoryId = null;
+
+  // Lắng nghe dữ liệu danh sách 거래처 & lịch sử 발행 내역 từ React Parent Component (InvoiceModal)
   window.addEventListener('message', (event) => {
     if (!event.data) return;
     if (event.data.type === 'OPEN_HISTORY_MODAL') {
@@ -1966,6 +2003,20 @@
       mergeClientsIntoBook(event.data.clients);
       const inputVal = document.getElementById('toName').value;
       if (inputVal) handleClientSearch(inputVal);
+    }
+    if (event.data.type === 'SET_INVOICE_HISTORY' && Array.isArray(event.data.history)) {
+      const localHistory = getInvoiceHistory();
+      const map = new Map();
+      localHistory.forEach(h => { if (h && h.id) map.set(h.id, h); });
+      event.data.history.forEach(h => { if (h && h.id && !map.has(h.id)) map.set(h.id, h); });
+      const merged = Array.from(map.values());
+      try {
+        localStorage.setItem('jinil_invoice_history', JSON.stringify(merged));
+      } catch (e) {}
+      const modal = document.getElementById('historyModalOverlay');
+      if (modal && modal.style.display === 'flex') {
+        renderHistoryList(document.getElementById('txtHistorySearch')?.value || '');
+      }
     }
   });
 
@@ -2057,67 +2108,127 @@
   function getInvoiceHistory() {
     try {
       const saved = localStorage.getItem('jinil_invoice_history');
-      return saved ? JSON.parse(saved) : [];
-    } catch (e) {
-      return [];
-    }
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) return parsed;
+      }
+    } catch (e) {}
+    return [];
   }
 
   function saveCurrentToHistory() {
-    const toName = (document.getElementById('toName').value || '').trim();
-    if (!toName) return;
-
+    const rawToName = (document.getElementById('toName').value || '').trim();
     const dateStr = document.getElementById('invDate').value || new Date().toISOString().split('T')[0];
     const subtotal = items.reduce((sum, item) => sum + (Number(item.sub) || 0), 0);
     const includeTax = document.getElementById('chkTax').checked;
     const tax = includeTax ? Math.round(subtotal * 0.1) : 0;
     const grandTotal = subtotal + tax;
 
-    if (!items.some(it => it.name && it.name.trim())) return;
+    // Lọc các item hợp lệ (có tên hoặc quy cách hoặc số tiền > 0)
+    const validItems = items.filter(it => 
+      (it.name && it.name.trim()) || 
+      (it.spec && it.spec.trim()) || 
+      Number(it.sub) > 0 || 
+      Number(it.price) > 0
+    );
+
+    // Nếu hoàn toàn trống (không có tên công ty, không có item nào, tổng tiền 0) thì bỏ qua
+    if (!rawToName && validItems.length === 0 && grandTotal === 0) return;
+
+    const toName = rawToName || '거래처 미지정';
+    let history = getInvoiceHistory();
+
+    // 1. Chống trùng lặp (Deduplication) khi xuất 3 định dạng Ảnh, PDF, Excel trên cùng 1 đơn:
+    // - Khớp theo activeInvoiceHistoryId (nếu đã lưu/xuất định dạng trước đó trong cùng phiên)
+    // - HOẶC khớp theo thông tin đơn: cùng toName + cùng date + cùng grandTotal + cùng danh sách items
+    let existingIdx = -1;
+    if (activeInvoiceHistoryId) {
+      existingIdx = history.findIndex(h => h.id === activeInvoiceHistoryId);
+    }
+
+    if (existingIdx === -1) {
+      existingIdx = history.findIndex(h => {
+        if (h.toName !== toName || h.date !== dateStr || h.grandTotal !== grandTotal) return false;
+        const hItems = h.items || [];
+        if (hItems.length !== items.length) return false;
+        return hItems.every((it, idx) => {
+          const cur = items[idx];
+          return cur && it.name === cur.name && Number(it.qty) === Number(cur.qty) && Number(it.price) === Number(cur.price);
+        });
+      });
+    }
+
+    const currentId = (existingIdx >= 0 && history[existingIdx].id) 
+      ? history[existingIdx].id 
+      : ('inv-' + Date.now() + '-' + Math.random().toString(36).substr(2, 4));
 
     const historyItem = {
-      id: 'inv-' + Date.now(),
+      id: currentId,
       date: dateStr,
-      savedAt: new Date().toLocaleString('ko-KR'),
+      savedAt: (existingIdx >= 0 && history[existingIdx].savedAt) ? history[existingIdx].savedAt : new Date().toLocaleString('ko-KR'),
+      updatedAt: new Date().toLocaleString('ko-KR'),
       toName: toName,
-      toRep: document.getElementById('toRep').value,
-      toTel: document.getElementById('toTel').value,
-      toAddr: document.getElementById('toAddr').value,
-      toBiz: document.getElementById('toBiz').value,
-      toBizType: document.getElementById('toBizType').value,
-      toItemType: document.getElementById('toItemType').value,
+      toRep: document.getElementById('toRep').value || '',
+      toTel: document.getElementById('toTel').value || '',
+      toAddr: document.getElementById('toAddr').value || '',
+      toBiz: document.getElementById('toBiz').value || '',
+      toBizType: document.getElementById('toBizType').value || '',
+      toItemType: document.getElementById('toItemType').value || '',
       items: JSON.parse(JSON.stringify(items)),
       subtotal: subtotal,
       tax: tax,
       grandTotal: grandTotal,
       includeTax: includeTax,
-      note: document.getElementById('invNote').value
+      note: document.getElementById('invNote').value || ''
     };
 
-    let history = getInvoiceHistory();
-    const existingIdx = history.findIndex(h => h.toName === toName && h.date === dateStr && h.grandTotal === grandTotal);
+    activeInvoiceHistoryId = currentId;
+
     if (existingIdx >= 0) {
+      // Cập nhật đè lên bản ghi cũ (không tạo thêm bản ghi trùng lặp)
       history[existingIdx] = historyItem;
     } else {
+      // Thêm bản ghi mới lên đầu danh sách
       history.unshift(historyItem);
     }
 
-    localStorage.setItem('jinil_invoice_history', JSON.stringify(history));
-    saveClientToAddressBook({
-      name: toName,
-      rep: historyItem.toRep,
-      tel: historyItem.toTel,
-      addr: historyItem.toAddr,
-      biz: historyItem.toBiz,
-      bizType: historyItem.toBizType,
-      itemType: historyItem.toItemType
-    });
+    try {
+      localStorage.setItem('jinil_invoice_history', JSON.stringify(history));
+    } catch (e) {
+      console.warn('Failed to save to localStorage:', e);
+    }
+
+    // Báo cho React Parent component để đồng bộ lưu trữ
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({
+          type: 'SAVE_INVOICE_HISTORY',
+          history: history,
+          item: historyItem
+        }, '*');
+      }
+    } catch (e) {}
+
+    // Đồng thời lưu/cập nhật thông tin khách hàng vào sổ địa chỉ 거래처
+    if (rawToName && rawToName !== '거래처 미지정') {
+      saveClientToAddressBook({
+        name: rawToName,
+        rep: historyItem.toRep,
+        tel: historyItem.toTel,
+        addr: historyItem.toAddr,
+        biz: historyItem.toBiz,
+        bizType: historyItem.toBizType,
+        itemType: historyItem.toItemType
+      });
+    }
   }
 
   function openHistoryModal() {
     const modal = document.getElementById('historyModalOverlay');
     if (modal) {
       modal.style.display = 'flex';
+      const searchInput = document.getElementById('txtHistorySearch');
+      if (searchInput) searchInput.value = '';
       renderHistoryList('');
     }
   }
@@ -2153,24 +2264,25 @@
     }
 
     container.innerHTML = filtered.map(h => {
-      const firstItemName = h.items && h.items[0] && h.items[0].name ? h.items[0].name : '품목 미지정';
-      const itemCount = h.items ? h.items.length : 0;
+      const firstItemName = h.items && h.items[0] && h.items[0].name ? h.items[0].name : (h.items && h.items[0] && h.items[0].spec ? h.items[0].spec : '품목 미지정');
+      const itemCount = h.items ? h.items.filter(it => (it.name && it.name.trim()) || Number(it.sub) > 0).length : 0;
       const summaryText = itemCount > 1 ? `${firstItemName} 외 ${itemCount - 1}건` : firstItemName;
 
       return `
         <div style="background: #ffffff; border: 1px solid var(--slate-200); border-radius: 12px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 3px rgba(0,0,0,0.04); gap: 16px;">
-          <div style="display: flex; flex-direction: column; gap: 4px; flex: 1;">
-            <div style="display: flex; align-items: center; gap: 10px;">
+          <div style="display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 0;">
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
               <span style="font-weight: 800; font-size: 14px; color: var(--slate-900);">${esc(h.toName)}</span>
-              <span style="font-size: 11px; background: var(--slate-100); color: var(--slate-600); padding: 2px 8px; border-radius: 6px; font-weight: 600;">${esc(h.date)}</span>
+              <span style="font-size: 11px; background: #eff6ff; color: #2563eb; padding: 2px 8px; border-radius: 6px; font-weight: 700; border: 1px solid #bfdbfe;">${esc(h.date)}</span>
+              ${h.savedAt ? `<span style="font-size: 10.5px; color: var(--slate-400);">${esc(h.savedAt)}</span>` : ''}
             </div>
             <div style="font-size: 12px; color: var(--slate-600); font-weight: 500;">
-              ${esc(summaryText)} | 합계: <strong>${fmt(h.grandTotal)}원</strong>
+              ${esc(summaryText)} | 합계: <strong style="color: #1e293b;">${fmt(h.grandTotal)}원</strong>
             </div>
           </div>
 
-          <div style="display: flex; gap: 8px;">
-            <button class="btn btn-primary" style="height: 30px; font-size: 11.5px;" onclick="loadInvoiceFromHistory('${h.id}')">불러오기</button>
+          <div style="display: flex; gap: 8px; flex-shrink: 0;">
+            <button class="btn btn-primary" style="height: 32px; font-size: 12px; padding: 0 12px;" onclick="loadInvoiceFromHistory('${h.id}')">불러오기</button>
             <button class="btn-delete" title="삭제" onclick="deleteHistoryItem('${h.id}')">
               <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
             </button>
@@ -2185,8 +2297,10 @@
     const item = history.find(h => h.id === id);
     if (!item) return;
 
+    activeInvoiceHistoryId = item.id; // Ghi nhớ ID của đơn để khi xuất tiếp sẽ cập nhật đúng đơn này
+
     document.getElementById('invDate').value = item.date || '';
-    document.getElementById('toName').value = item.toName || '';
+    document.getElementById('toName').value = (item.toName === '거래처 미지정') ? '' : (item.toName || '');
     document.getElementById('toRep').value = item.toRep || '';
     document.getElementById('toTel').value = item.toTel || '';
     document.getElementById('toAddr').value = item.toAddr || '';
@@ -2209,14 +2323,42 @@
   function deleteHistoryItem(id) {
     let history = getInvoiceHistory();
     history = history.filter(h => h.id !== id);
-    localStorage.setItem('jinil_invoice_history', JSON.stringify(history));
+    if (activeInvoiceHistoryId === id) {
+      activeInvoiceHistoryId = null;
+    }
+    try {
+      localStorage.setItem('jinil_invoice_history', JSON.stringify(history));
+    } catch (e) {}
+
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({
+          type: 'SYNC_INVOICE_HISTORY',
+          history: history
+        }, '*');
+      }
+    } catch (e) {}
+
     renderHistoryList(document.getElementById('txtHistorySearch').value);
     showToast('발행 내역이 삭제되었습니다.');
   }
 
   function clearAllHistory() {
     if (confirm('모든 발행 내역을 삭제하시겠습니까?')) {
-      localStorage.removeItem('jinil_invoice_history');
+      activeInvoiceHistoryId = null;
+      try {
+        localStorage.removeItem('jinil_invoice_history');
+      } catch (e) {}
+
+      try {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({
+            type: 'SYNC_INVOICE_HISTORY',
+            history: []
+          }, '*');
+        }
+      } catch (e) {}
+
       renderHistoryList('');
       showToast('전체 발행 내역이 삭제되었습니다.');
     }

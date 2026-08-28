@@ -218,13 +218,19 @@ export default function NotesModal({ isOpen, onClose, user }) {
     // Listen for live updates from detached popout window
     useEffect(() => {
         const handlePopupMessage = (e) => {
-            if (e.data && e.data.type === 'JINIL_NOTE_CONTENT_UPDATE') {
+            if (!e.data) return;
+            if (e.data.type === 'JINIL_NOTE_CONTENT_UPDATE') {
                 const newHtml = e.data.content || '';
                 setContent(newHtml);
                 if (editorRef.current && editorRef.current.innerHTML !== newHtml) {
                     editorRef.current.innerHTML = newHtml;
                 }
                 triggerAutoSave({ content: newHtml });
+            }
+            if (e.data.type === 'JINIL_NOTE_POPUP_BOUNDS_UPDATE' && e.data.bounds) {
+                try {
+                    localStorage.setItem('jinil_notes_popup_bounds', JSON.stringify(e.data.bounds));
+                } catch (err) {}
             }
         };
         window.addEventListener('message', handlePopupMessage);
@@ -905,14 +911,42 @@ export default function NotesModal({ isOpen, onClose, user }) {
         return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
     };
 
-    // Detached Browser Popup Window with MiniWidget-Style Toss & Kakao Theme & Wallpaper System
-    const handleOpenExternalWindow = () => {
+    // Detached Browser Popup Window with MiniWidget-Style Toss & Kakao Theme & Wallpaper System + Sticky Note Mode
+    const handleOpenExternalWindow = (startAsSticky = false) => {
         const noteTitle = title || '메모 본문';
         const noteHtml = content || '';
-        const w = 840;
-        const h = 740;
-        const left = Math.max(0, Math.round((window.screen.width - w) / 2));
-        const top = Math.max(0, Math.round((window.screen.height - h) / 2));
+        
+        let isSticky = startAsSticky;
+        if (!startAsSticky) {
+            try {
+                isSticky = localStorage.getItem('jinil_notes_is_sticky') === 'true';
+            } catch (e) {}
+        }
+
+        const screenAvailW = window.screen.availWidth || window.screen.width || 1920;
+        const screenAvailH = window.screen.availHeight || window.screen.height || 1080;
+
+        let w = isSticky ? 380 : 840;
+        let h = isSticky ? 500 : 740;
+        let left = isSticky ? Math.max(0, screenAvailW - w - 40) : Math.max(0, Math.round((screenAvailW - w) / 2));
+        let top = isSticky ? 50 : Math.max(0, Math.round((screenAvailH - h) / 2));
+
+        try {
+            const boundsKey = isSticky ? 'jinil_notes_sticky_bounds' : 'jinil_notes_popup_bounds';
+            const savedBoundsStr = localStorage.getItem(boundsKey);
+            if (savedBoundsStr) {
+                const b = JSON.parse(savedBoundsStr);
+                if (b.width && b.height) {
+                    w = isSticky ? Math.min(600, Math.max(280, b.width)) : Math.min(screenAvailW, Math.max(340, b.width));
+                    h = isSticky ? Math.min(800, Math.max(260, b.height)) : Math.min(screenAvailH, Math.max(280, b.height));
+                }
+                if (b.left !== undefined && b.top !== undefined) {
+                    left = Math.min(Math.max(0, b.left), Math.max(0, screenAvailW - 120));
+                    top = Math.min(Math.max(0, b.top), Math.max(0, screenAvailH - 120));
+                }
+            }
+        } catch (e) {}
+
         const popup = window.open('', '_blank', `width=${w},height=${h},top=${top},left=${left},resizable=yes,scrollbars=yes`);
         if (!popup) return;
 
@@ -924,7 +958,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
             <head>
                 <meta charset="UTF-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>${safeTitle} - 진일 상세 메모</title>
+                <title>${safeTitle} - 진일 스티키 메모</title>
                 <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
                 <style>
                     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -957,10 +991,11 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         --badge-bg: #2563eb;
                         --badge-text: #ffffff;
                         --footer-bg: #0f172a;
+                        --window-opacity: 1;
                     }
 
                     body {
-                        padding: 14px;
+                        padding: 10px;
                         font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
                         background-color: var(--bg-body);
                         color: var(--text-main);
@@ -980,12 +1015,13 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         height: 100%;
                         background-color: var(--card-bg);
                         border: 1px solid var(--border-color);
-                        border-radius: 20px;
+                        border-radius: 16px;
                         overflow: hidden;
-                        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+                        box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.45);
                         backdrop-filter: blur(16px);
                         -webkit-backdrop-filter: blur(16px);
-                        transition: all 0.3s ease;
+                        opacity: var(--window-opacity);
+                        transition: opacity 0.2s ease, all 0.2s ease;
                     }
 
                     .high-contrast .app-container {
@@ -1003,63 +1039,67 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         display: flex;
                         justify-content: space-between;
                         align-items: center;
-                        padding: 12px 18px;
+                        padding: 10px 14px;
                         background-color: var(--header-bg);
                         border-bottom: 1px solid var(--header-border);
-                        gap: 12px;
-                        min-height: 58px;
+                        gap: 8px;
+                        min-height: 50px;
                         box-sizing: border-box;
-                        transition: all 0.3s ease;
+                        transition: all 0.2s ease;
+                        flex-shrink: 0;
+                        user-select: none;
                     }
 
                     .title-group {
                         display: flex;
                         align-items: center;
-                        gap: 10px;
+                        gap: 8px;
                         min-width: 0;
-                        flex-shrink: 1;
+                        flex: 1 1 auto;
                     }
 
                     .badge {
                         background-color: var(--badge-bg);
                         color: var(--badge-text);
-                        font-size: 11px;
+                        font-size: 10.5px;
                         font-weight: 800;
-                        padding: 4px 9px;
-                        border-radius: 8px;
-                        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+                        padding: 3px 8px;
+                        border-radius: 6px;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.15);
                         white-space: nowrap;
+                        flex-shrink: 0;
+                        transition: all 0.2s;
                     }
 
                     .title-text {
-                        font-size: 15px;
+                        font-size: 14px;
                         font-weight: 800;
                         color: var(--text-main);
                         white-space: nowrap;
                         overflow: hidden;
                         text-overflow: ellipsis;
-                        max-width: 240px;
+                        min-width: 0;
                     }
 
                     .toolbar {
                         display: flex;
                         align-items: center;
-                        gap: 6px;
+                        gap: 5px;
                         flex-wrap: nowrap;
                         flex-shrink: 0;
                     }
 
                     .btn {
-                        height: 34px;
-                        padding: 0 11px;
-                        border-radius: 9px;
+                        height: 32px;
+                        padding: 0 10px;
+                        border-radius: 8px;
                         font-weight: 700;
                         font-size: 12px;
                         cursor: pointer;
                         display: inline-flex;
                         align-items: center;
                         justify-content: center;
-                        gap: 5px;
+                        gap: 4px;
                         white-space: nowrap;
                         transition: all 0.15s ease;
                         user-select: none;
@@ -1077,11 +1117,41 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         transform: translateY(-1px);
                     }
 
+                    /* 📌 Sticky Note Pin Toggle Button */
+                    .btn-sticky {
+                        background: rgba(245, 158, 11, 0.12);
+                        color: #fbbf24;
+                        border: 1px solid rgba(245, 158, 11, 0.3);
+                        font-weight: 800;
+                    }
+
+                    .btn-sticky:hover {
+                        background: rgba(245, 158, 11, 0.25);
+                        color: #fef08a;
+                        border-color: rgba(245, 158, 11, 0.5);
+                    }
+
+                    .btn-sticky.active {
+                        background: linear-gradient(135deg, #d97706, #b45309);
+                        color: #ffffff;
+                        border-color: #f59e0b;
+                        box-shadow: 0 0 12px rgba(245, 158, 11, 0.4);
+                    }
+
+                    /* 👁️ Opacity Button */
+                    .btn-opacity {
+                        background: rgba(255, 255, 255, 0.08);
+                        color: #cbd5e1;
+                        font-size: 11px;
+                        font-weight: 800;
+                        padding: 0 8px;
+                    }
+
                     .btn-theme {
                         background-color: var(--btn-theme-bg);
                         color: var(--btn-theme-text);
                         border: 1px solid var(--btn-theme-border);
-                        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+                        box-shadow: 0 2px 6px rgba(0,0,0,0.15);
                     }
 
                     .btn-theme:hover {
@@ -1102,19 +1172,19 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     }
 
                     .font-controls {
-                        height: 34px;
+                        height: 32px;
                         display: inline-flex;
                         align-items: center;
                         background-color: var(--btn-bg);
-                        border-radius: 9px;
+                        border-radius: 8px;
                         border: 1px solid var(--btn-border);
                         padding: 2px 3px;
                         box-sizing: border-box;
                     }
 
                     .font-controls button {
-                        height: 28px;
-                        padding: 0 7px;
+                        height: 26px;
+                        padding: 0 6px;
                         display: inline-flex;
                         align-items: center;
                         justify-content: center;
@@ -1124,7 +1194,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         font-weight: 800;
                         font-size: 11px;
                         cursor: pointer;
-                        border-radius: 6px;
+                        border-radius: 5px;
                         transition: background 0.15s;
                         line-height: 1;
                     }
@@ -1137,7 +1207,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     .font-size-text {
                         font-size: 11px;
                         color: var(--text-muted);
-                        padding: 0 4px;
+                        padding: 0 3px;
                         font-weight: bold;
                         user-select: none;
                     }
@@ -1146,7 +1216,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         flex: 1;
                         display: flex;
                         flex-direction: column;
-                        padding: 14px 18px;
+                        padding: 10px 14px;
                         min-height: 0;
                     }
 
@@ -1156,10 +1226,10 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         background-color: var(--textarea-bg);
                         border: 1px solid var(--textarea-border);
                         color: var(--text-main);
-                        border-radius: 16px;
-                        padding: 16px 18px;
-                        font-size: 16px;
-                        line-height: 1.7;
+                        border-radius: 12px;
+                        padding: 14px 16px;
+                        font-size: 15px;
+                        line-height: 1.65;
                         outline: none;
                         font-family: "Pretendard", sans-serif;
                         box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
@@ -1168,6 +1238,8 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         min-height: 0;
                         cursor: text;
                         user-select: text;
+                        word-break: break-word;
+                        overflow-wrap: break-word;
                     }
 
                     .rich-editor:focus {
@@ -1179,123 +1251,204 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         content: "상세 내용을 작성하세요... (Ctrl+V로 con trỏ chuột dán ảnh trực tiếp)";
                         color: var(--text-muted);
                         pointer-events: none;
+                        display: block;
                     }
 
+                    /* Inline pasted images */
                     .inline-image-block {
-                        margin: 12px 0;
+                        margin: 10px 0;
+                        display: inline-block;
+                        max-width: 100%;
                         user-select: none;
                     }
 
                     .inline-image-block img {
                         max-width: 100%;
                         max-height: 480px;
-                        border-radius: 12px;
-                        box-shadow: 0 4px 14px rgba(0,0,0,0.3);
-                        display: block;
                         object-fit: contain;
-                        cursor: pointer;
+                        border-radius: 8px;
+                        border: 1px solid var(--border-color);
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+                        display: block;
                     }
 
                     .footer {
                         display: flex;
                         justify-content: space-between;
                         align-items: center;
-                        padding: 10px 18px;
-                        border-top: 1px solid var(--header-border);
+                        padding: 8px 14px;
                         background-color: var(--footer-bg);
-                        font-size: 12px;
+                        border-top: 1px solid var(--header-border);
+                        font-size: 11.5px;
                         color: var(--text-muted);
-                        transition: all 0.3s ease;
+                        gap: 8px;
+                        flex-shrink: 0;
+                        user-select: none;
                     }
 
                     .sync-status {
                         display: flex;
                         align-items: center;
                         gap: 6px;
-                        font-weight: 700;
+                        min-width: 0;
                     }
 
                     .status-dot {
-                        width: 8px;
-                        height: 8px;
-                        border-radius: 50%;
+                        width: 7px;
+                        height: 7px;
                         background-color: #10b981;
+                        border-radius: 50%;
+                        display: inline-block;
                         box-shadow: 0 0 8px #10b981;
-                        animation: pulse 2s infinite;
-                    }
-
-                    @keyframes pulse {
-                        0%, 100% { opacity: 1; transform: scale(1); }
-                        50% { opacity: 0.5; transform: scale(0.85); }
+                        flex-shrink: 0;
                     }
 
                     .stats-group {
                         display: flex;
                         align-items: center;
-                        gap: 8px;
-                        font-weight: 600;
+                        gap: 6px;
+                        white-space: nowrap;
+                        flex-shrink: 0;
                     }
 
-                    /* 🎨 Modal Dialog for Toss & Kakao Themes & Wallpapers */
+                    /* 🌟 ULTRA-COMPACT STICKY NOTE MODE STYLES */
+                    body.sticky-mode {
+                        padding: 4px;
+                        background-color: transparent !important;
+                    }
+
+                    body.sticky-mode .app-container {
+                        border-radius: 14px;
+                        box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.12);
+                    }
+
+                    body.sticky-mode .header {
+                        padding: 6px 8px;
+                        min-height: 38px;
+                        height: 38px;
+                        gap: 4px;
+                    }
+
+                    body.sticky-mode .badge {
+                        background: linear-gradient(135deg, #d97706, #b45309) !important;
+                        color: #ffffff !important;
+                        font-size: 9.5px;
+                        padding: 2px 6px;
+                    }
+
+                    body.sticky-mode .title-text {
+                        font-size: 12px;
+                        max-width: 90px;
+                    }
+
+                    body.sticky-mode .btn {
+                        height: 26px;
+                        padding: 0 6px;
+                        font-size: 10.5px;
+                        border-radius: 6px;
+                    }
+
+                    body.sticky-mode .font-controls,
+                    body.sticky-mode .btn-print,
+                    body.sticky-mode .font-size-text {
+                        display: none !important;
+                    }
+
+                    body.sticky-mode .editor-wrap {
+                        padding: 6px 8px;
+                    }
+
+                    body.sticky-mode .rich-editor {
+                        padding: 8px 10px;
+                        border-radius: 10px;
+                        font-size: 13.5px;
+                        line-height: 1.55;
+                    }
+
+                    body.sticky-mode .footer {
+                        padding: 4px 8px;
+                        font-size: 10px;
+                        min-height: 24px;
+                    }
+
+                    body.sticky-mode .sync-text {
+                        display: none;
+                    }
+
+                    /* 📱 Responsive optimizations */
+                    @media (max-width: 640px) {
+                        body { padding: 6px; }
+                        .header { padding: 8px 10px; min-height: 46px; gap: 6px; }
+                        .editor-wrap { padding: 8px 10px; }
+                        .rich-editor { padding: 10px 12px; font-size: 14px; }
+                        .btn { height: 30px; padding: 0 8px; font-size: 11px; }
+                        .font-controls { height: 30px; }
+                        .font-controls button { height: 24px; padding: 0 5px; font-size: 10px; }
+                        .font-size-text { font-size: 10px; }
+                        .footer { padding: 6px 10px; font-size: 11px; }
+                    }
+
+                    @media (max-width: 480px) {
+                        body { padding: 4px; }
+                        .app-container { border-radius: 12px; }
+                        .header { padding: 6px 8px; min-height: 40px; gap: 4px; }
+                        .title-text { font-size: 12.5px; max-width: 80px; }
+                        .editor-wrap { padding: 6px 8px; }
+                        .rich-editor { padding: 8px 10px; border-radius: 8px; font-size: 13px; }
+                        .btn { height: 26px; padding: 0 5px; font-size: 10px; }
+                        .font-controls { display: none; }
+                        .sync-text { display: none; }
+                        .footer { padding: 4px 8px; font-size: 10px; }
+                    }
+
+                    /* 🎨 Toss / Kakao Theme Selector Modal Dialog Styles */
                     .modal-backdrop {
                         position: fixed;
                         inset: 0;
-                        background: rgba(0, 0, 0, 0.75);
-                        backdrop-filter: blur(12px);
-                        -webkit-backdrop-filter: blur(12px);
-                        z-index: 1000;
-                        display: none;
+                        background: rgba(0, 0, 0, 0.65);
+                        backdrop-filter: blur(8px);
+                        -webkit-backdrop-filter: blur(8px);
+                        display: flex;
                         align-items: center;
                         justify-content: center;
+                        z-index: 99999;
+                        opacity: 0;
+                        pointer-events: none;
+                        transition: opacity 0.2s ease;
                         padding: 16px;
-                        animation: fadeIn 0.2s ease-out;
                     }
 
                     .modal-backdrop.show {
-                        display: flex;
+                        opacity: 1;
+                        pointer-events: auto;
                     }
 
                     .theme-modal {
-                        width: 100%;
-                        max-width: 440px;
-                        max-height: 88vh;
                         background: #0f172a;
                         border: 1px solid rgba(255, 255, 255, 0.15);
-                        border-radius: 28px;
-                        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
-                        padding: 20px;
-                        color: #ffffff;
+                        border-radius: 20px;
+                        width: 100%;
+                        max-width: 480px;
+                        max-height: 85vh;
                         display: flex;
                         flex-direction: column;
-                        gap: 16px;
-                        overflow-y: auto;
-                        animation: scaleUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+                        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+                        overflow: hidden;
+                        transform: scale(0.95);
+                        transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
                     }
 
-                    .theme-modal::-webkit-scrollbar {
-                        width: 6px;
-                    }
-                    .theme-modal::-webkit-scrollbar-thumb {
-                        background: rgba(255,255,255,0.2);
-                        border-radius: 3px;
-                    }
-
-                    @keyframes fadeIn {
-                        from { opacity: 0; }
-                        to { opacity: 1; }
-                    }
-
-                    @keyframes scaleUp {
-                        from { opacity: 0; transform: scale(0.94); }
-                        to { opacity: 1; transform: scale(1); }
+                    .modal-backdrop.show .theme-modal {
+                        transform: scale(1);
                     }
 
                     .modal-header {
+                        padding: 16px 20px;
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
                         display: flex;
                         justify-content: space-between;
                         align-items: center;
-                        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-                        padding-bottom: 12px;
+                        background: #1e293b;
                     }
 
                     .modal-title-wrap {
@@ -1307,33 +1460,32 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     .modal-icon {
                         width: 32px;
                         height: 32px;
-                        border-radius: 12px;
-                        background: linear-gradient(135deg, #3b82f6, #6366f1);
+                        border-radius: 10px;
+                        background: linear-gradient(135deg, #2563eb, #7c3aed);
                         display: flex;
                         align-items: center;
                         justify-content: center;
-                        font-size: 16px;
-                        box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+                        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
                     }
 
-                    .modal-title-wrap h3 {
-                        font-size: 14px;
+                    .modal-header h3 {
+                        font-size: 15px;
                         font-weight: 800;
                         color: #ffffff;
                     }
 
-                    .modal-title-wrap p {
-                        font-size: 10px;
+                    .modal-header p {
+                        font-size: 11px;
                         color: #94a3b8;
                     }
 
                     .modal-close-btn {
-                        width: 28px;
-                        height: 28px;
-                        border-radius: 10px;
-                        background: rgba(255, 255, 255, 0.1);
+                        background: rgba(255, 255, 255, 0.08);
                         border: none;
                         color: #94a3b8;
+                        width: 28px;
+                        height: 28px;
+                        border-radius: 8px;
                         font-size: 13px;
                         cursor: pointer;
                         display: flex;
@@ -1348,309 +1500,275 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     }
 
                     .tab-switcher {
-                        display: grid;
-                        grid-template-columns: 1fr 1fr;
-                        background: rgba(255, 255, 255, 0.08);
-                        padding: 4px;
-                        border-radius: 16px;
-                        gap: 4px;
+                        display: flex;
+                        padding: 10px 16px 0;
+                        background: #0f172a;
+                        gap: 8px;
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
                     }
 
                     .tab-btn {
-                        padding: 8px 12px;
+                        padding: 8px 14px;
                         font-size: 12px;
-                        font-weight: 800;
-                        border: none;
-                        border-radius: 12px;
-                        cursor: pointer;
+                        font-weight: 700;
                         color: #94a3b8;
                         background: transparent;
-                        transition: all 0.2s;
+                        border: none;
+                        border-bottom: 2px solid transparent;
+                        cursor: pointer;
+                        transition: all 0.15s;
+                    }
+
+                    .tab-btn:hover {
+                        color: #ffffff;
                     }
 
                     .tab-btn.active-theme {
-                        background: #2563eb;
-                        color: #ffffff;
-                        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
+                        color: #3b82f6;
+                        border-bottom-color: #3b82f6;
                     }
 
                     .tab-btn.active-wp {
-                        background: #9333ea;
-                        color: #ffffff;
-                        box-shadow: 0 4px 12px rgba(147, 51, 234, 0.35);
+                        color: #a855f7;
+                        border-bottom-color: #a855f7;
                     }
 
-                    .theme-list {
+                    .modal-body {
+                        padding: 16px;
+                        overflow-y: auto;
+                        flex: 1;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 14px;
+                    }
+
+                    .section-subtitle {
+                        font-size: 11.5px;
+                        font-weight: 700;
+                        color: #cbd5e1;
+                        margin-bottom: 8px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                    }
+
+                    .theme-grid {
+                        display: grid;
+                        grid-template-columns: repeat(2, 1fr);
+                        gap: 10px;
+                    }
+
+                    .theme-card {
+                        background: #1e293b;
+                        border: 2px solid rgba(255, 255, 255, 0.08);
+                        border-radius: 14px;
+                        padding: 12px;
+                        cursor: pointer;
+                        transition: all 0.18s ease;
+                        display: flex;
+                        flex-direction: column;
+                        gap: 8px;
+                        position: relative;
+                    }
+
+                    .theme-card:hover {
+                        border-color: rgba(59, 130, 246, 0.5);
+                        transform: translateY(-2px);
+                        box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+                    }
+
+                    .theme-card.active {
+                        border-color: #3b82f6;
+                        background: rgba(59, 130, 246, 0.1);
+                    }
+
+                    .theme-preview-dots {
+                        display: flex;
+                        gap: 5px;
+                        align-items: center;
+                    }
+
+                    .preview-circle {
+                        width: 14px;
+                        height: 14px;
+                        border-radius: 50%;
+                        border: 1px solid rgba(255,255,255,0.2);
+                    }
+
+                    .theme-name {
+                        font-size: 12px;
+                        font-weight: 800;
+                        color: #ffffff;
+                    }
+
+                    .theme-desc {
+                        font-size: 10.5px;
+                        color: #94a3b8;
+                    }
+
+                    .check-badge {
+                        width: 18px;
+                        height: 18px;
+                        border-radius: 50%;
+                        background: #3b82f6;
+                        color: #ffffff;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 10px;
+                        font-weight: 900;
+                    }
+
+                    .radio-circle {
+                        width: 14px;
+                        height: 14px;
+                        border-radius: 50%;
+                        border: 1.5px solid rgba(255,255,255,0.3);
+                    }
+
+                    .wallpaper-grid {
+                        display: grid;
+                        grid-template-columns: repeat(3, 1fr);
+                        gap: 8px;
+                    }
+
+                    .wp-card {
+                        height: 60px;
+                        border-radius: 10px;
+                        border: 2px solid rgba(255, 255, 255, 0.1);
+                        cursor: pointer;
+                        transition: all 0.15s;
+                        position: relative;
+                        overflow: hidden;
+                        display: flex;
+                        align-items: flex-end;
+                        padding: 6px;
+                    }
+
+                    .wp-card:hover {
+                        transform: scale(1.03);
+                        border-color: #a855f7;
+                    }
+
+                    .wp-card.active {
+                        border-color: #a855f7;
+                        box-shadow: 0 0 0 2px rgba(168, 85, 247, 0.4);
+                    }
+
+                    .wp-name {
+                        font-size: 9.5px;
+                        font-weight: 800;
+                        color: #ffffff;
+                        text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+                    }
+
+                    .custom-bg-input-box {
+                        background: #1e293b;
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        border-radius: 12px;
+                        padding: 12px;
                         display: flex;
                         flex-direction: column;
                         gap: 8px;
                     }
 
-                    .theme-card {
-                        padding: 10px 14px;
-                        border-radius: 16px;
-                        border: 1px solid rgba(255, 255, 255, 0.1);
-                        background: rgba(255, 255, 255, 0.04);
+                    .custom-bg-input-box input[type="text"] {
+                        width: 100%;
+                        background: #0f172a;
+                        border: 1px solid rgba(255, 255, 255, 0.15);
+                        border-radius: 8px;
+                        padding: 7px 10px;
+                        font-size: 11.5px;
+                        color: #ffffff;
+                        outline: none;
+                    }
+
+                    .custom-bg-input-box input[type="text"]:focus {
+                        border-color: #a855f7;
+                    }
+
+                    .file-label-btn {
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 6px;
+                        background: rgba(255, 255, 255, 0.08);
+                        border: 1px solid rgba(255, 255, 255, 0.2);
+                        color: #ffffff;
+                        border-radius: 8px;
+                        padding: 6px 12px;
+                        font-size: 11px;
+                        font-weight: 700;
                         cursor: pointer;
+                        transition: background 0.15s;
+                    }
+
+                    .file-label-btn:hover {
+                        background: rgba(255, 255, 255, 0.15);
+                    }
+
+                    .contrast-toggle-btn {
                         display: flex;
                         align-items: center;
                         justify-content: space-between;
+                        padding: 10px 14px;
+                        background: #1e293b;
+                        border: 1px solid rgba(255, 255, 255, 0.1);
+                        border-radius: 12px;
+                        cursor: pointer;
                         transition: all 0.15s;
                     }
 
-                    .theme-card:hover {
-                        background: rgba(255, 255, 255, 0.08);
-                        border-color: rgba(255, 255, 255, 0.2);
-                        transform: translateY(-1px);
-                    }
-
-                    .theme-card.active {
-                        border-color: #3b82f6;
-                        background: rgba(59, 130, 246, 0.18);
-                        box-shadow: 0 4px 14px rgba(59, 130, 246, 0.2);
-                    }
-
-                    .theme-card-left {
-                        display: flex;
-                        align-items: center;
-                        gap: 12px;
-                    }
-
-                    .theme-mini-thumb {
-                        width: 36px;
-                        height: 36px;
-                        border-radius: 10px;
-                        border: 1px solid rgba(255, 255, 255, 0.2);
-                        overflow: hidden;
-                        display: flex;
-                        flex-direction: column;
-                        flex-shrink: 0;
-                    }
-
-                    .theme-mini-header {
-                        height: 12px;
-                        width: 100%;
-                    }
-
-                    .theme-mini-body {
-                        flex: 1;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        padding: 2px;
-                    }
-
-                    .theme-mini-inner {
-                        width: 20px;
-                        height: 10px;
-                        border-radius: 3px;
-                    }
-
-                    .theme-card-name {
-                        font-size: 12px;
-                        font-weight: 800;
-                        color: #ffffff;
-                    }
-
-                    .theme-card-cat {
-                        font-size: 10px;
-                        color: #94a3b8;
-                    }
-
-                    .check-badge {
-                        width: 20px;
-                        height: 20px;
-                        border-radius: 50%;
-                        background: #2563eb;
-                        color: #ffffff;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        font-size: 11px;
-                        font-weight: 900;
-                    }
-
-                    .radio-circle {
-                        width: 16px;
-                        height: 16px;
-                        border-radius: 50%;
-                        border: 1px solid rgba(255, 255, 255, 0.3);
-                    }
-
-                    .contrast-section {
-                        border-top: 1px solid rgba(255, 255, 255, 0.1);
-                        padding-top: 12px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: space-between;
-                    }
-
-                    .contrast-title {
-                        font-size: 12px;
-                        font-weight: 800;
-                        color: #ffffff;
-                    }
-
-                    .contrast-sub {
-                        font-size: 10px;
-                        color: #94a3b8;
-                    }
-
-                    .switch-btn {
-                        width: 44px;
-                        height: 24px;
-                        border-radius: 12px;
+                    .contrast-toggle-btn:hover {
                         background: #334155;
-                        border: none;
-                        cursor: pointer;
+                    }
+
+                    .toggle-pill {
+                        width: 38px;
+                        height: 20px;
+                        background: rgba(255,255,255,0.2);
+                        border-radius: 20px;
                         position: relative;
                         transition: background 0.2s;
                     }
 
-                    .switch-btn.on {
-                        background: #2563eb;
-                    }
-
-                    .switch-knob {
-                        width: 18px;
-                        height: 18px;
-                        border-radius: 50%;
+                    .toggle-circle {
+                        width: 14px;
+                        height: 14px;
                         background: #ffffff;
+                        border-radius: 50%;
                         position: absolute;
                         top: 3px;
                         left: 3px;
                         transition: transform 0.2s;
                     }
 
-                    .switch-btn.on .switch-knob {
-                        transform: translateX(20px);
+                    .contrast-toggle-btn.on .toggle-pill {
+                        background: #3b82f6;
                     }
 
-                    .wallpaper-grid {
-                        display: grid;
-                        grid-template-columns: 1fr 1fr;
-                        gap: 10px;
+                    .contrast-toggle-btn.on .toggle-circle {
+                        transform: translateX(18px);
                     }
 
-                    .wp-card {
-                        height: 80px;
-                        border-radius: 18px;
-                        border: 1px solid rgba(255, 255, 255, 0.1);
-                        background: rgba(255, 255, 255, 0.05);
-                        padding: 10px;
-                        cursor: pointer;
-                        display: flex;
-                        flex-direction: column;
-                        justify-content: space-between;
-                        position: relative;
-                        overflow: hidden;
-                        transition: all 0.15s;
-                    }
-
-                    .wp-card:hover {
-                        border-color: rgba(255, 255, 255, 0.3);
-                        transform: translateY(-2px);
-                    }
-
-                    .wp-card.active {
-                        border-color: #a855f7;
-                        box-shadow: 0 0 0 2px #a855f7, 0 4px 14px rgba(168, 85, 247, 0.3);
-                    }
-
-                    .wp-card-bg {
-                        position: absolute;
-                        inset: 0;
-                        opacity: 0.5;
-                        transition: opacity 0.2s;
-                    }
-
-                    .wp-card:hover .wp-card-bg {
-                        opacity: 0.75;
-                    }
-
-                    .wp-card-top {
-                        position: relative;
-                        z-index: 2;
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: center;
-                    }
-
-                    .wp-icon {
-                        font-size: 16px;
-                    }
-
-                    .wp-card-bot {
-                        position: relative;
-                        z-index: 2;
-                    }
-
-                    .wp-card-name {
-                        font-size: 11px;
-                        font-weight: 800;
-                        color: #ffffff;
-                    }
-
-                    .wp-card-eng {
-                        font-size: 9px;
-                        color: #e2e8f0;
-                    }
-
-                    .upload-box {
+                    .modal-footer {
+                        padding: 12px 20px;
                         border-top: 1px solid rgba(255, 255, 255, 0.1);
-                        padding-top: 12px;
+                        background: #1e293b;
                         display: flex;
-                        flex-direction: column;
-                        gap: 8px;
-                    }
-
-                    .upload-label {
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        gap: 8px;
-                        padding: 10px;
-                        border-radius: 16px;
-                        border: 1px dashed rgba(168, 85, 247, 0.6);
-                        background: rgba(147, 51, 234, 0.1);
-                        color: #d8b4fe;
-                        font-size: 11px;
-                        font-weight: 800;
-                        cursor: pointer;
-                        transition: all 0.15s;
-                    }
-
-                    .upload-label:hover {
-                        background: rgba(147, 51, 234, 0.2);
-                        color: #ffffff;
-                    }
-
-                    .url-input {
-                        width: 100%;
-                        padding: 8px 12px;
-                        border-radius: 12px;
-                        border: 1px solid rgba(255, 255, 255, 0.15);
-                        background: rgba(0, 0, 0, 0.4);
-                        color: #ffffff;
-                        font-size: 11px;
-                        outline: none;
-                    }
-
-                    .url-input:focus {
-                        border-color: #a855f7;
+                        justify-content: flex-end;
                     }
 
                     .apply-btn {
-                        width: 100%;
-                        padding: 12px;
-                        border-radius: 16px;
                         background: linear-gradient(135deg, #2563eb, #7c3aed);
                         color: #ffffff;
+                        border: none;
+                        padding: 8px 18px;
+                        border-radius: 10px;
                         font-size: 12px;
                         font-weight: 800;
-                        border: none;
                         cursor: pointer;
-                        box-shadow: 0 4px 16px rgba(59, 130, 246, 0.35);
+                        box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
                         transition: all 0.15s;
                     }
 
@@ -1660,28 +1778,41 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     }
                 </style>
             </head>
-            <body>
+            <body class="${isSticky ? 'sticky-mode' : ''}">
                 <div class="app-container" id="appContainer">
                     <div class="header" id="appHeader">
                         <div class="title-group">
-                            <span class="badge" id="appBadge">새 창 메모</span>
+                            <span class="badge" id="appBadge">${isSticky ? '📌 스티키' : '새 창 메모'}</span>
                             <div class="title-text" id="appTitle">${safeTitle}</div>
                         </div>
 
                         <div class="toolbar">
-                            <!-- Theme & Wallpaper Settings Button (Taste-Skill Vector SVG) -->
+                            <!-- 📌 Sticky Note Pin Toggle Button -->
+                            <button id="stickyToggleBtn" class="btn btn-sticky ${isSticky ? 'active' : ''}" onclick="toggleStickyMode()" title="스티키 노트 모드 전환 (Alt+S)">
+                                <svg style="width:13px; height:13px; flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M12 2v8M5 5l14 14M19 5l-4 4M5 19l4-4M15 15l4 4"/>
+                                    <circle cx="12" cy="12" r="3" fill="currentColor"/>
+                                </svg>
+                                <span id="stickyBtnText">${isSticky ? '스티키 ON' : '스티키'}</span>
+                            </button>
+
+                            <!-- 👁️ Opacity Transparency Toggle Button -->
+                            <button id="opacityBtn" class="btn btn-opacity" onclick="cycleOpacity()" title="창 투명도 조절 (Alt+O)">
+                                <span>👁️ 100%</span>
+                            </button>
+
+                            <!-- Theme & Wallpaper Settings Button -->
                             <button class="btn btn-theme" onclick="openThemeModal()" title="테마 및 배경화면 설정">
-                                <svg style="width:14px; height:14px; flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <svg style="width:13px; height:13px; flex-shrink:0;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                     <circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>
                                     <circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>
                                     <circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>
                                     <circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>
                                     <path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2Z"/>
                                 </svg>
-                                <span>테마 설정</span>
                             </button>
 
-                            <!-- Font Size Controls -->
+                            <!-- Font Size Controls (Hidden in sticky mode) -->
                             <div class="font-controls">
                                 <button onclick="changeFontSize(-2)" title="글자 크기 축소">A-</button>
                                 <span id="fontSizeDisplay" class="font-size-text">16px</span>
@@ -1689,18 +1820,18 @@ export default function NotesModal({ isOpen, onClose, user }) {
                             </div>
 
                             <!-- Copy Button -->
-                            <button id="copyBtn" class="btn btn-copy" onclick="copyContent()">
-                                <span>전체 복사</span>
+                            <button id="copyBtn" class="btn btn-copy" onclick="copyContent()" title="전체 복사">
+                                <span>복사</span>
                             </button>
 
-                            <!-- Print Button -->
-                            <button class="btn" onclick="window.print()" title="인쇄">
+                            <!-- Print Button (Hidden in sticky mode) -->
+                            <button class="btn btn-print" onclick="window.print()" title="인쇄">
                                 <span>인쇄</span>
                             </button>
 
                             <!-- Close Button -->
                             <button class="btn" onclick="window.close()" title="창 닫기">
-                                <span>닫기</span>
+                                <span>✕</span>
                             </button>
                         </div>
                     </div>
@@ -1712,7 +1843,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     <div class="footer" id="appFooter">
                         <div class="sync-status">
                             <span class="status-dot"></span>
-                            <span>메인 앱과 실시간 동기화 중</span>
+                            <span class="sync-text">메인 앱과 실시간 동기화 중</span>
                         </div>
                         <div class="stats-group">
                             <span id="charCount">0 글자</span>
@@ -1931,317 +2062,170 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                 </div>
 
                                 <div class="wp-card" data-wp="dots" onclick="selectWallpaper('dots')">
-                                    <div class="wp-card-bg" style="background: #020617; border: 1px solid #475569;"></div>
+                                    <div class="wp-card-bg" style="background: #020617;"></div>
                                     <div class="wp-card-top">
                                         <span class="wp-icon" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);">
-                                            <svg style="width:14px;height:14px;color:#e2e8f0;" viewBox="0 0 24 24" fill="currentColor">
-                                                <circle cx="6" cy="6" r="2" /><circle cx="12" cy="6" r="2" /><circle cx="18" cy="6" r="2" />
-                                                <circle cx="6" cy="12" r="2" /><circle cx="12" cy="12" r="2" /><circle cx="18" cy="12" r="2" />
-                                                <circle cx="6" cy="18" r="2" /><circle cx="12" cy="18" r="2" /><circle cx="18" cy="18" r="2" />
+                                            <svg style="width:14px;height:14px;color:#fbcfe8;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <circle cx="12" cy="12" r="1" />
+                                                <circle cx="19" cy="12" r="1" />
+                                                <circle cx="5" cy="12" r="1" />
+                                                <circle cx="12" cy="19" r="1" />
+                                                <circle cx="19" cy="19" r="1" />
+                                                <circle cx="5" cy="19" r="1" />
+                                                <circle cx="12" cy="5" r="1" />
+                                                <circle cx="19" cy="5" r="1" />
+                                                <circle cx="5" cy="5" r="1" />
                                             </svg>
                                         </span>
                                         <span class="wp-slot"></span>
                                     </div>
-                                    <div class="wp-card-bot"><div class="wp-card-name">미니멀 도트</div><div class="wp-card-eng">Dot Matrix</div></div>
+                                    <div class="wp-card-bot"><div class="wp-card-name">도트 매트릭스</div><div class="wp-card-eng">Modern Dots</div></div>
                                 </div>
 
-                                <div class="wp-card" data-wp="vietnam" onclick="selectWallpaper('vietnam')">
-                                    <div class="wp-card-bg" style="background: linear-gradient(135deg, #dc2626, #facc15, #16a34a);"></div>
+                                <div class="wp-card" data-wp="sunset" onclick="selectWallpaper('sunset')">
+                                    <div class="wp-card-bg" style="background: linear-gradient(135deg, #f97316, #db2777, #7c3aed);"></div>
                                     <div class="wp-card-top">
                                         <span class="wp-icon" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);">
-                                            <svg style="width:15px;height:15px;color:#fde047;" viewBox="0 0 24 24" fill="currentColor">
-                                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+                                            <svg style="width:14px;height:14px;color:#fed7aa;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+                                                <circle cx="12" cy="12" r="4" />
                                             </svg>
                                         </span>
                                         <span class="wp-slot"></span>
                                     </div>
-                                    <div class="wp-card-bot"><div class="wp-card-name">베트남 에디션</div><div class="wp-card-eng">Vietnam Star</div></div>
+                                    <div class="wp-card-bot"><div class="wp-card-name">노을 그라디언트</div><div class="wp-card-eng">Sunset</div></div>
                                 </div>
 
-                                <div class="wp-card" data-wp="korea" onclick="selectWallpaper('korea')">
-                                    <div class="wp-card-bg" style="background: linear-gradient(135deg, #ffffff, #93c5fd, #f87171);"></div>
-                                    <div class="wp-card-top">
-                                        <span class="wp-icon" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);">
-                                            <svg style="width:15px;height:15px;" viewBox="0 0 24 24" fill="none">
-                                                <circle cx="12" cy="12" r="9" stroke="rgba(255,255,255,0.8)" stroke-width="1.5" />
-                                                <path d="M12 3a4.5 4.5 0 0 0 0 9 4.5 4.5 0 0 1 0 9A9 9 0 0 0 12 3z" fill="#ef4444" />
-                                                <path d="M12 3a4.5 4.5 0 0 1 0 9 4.5 4.5 0 0 0 0 9A9 9 0 0 1 12 3z" fill="#3b82f6" />
-                                            </svg>
-                                        </span>
-                                        <span class="wp-slot"></span>
-                                    </div>
-                                    <div class="wp-card-bot"><div class="wp-card-name">한국 에디션</div><div class="wp-card-eng">Korea Taeguk</div></div>
-                                </div>
-
-                                <div class="wp-card" data-wp="cyberpunk" onclick="selectWallpaper('cyberpunk')">
-                                    <div class="wp-card-bg" style="background: linear-gradient(135deg, #d946ef, #7e22ce, #06b6d4);"></div>
-                                    <div class="wp-card-top">
-                                        <span class="wp-icon" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);">
-                                            <svg style="width:14px;height:14px;color:#f472b6;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" />
-                                            </svg>
-                                        </span>
-                                        <span class="wp-slot"></span>
-                                    </div>
-                                    <div class="wp-card-bot"><div class="wp-card-name">네온 사이버</div><div class="wp-card-eng">Cyberpunk HD</div></div>
-                                </div>
-
-                                <div class="wp-card" data-wp="solid" onclick="selectWallpaper('solid')">
-                                    <div class="wp-card-bg" style="background: #1e293b;"></div>
+                                <div class="wp-card" data-wp="none" onclick="selectWallpaper('none')">
+                                    <div class="wp-card-bg" style="background: rgba(255,255,255,0.05);"></div>
                                     <div class="wp-card-top">
                                         <span class="wp-icon" style="display:flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:6px;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);">
                                             <svg style="width:14px;height:14px;color:#cbd5e1;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                                <rect width="18" height="18" x="3" y="3" rx="4" />
-                                                <path d="M3 14h18" />
+                                                <circle cx="12" cy="12" r="10" />
+                                                <path d="m4.93 4.93 14.14 14.14" />
                                             </svg>
                                         </span>
                                         <span class="wp-slot"></span>
                                     </div>
-                                    <div class="wp-card-bot"><div class="wp-card-name">플랫 솔리드</div><div class="wp-card-eng">Clean Solid</div></div>
+                                    <div class="wp-card-bot"><div class="wp-card-name">배경 없음</div><div class="wp-card-eng">Clean Slate</div></div>
                                 </div>
                             </div>
 
-                            <!-- Upload Box -->
+                            <!-- Custom Wallpaper -->
                             <div class="upload-box">
-                                <label class="upload-label">
-                                    <svg style="width:14px;height:14px;color:#c084fc;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                        <path d="M4 16v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1M4 8l8-4 8 4M12 4v12"/>
+                                <label class="upload-label" for="wpFileInput">
+                                    <svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12" />
                                     </svg>
-                                    <span>내 컴퓨터에서 이미지 업로드</span>
-                                    <input type="file" accept="image/*" onchange="handleFileUpload(event)" style="display:none;">
+                                    <span>내 PC에서 배경 이미지 업로드</span>
                                 </label>
-                                <input id="customUrlInput" type="text" class="url-input" placeholder="또는 이미지 URL 입력..." onchange="handleUrlInput(event)">
+                                <input type="file" id="wpFileInput" accept="image/*" style="display: none;" onchange="handleFileUpload(event)">
+                                <input type="text" class="url-input" placeholder="웹 이미지 URL 붙여넣기 (https://...)" onchange="handleUrlInput(event)">
                             </div>
                         </div>
 
-                        <!-- Apply Button -->
-                        <button class="apply-btn" onclick="closeThemeModal()">설정 완료 (Apply Theme)</button>
+                        <button class="apply-btn" onclick="closeThemeModal()">설정 완료</button>
                     </div>
                 </div>
 
                 <script>
                     const THEME_PRESETS = {
                         'toss-dark': {
-                            bgBody: '#090d16',
-                            cardBg: '#0f172a',
-                            headerBg: '#1e293b',
-                            headerBorder: '#334155',
-                            textMain: '#f8fafc',
-                            textMuted: '#94a3b8',
-                            textareaBg: '#020617',
-                            textareaBorder: '#1e293b',
-                            borderColor: 'rgba(255, 255, 255, 0.12)',
-                            btnBg: 'rgba(255, 255, 255, 0.08)',
-                            btnText: '#e2e8f0',
-                            btnBorder: 'rgba(255, 255, 255, 0.15)',
-                            btnHoverBg: 'rgba(255, 255, 255, 0.15)',
-                            btnHoverText: '#ffffff',
-                            btnHoverBorder: 'rgba(255, 255, 255, 0.25)',
-                            btnThemeBg: '#2563eb',
-                            btnThemeText: '#ffffff',
-                            btnThemeBorder: '#3b82f6',
-                            btnThemeHover: '#1d4ed8',
-                            btnCopyBg: '#0f766e',
-                            btnCopyText: '#ccfbf1',
-                            btnCopyBorder: '#14b8a6',
-                            btnCopyHover: '#0d9488',
-                            accentColor: '#3b82f6',
-                            badgeBg: '#2563eb',
-                            badgeText: '#ffffff',
-                            footerBg: '#0f172a'
+                            bgBody: '#0b0f19', cardBg: '#0f172a', headerBg: '#1e293b', headerBorder: '#334155',
+                            textMain: '#f8fafc', textMuted: '#94a3b8', textareaBg: '#020617', textareaBorder: '#1e293b',
+                            borderColor: 'rgba(255, 255, 255, 0.12)', btnBg: 'rgba(255, 255, 255, 0.08)', btnText: '#e2e8f0',
+                            btnBorder: 'rgba(255, 255, 255, 0.15)', btnHoverBg: 'rgba(255, 255, 255, 0.15)', btnHoverText: '#ffffff',
+                            btnHoverBorder: 'rgba(255, 255, 255, 0.25)', btnThemeBg: '#2563eb', btnThemeText: '#ffffff',
+                            btnThemeBorder: '#3b82f6', btnThemeHover: '#1d4ed8', btnCopyBg: '#0f766e', btnCopyText: '#ccfbf1',
+                            btnCopyBorder: '#14b8a6', btnCopyHover: '#0d9488', accentColor: '#3b82f6', badgeBg: '#2563eb',
+                            badgeText: '#ffffff', footerBg: '#0f172a'
                         },
                         'kakao-yellow': {
-                            bgBody: '#F5F2DC',
-                            cardBg: '#ffffff',
-                            headerBg: '#FEE500',
-                            headerBorder: '#E5CE00',
-                            textMain: '#191919',
-                            textMuted: '#555555',
-                            textareaBg: '#FAF9F5',
-                            textareaBorder: '#E0D5B5',
-                            borderColor: '#E5CE00',
-                            btnBg: 'rgba(25, 25, 25, 0.08)',
-                            btnText: '#191919',
-                            btnBorder: 'rgba(25, 25, 25, 0.18)',
-                            btnHoverBg: 'rgba(25, 25, 25, 0.16)',
-                            btnHoverText: '#191919',
-                            btnHoverBorder: 'rgba(25, 25, 25, 0.3)',
-                            btnThemeBg: '#191919',
-                            btnThemeText: '#FEE500',
-                            btnThemeBorder: '#191919',
-                            btnThemeHover: '#2e2e2e',
-                            btnCopyBg: '#382800',
-                            btnCopyText: '#FEE500',
-                            btnCopyBorder: '#191919',
-                            btnCopyHover: '#191919',
-                            accentColor: '#191919',
-                            badgeBg: '#191919',
-                            badgeText: '#FEE500',
-                            footerBg: '#FAF9F5'
+                            bgBody: '#FAF9F5', cardBg: '#FAF9F5', headerBg: '#FEE500', headerBorder: '#E6CF00',
+                            textMain: '#191919', textMuted: '#666666', textareaBg: '#FFFFFF', textareaBorder: '#E5E2D8',
+                            borderColor: 'rgba(0, 0, 0, 0.08)', btnBg: 'rgba(0, 0, 0, 0.06)', btnText: '#191919',
+                            btnBorder: 'rgba(0, 0, 0, 0.12)', btnHoverBg: 'rgba(0, 0, 0, 0.12)', btnHoverText: '#000000',
+                            btnHoverBorder: 'rgba(0, 0, 0, 0.2)', btnThemeBg: '#191919', btnThemeText: '#FEE500',
+                            btnThemeBorder: '#000000', btnThemeHover: '#333333', btnCopyBg: '#FEE500', btnCopyText: '#191919',
+                            btnCopyBorder: '#E6CF00', btnCopyHover: '#EBD400', accentColor: '#191919', badgeBg: '#191919',
+                            badgeText: '#FEE500', footerBg: '#F5F3EB'
                         },
                         'kakao-dark': {
-                            bgBody: '#141414',
-                            cardBg: '#222222',
-                            headerBg: '#2a2a2a',
-                            headerBorder: '#383838',
-                            textMain: '#f5f5f5',
-                            textMuted: '#a3a3a3',
-                            textareaBg: '#1a1a1a',
-                            textareaBorder: '#383838',
-                            borderColor: 'rgba(255, 255, 255, 0.12)',
-                            btnBg: 'rgba(255, 255, 255, 0.08)',
-                            btnText: '#f5f5f5',
-                            btnBorder: 'rgba(255, 255, 255, 0.15)',
-                            btnHoverBg: 'rgba(255, 255, 255, 0.15)',
-                            btnHoverText: '#ffffff',
-                            btnHoverBorder: 'rgba(255, 255, 255, 0.25)',
-                            btnThemeBg: '#FEE500',
-                            btnThemeText: '#181818',
-                            btnThemeBorder: '#FEE500',
-                            btnThemeHover: '#ebd200',
-                            btnCopyBg: 'rgba(255, 255, 255, 0.12)',
-                            btnCopyText: '#FEE500',
-                            btnCopyBorder: 'rgba(255, 255, 255, 0.2)',
-                            btnCopyHover: 'rgba(255, 255, 255, 0.2)',
-                            accentColor: '#FEE500',
-                            badgeBg: '#FEE500',
-                            badgeText: '#181818',
-                            footerBg: '#1a1a1a'
+                            bgBody: '#121212', cardBg: '#181818', headerBg: '#222222', headerBorder: '#2E2E2E',
+                            textMain: '#FFFFFF', textMuted: '#888888', textareaBg: '#101010', textareaBorder: '#282828',
+                            borderColor: 'rgba(255, 255, 255, 0.08)', btnBg: 'rgba(255, 255, 255, 0.06)', btnText: '#CCCCCC',
+                            btnBorder: 'rgba(255, 255, 255, 0.12)', btnHoverBg: 'rgba(255, 255, 255, 0.12)', btnHoverText: '#FFFFFF',
+                            btnHoverBorder: 'rgba(255, 255, 255, 0.2)', btnThemeBg: '#FEE500', btnThemeText: '#191919',
+                            btnThemeBorder: '#FEE500', btnThemeHover: '#EBD400', btnCopyBg: '#2A2A2A', btnCopyText: '#FEE500',
+                            btnCopyBorder: '#3E3E3E', btnCopyHover: '#353535', accentColor: '#FEE500', badgeBg: '#FEE500',
+                            badgeText: '#191919', footerBg: '#141414'
                         },
                         'toss-light': {
-                            bgBody: '#EBF0F7',
-                            cardBg: '#ffffff',
-                            headerBg: '#ffffff',
-                            headerBorder: '#E2E8F0',
-                            textMain: '#0F172A',
-                            textMuted: '#64748B',
-                            textareaBg: '#F8FAFC',
-                            textareaBorder: '#CBD5E1',
-                            borderColor: '#E2E8F0',
-                            btnBg: '#F1F5F9',
-                            btnText: '#334155',
-                            btnBorder: '#E2E8F0',
-                            btnHoverBg: '#E2E8F0',
-                            btnHoverText: '#0F172A',
-                            btnHoverBorder: '#CBD5E1',
-                            btnThemeBg: '#2563eb',
-                            btnThemeText: '#ffffff',
-                            btnThemeBorder: '#2563eb',
-                            btnThemeHover: '#1d4ed8',
-                            btnCopyBg: '#0f766e',
-                            btnCopyText: '#ccfbf1',
-                            btnCopyBorder: '#14b8a6',
-                            btnCopyHover: '#0d9488',
-                            accentColor: '#2563eb',
-                            badgeBg: '#EFF6FF',
-                            badgeText: '#1D4ED8',
-                            footerBg: '#F8FAFC'
+                            bgBody: '#EEF2F6', cardBg: '#F8FAFC', headerBg: '#FFFFFF', headerBorder: '#E2E8F0',
+                            textMain: '#0F172A', textMuted: '#64748B', textareaBg: '#FFFFFF', textareaBorder: '#E2E8F0',
+                            borderColor: 'rgba(0, 0, 0, 0.08)', btnBg: 'rgba(0, 0, 0, 0.04)', btnText: '#334155',
+                            btnBorder: 'rgba(0, 0, 0, 0.1)', btnHoverBg: 'rgba(0, 0, 0, 0.08)', btnHoverText: '#0F172A',
+                            btnHoverBorder: 'rgba(0, 0, 0, 0.18)', btnThemeBg: '#2563EB', btnThemeText: '#FFFFFF',
+                            btnThemeBorder: '#1D4ED8', btnThemeHover: '#1E40AF', btnCopyBg: '#0284C7', btnCopyText: '#FFFFFF',
+                            btnCopyBorder: '#0369A1', btnCopyHover: '#075985', accentColor: '#2563EB', badgeBg: '#2563EB',
+                            badgeText: '#FFFFFF', footerBg: '#F1F5F9'
                         },
                         'oled-black': {
-                            bgBody: '#000000',
-                            cardBg: '#080808',
-                            headerBg: '#121212',
-                            headerBorder: '#27272a',
-                            textMain: '#ffffff',
-                            textMuted: '#a1a1aa',
-                            textareaBg: '#000000',
-                            textareaBorder: '#27272a',
-                            borderColor: '#27272a',
-                            btnBg: 'rgba(255, 255, 255, 0.08)',
-                            btnText: '#ffffff',
-                            btnBorder: '#3f3f46',
-                            btnHoverBg: 'rgba(255, 255, 255, 0.16)',
-                            btnHoverText: '#ffffff',
-                            btnHoverBorder: '#71717a',
-                            btnThemeBg: '#9333ea',
-                            btnThemeText: '#ffffff',
-                            btnThemeBorder: '#a855f7',
-                            btnThemeHover: '#7e22ce',
-                            btnCopyBg: '#27272a',
-                            btnCopyText: '#e9d5ff',
-                            btnCopyBorder: '#3f3f46',
-                            btnCopyHover: '#3f3f46',
-                            accentColor: '#a855f7',
-                            badgeBg: '#9333ea',
-                            badgeText: '#ffffff',
-                            footerBg: '#000000'
+                            bgBody: '#000000', cardBg: '#000000', headerBg: '#0A0A0A', headerBorder: '#1A1A1A',
+                            textMain: '#FFFFFF', textMuted: '#777777', textareaBg: '#000000', textareaBorder: '#1F1F1F',
+                            borderColor: '#222222', btnBg: '#111111', btnText: '#DDDDDD', btnBorder: '#2A2A2A',
+                            btnHoverBg: '#222222', btnHoverText: '#FFFFFF', btnHoverBorder: '#444444',
+                            btnThemeBg: '#A855F7', btnThemeText: '#FFFFFF', btnThemeBorder: '#9333EA', btnThemeHover: '#7E22CE',
+                            btnCopyBg: '#1E1B4B', btnCopyText: '#C7D2FE', btnCopyBorder: '#3730A3', btnCopyHover: '#312E81',
+                            accentColor: '#A855F7', badgeBg: '#A855F7', badgeText: '#FFFFFF', footerBg: '#050505'
                         },
                         'cyber-neon': {
-                            bgBody: '#050510',
-                            cardBg: '#110b24',
-                            headerBg: '#1f0e3d',
-                            headerBorder: 'rgba(236,72,153,0.35)',
-                            textMain: '#fdf2f8',
-                            textMuted: '#f472b6',
-                            textareaBg: '#0d081d',
-                            textareaBorder: 'rgba(236,72,153,0.3)',
-                            borderColor: 'rgba(236,72,153,0.35)',
-                            btnBg: 'rgba(236,72,153,0.15)',
-                            btnText: '#fce7f3',
-                            btnBorder: 'rgba(236,72,153,0.35)',
-                            btnHoverBg: 'rgba(236,72,153,0.25)',
-                            btnHoverText: '#ffffff',
-                            btnHoverBorder: 'rgba(236,72,153,0.5)',
-                            btnThemeBg: '#db2777',
-                            btnThemeText: '#ffffff',
-                            btnThemeBorder: '#ec4899',
-                            btnThemeHover: '#be185d',
-                            btnCopyBg: '#4c0519',
-                            btnCopyText: '#fecdd3',
-                            btnCopyBorder: '#9f1239',
-                            btnCopyHover: '#881337',
-                            accentColor: '#ec4899',
-                            badgeBg: '#db2777',
-                            badgeText: '#ffffff',
-                            footerBg: '#050510'
+                            bgBody: '#050510', cardBg: '#0A081D', headerBg: '#130C2E', headerBorder: '#2D1B69',
+                            textMain: '#F0E6FF', textMuted: '#9D8BC9', textareaBg: '#060412', textareaBorder: '#231553',
+                            borderColor: 'rgba(236, 72, 153, 0.25)', btnBg: 'rgba(168, 85, 247, 0.12)', btnText: '#E9D5FF',
+                            btnBorder: 'rgba(168, 85, 247, 0.3)', btnHoverBg: 'rgba(168, 85, 247, 0.25)', btnHoverText: '#FFFFFF',
+                            btnHoverBorder: 'rgba(168, 85, 247, 0.5)', btnThemeBg: '#EC4899', btnThemeText: '#FFFFFF',
+                            btnThemeBorder: '#DB2777', btnThemeHover: '#BE185D', btnCopyBg: '#06B6D4', btnCopyText: '#ECFEFF',
+                            btnCopyBorder: '#0891B2', btnCopyHover: '#0E7490', accentColor: '#EC4899', badgeBg: '#EC4899',
+                            badgeText: '#FFFFFF', footerBg: '#080517'
                         },
                         'emerald-mint': {
-                            bgBody: '#021a12',
-                            cardBg: '#06291e',
-                            headerBg: '#0b3b2c',
-                            headerBorder: 'rgba(16,185,129,0.35)',
-                            textMain: '#ecfdf5',
-                            textMuted: '#6ee7b7',
-                            textareaBg: '#031f16',
-                            textareaBorder: 'rgba(16,185,129,0.3)',
-                            borderColor: 'rgba(16,185,129,0.35)',
-                            btnBg: 'rgba(16,185,129,0.15)',
-                            btnText: '#d1fae5',
-                            btnBorder: 'rgba(16,185,129,0.35)',
-                            btnHoverBg: 'rgba(16,185,129,0.25)',
-                            btnHoverText: '#ffffff',
-                            btnHoverBorder: 'rgba(16,185,129,0.5)',
-                            btnThemeBg: '#059669',
-                            btnThemeText: '#ffffff',
-                            btnThemeBorder: '#10b981',
-                            btnThemeHover: '#047857',
-                            btnCopyBg: '#064e3b',
-                            btnCopyText: '#a7f3d0',
-                            btnCopyBorder: '#047857',
-                            btnCopyHover: '#065f46',
-                            accentColor: '#10b981',
-                            badgeBg: '#059669',
-                            badgeText: '#ffffff',
-                            footerBg: '#021a12'
+                            bgBody: '#021A12', cardBg: '#04271C', headerBg: '#083B2C', headerBorder: '#0F5741',
+                            textMain: '#E6FBF2', textMuted: '#7DD3B6', textareaBg: '#01130D', textareaBorder: '#0B4734',
+                            borderColor: 'rgba(16, 185, 129, 0.2)', btnBg: 'rgba(16, 185, 129, 0.1)', btnText: '#A7F3D0',
+                            btnBorder: 'rgba(16, 185, 129, 0.25)', btnHoverBg: 'rgba(16, 185, 129, 0.22)', btnHoverText: '#FFFFFF',
+                            btnHoverBorder: 'rgba(16, 185, 129, 0.4)', btnThemeBg: '#10B981', btnThemeText: '#022C22',
+                            btnThemeBorder: '#059669', btnThemeHover: '#047857', btnCopyBg: '#0D9488', btnCopyText: '#F0FDFA',
+                            btnCopyBorder: '#14B8A6', btnCopyHover: '#0F766E', accentColor: '#10B981', badgeBg: '#10B981',
+                            badgeText: '#022C22', footerBg: '#031F16'
                         }
                     };
 
                     const WALLPAPER_PRESETS = {
-                        'orbs': 'linear-gradient(135deg, rgba(147, 51, 234, 0.45), rgba(79, 70, 229, 0.4), rgba(236, 72, 153, 0.45))',
-                        'mesh': 'linear-gradient(135deg, rgba(37, 99, 235, 0.45), rgba(20, 184, 166, 0.4), rgba(74, 222, 128, 0.4))',
-                        'grid': 'linear-gradient(to right, rgba(59,130,246,0.15) 1px, transparent 1px), linear-gradient(to bottom, rgba(59,130,246,0.15) 1px, transparent 1px)',
-                        'dots': 'radial-gradient(rgba(255,255,255,0.2) 1.5px, transparent 1.5px)',
-                        'vietnam': 'linear-gradient(135deg, rgba(220, 38, 38, 0.55), rgba(250, 204, 21, 0.35), rgba(22, 163, 74, 0.45))',
-                        'korea': 'linear-gradient(135deg, rgba(248, 250, 252, 0.55), rgba(147, 197, 253, 0.35), rgba(248, 113, 113, 0.45))',
-                        'cyberpunk': 'linear-gradient(135deg, rgba(217, 70, 239, 0.45), rgba(126, 34, 206, 0.45), rgba(6, 182, 212, 0.45))',
-                        'solid': 'none'
+                        'orbs': 'radial-gradient(circle at 10% 20%, rgba(147, 51, 234, 0.45) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.4) 0%, transparent 45%), radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.25) 0%, transparent 60%)',
+                        'mesh': 'linear-gradient(135deg, rgba(37, 99, 235, 0.4) 0%, rgba(20, 184, 166, 0.35) 50%, rgba(74, 222, 128, 0.25) 100%)',
+                        'grid': 'linear-gradient(to right, rgba(59, 130, 246, 0.12) 1px, transparent 1px), linear-gradient(to bottom, rgba(59, 130, 246, 0.12) 1px, transparent 1px)',
+                        'dots': 'radial-gradient(rgba(255, 255, 255, 0.15) 1.5px, transparent 1.5px)',
+                        'sunset': 'linear-gradient(135deg, rgba(249, 115, 22, 0.35) 0%, rgba(219, 39, 119, 0.35) 50%, rgba(124, 58, 237, 0.4) 100%)',
+                        'none': 'none'
                     };
 
+                    let isStickyMode = ${isSticky ? 'true' : 'false'};
                     let currentTheme = localStorage.getItem('jinil_note_popout_theme_id') || 'toss-dark';
                     let currentWallpaper = localStorage.getItem('jinil_note_popout_wp_id') || 'orbs';
-                    let isHighContrast = localStorage.getItem('jinil_note_popout_contrast') === 'true';
                     let customBgUrl = localStorage.getItem('jinil_note_popout_custom_bg') || '';
-                    let currentFontSize = 16;
+                    let isHighContrast = localStorage.getItem('jinil_note_popout_contrast') === 'true';
+                    let currentFontSize = isStickyMode ? 14 : 16;
+                    let opacityLevels = [1.0, 0.88, 0.72, 0.55];
+                    let currentOpacityIdx = 0;
+
+                    try {
+                        const savedOpacity = parseFloat(localStorage.getItem('jinil_notes_sticky_opacity'));
+                        if (!isNaN(savedOpacity) && savedOpacity >= 0.3 && savedOpacity <= 1.0) {
+                            const idx = opacityLevels.findIndex(lvl => Math.abs(lvl - savedOpacity) < 0.05);
+                            if (idx !== -1) currentOpacityIdx = idx;
+                        }
+                    } catch(e) {}
 
                     const editor = document.getElementById('editor');
                     const modalBackdrop = document.getElementById('themeModalBackdrop');
@@ -2249,6 +2233,107 @@ export default function NotesModal({ isOpen, onClose, user }) {
 
                     if (editor) {
                         editor.innerHTML = initialHtml || '';
+                    }
+
+                    // Window Bounds (Size & Position) Auto-saver
+                    function savePopupBounds() {
+                        try {
+                            const bounds = {
+                                width: window.outerWidth || window.innerWidth,
+                                height: window.outerHeight || window.innerHeight,
+                                left: window.screenX !== undefined ? window.screenX : window.screenLeft,
+                                top: window.screenY !== undefined ? window.screenY : window.screenTop
+                            };
+                            const boundsKey = isStickyMode ? 'jinil_notes_sticky_bounds' : 'jinil_notes_popup_bounds';
+                            localStorage.setItem(boundsKey, JSON.stringify(bounds));
+                            if (window.opener && !window.opener.closed) {
+                                window.opener.postMessage({
+                                    type: 'JINIL_NOTE_POPUP_BOUNDS_UPDATE',
+                                    bounds: bounds,
+                                    isSticky: isStickyMode
+                                }, '*');
+                            }
+                        } catch (e) {}
+                    }
+
+                    let resizeTimer;
+                    window.addEventListener('resize', () => {
+                        clearTimeout(resizeTimer);
+                        resizeTimer = setTimeout(savePopupBounds, 250);
+                    });
+                    window.addEventListener('beforeunload', savePopupBounds);
+                    setInterval(savePopupBounds, 2500);
+
+                    // 📌 Toggle Sticky Mode
+                    function toggleStickyMode() {
+                        isStickyMode = !isStickyMode;
+                        localStorage.setItem('jinil_notes_is_sticky', isStickyMode ? 'true' : 'false');
+                        
+                        const appBadge = document.getElementById('appBadge');
+                        const stickyToggleBtn = document.getElementById('stickyToggleBtn');
+                        const stickyBtnText = document.getElementById('stickyBtnText');
+
+                        if (isStickyMode) {
+                            document.body.classList.add('sticky-mode');
+                            stickyToggleBtn.classList.add('active');
+                            stickyBtnText.innerText = '스티키 ON';
+                            appBadge.innerText = '📌 스티키';
+
+                            // Resize to compact sticky bounds
+                            let targetW = 380;
+                            let targetH = 500;
+                            try {
+                                const savedStickyBounds = JSON.parse(localStorage.getItem('jinil_notes_sticky_bounds') || '{}');
+                                if (savedStickyBounds.width && savedStickyBounds.height) {
+                                    targetW = Math.min(600, Math.max(280, savedStickyBounds.width));
+                                    targetH = Math.min(800, Math.max(260, savedStickyBounds.height));
+                                }
+                            } catch(e) {}
+                            window.resizeTo(targetW, targetH);
+                        } else {
+                            document.body.classList.remove('sticky-mode');
+                            stickyToggleBtn.classList.remove('active');
+                            stickyBtnText.innerText = '스티키';
+                            appBadge.innerText = '새 창 메모';
+
+                            // Resize back to standard bounds
+                            let targetW = 840;
+                            let targetH = 740;
+                            try {
+                                const savedStandardBounds = JSON.parse(localStorage.getItem('jinil_notes_popup_bounds') || '{}');
+                                if (savedStandardBounds.width && savedStandardBounds.height) {
+                                    targetW = Math.min(1920, Math.max(480, savedStandardBounds.width));
+                                    targetH = Math.min(1080, Math.max(380, savedStandardBounds.height));
+                                }
+                            } catch(e) {}
+                            window.resizeTo(targetW, targetH);
+                        }
+                        updateOpacityUI();
+                        savePopupBounds();
+                    }
+
+                    // 👁️ Cycle Window Transparency
+                    function cycleOpacity() {
+                        currentOpacityIdx = (currentOpacityIdx + 1) % opacityLevels.length;
+                        const opacityVal = opacityLevels[currentOpacityIdx];
+                        localStorage.setItem('jinil_notes_sticky_opacity', opacityVal.toString());
+                        updateOpacityUI();
+                    }
+
+                    function updateOpacityUI() {
+                        const opacityVal = opacityLevels[currentOpacityIdx];
+                        document.documentElement.style.setProperty('--window-opacity', opacityVal.toString());
+                        const opacityBtn = document.getElementById('opacityBtn');
+                        if (opacityBtn) {
+                            opacityBtn.innerHTML = '<span>👁️ ' + Math.round(opacityVal * 100) + '%</span>';
+                            if (opacityVal < 0.95) {
+                                opacityBtn.style.background = 'rgba(59, 130, 246, 0.25)';
+                                opacityBtn.style.color = '#93c5fd';
+                            } else {
+                                opacityBtn.style.background = 'rgba(255, 255, 255, 0.08)';
+                                opacityBtn.style.color = '#cbd5e1';
+                            }
+                        }
                     }
 
                     function openThemeModal() {
@@ -2386,7 +2471,6 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     }
 
                     function updateModalActiveStates() {
-                        // Theme list
                         document.querySelectorAll('.theme-card').forEach(card => {
                             const tId = card.getAttribute('data-theme');
                             const isSelected = tId === currentTheme;
@@ -2397,14 +2481,12 @@ export default function NotesModal({ isOpen, onClose, user }) {
                             }
                         });
 
-                        // High Contrast button
                         const contrastBtn = document.getElementById('contrastBtn');
                         if (contrastBtn) {
                             if (isHighContrast) contrastBtn.classList.add('on');
                             else contrastBtn.classList.remove('on');
                         }
 
-                        // Wallpaper grid
                         document.querySelectorAll('.wp-card').forEach(card => {
                             const wpId = card.getAttribute('data-wp');
                             const isSelected = wpId === currentWallpaper && !customBgUrl;
@@ -2419,7 +2501,8 @@ export default function NotesModal({ isOpen, onClose, user }) {
                     function changeFontSize(delta) {
                         currentFontSize = Math.min(36, Math.max(12, currentFontSize + delta));
                         editor.style.fontSize = currentFontSize + 'px';
-                        document.getElementById('fontSizeDisplay').innerText = currentFontSize + 'px';
+                        const el = document.getElementById('fontSizeDisplay');
+                        if (el) el.innerText = currentFontSize + 'px';
                     }
 
                     function updateStats() {
@@ -2511,7 +2594,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
                         }
                     });
 
-                    // Keyboard shortcuts
+                    // Keyboard shortcuts: Esc, Alt+S (Toggle Sticky), Alt+O (Cycle Opacity)
                     window.addEventListener('keydown', (e) => {
                         if (e.key === 'Escape') {
                             if (modalBackdrop.classList.contains('show')) {
@@ -2519,16 +2602,22 @@ export default function NotesModal({ isOpen, onClose, user }) {
                             } else {
                                 window.close();
                             }
+                        } else if ((e.altKey && e.key.toLowerCase() === 's') || (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 's')) {
+                            e.preventDefault();
+                            toggleStickyMode();
+                        } else if (e.altKey && e.key.toLowerCase() === 'o') {
+                            e.preventDefault();
+                            cycleOpacity();
                         }
                     });
 
                     // Initial Load
                     applyThemeStyles();
                     applyWallpaperStyles();
+                    updateOpacityUI();
                     updateStats();
                 </script>
             </body>
-            </html>
         `);
         popup.document.close();
     };
@@ -3375,7 +3464,7 @@ export default function NotesModal({ isOpen, onClose, user }) {
 
                                             <button
                                                 type="button"
-                                                onClick={handleOpenExternalWindow}
+                                                onClick={() => handleOpenExternalWindow(false)}
                                                 className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/60 hover:bg-blue-100 dark:hover:bg-blue-900/60 rounded-xl transition-all border border-blue-200/60 dark:border-blue-800/40 cursor-pointer shadow-xs active:scale-95 group"
                                                 title="상세 메모를 독립된 새 창 팝업으로 분리 및 편집"
                                             >
@@ -3383,6 +3472,18 @@ export default function NotesModal({ isOpen, onClose, user }) {
                                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                                                 </svg>
                                                 <span>새 창 분리</span>
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() => handleOpenExternalWindow(true)}
+                                                className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 hover:bg-amber-100 dark:hover:bg-amber-900/60 rounded-xl transition-all border border-amber-200/60 dark:border-amber-800/40 cursor-pointer shadow-xs active:scale-95 group"
+                                                title="화면 구석에 띄워두는 초소형 스티키 노트(Sticky Note) 모드로 바로 열기"
+                                            >
+                                                <svg className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 2v8M5 5l14 14M19 5l-4 4M5 19l4-4M15 15l4 4" />
+                                                </svg>
+                                                <span>스티키 위젯</span>
                                             </button>
                                         </div>
                                     </div>
