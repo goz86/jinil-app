@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import invoiceHtml from '../../public/invoice-app/index.html?raw';
 import { subscribeClients, getCachedClients } from '../services/clientAddressService';
 
 export default function InvoiceModal({ isOpen, onClose }) {
@@ -133,7 +134,7 @@ export default function InvoiceModal({ isOpen, onClose }) {
                 <div className="flex-1 w-full h-full bg-slate-50 dark:bg-slate-900 p-0 overflow-hidden">
                     <iframe
                         ref={iframeRef}
-                        src="/invoice-app/index.html"
+                        srcDoc={invoiceHtml}
                         title="거래명세서 발행"
                         className="w-full h-full border-none"
                     />

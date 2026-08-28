@@ -752,21 +752,27 @@
     { date: '', name: '', spec: '', qty: 1, price: 0, sub: 0, note: '' }
   ];
 
-  window.addEventListener('DOMContentLoaded', () => {
-    // Gán ngày mặc định hôm nay YYYY-MM-DD
-    const todayStr = new Date().toISOString().split('T')[0];
-    document.getElementById('invDate').value = todayStr;
+  function initInvoiceApp() {
+    try {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const invDateInput = document.getElementById('invDate');
+      if (invDateInput && !invDateInput.value) {
+        invDateInput.value = todayStr;
+      }
+      loadSupplierData();
+      loadClientAddressBook();
+      renderItemTable();
+      renderStatement();
+    } catch (err) {
+      console.error('initInvoiceApp error:', err);
+    }
+  }
 
-    // Khôi phục thông tin 공급자 từ LocalStorage nếu có
-    loadSupplierData();
-
-    // Tải danh sách 거래처 주소록 để tự động gợi ý
-    loadClientAddressBook();
-
-    // Render bảng 품목 và xem trước 거래명세서
-    renderItemTable();
-    renderStatement();
-  });
+  if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', initInvoiceApp);
+  } else {
+    initInvoiceApp();
+  }
 
   // Hiển thị thông báo Toast
   function showToast(msg, duration = 3000) {
