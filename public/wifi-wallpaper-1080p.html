@@ -499,13 +499,13 @@
             <span class="bar-badge">16:9 FHD / 4K</span>
         </div>
         <div class="btn-group">
-            <button class="btn btn-download-fhd" onclick="downloadWallpaper(1920, 1080, '진일라벨_WiFi_배경화면_1920x1080.png')">
+            <button class="btn btn-download-fhd" onclick="downloadWallpaper(this, 1920, 1080, '진일라벨_WiFi_배경화면_1920x1080.png')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
                 </svg>
                 <span>1920 × 1080 다운로드</span>
             </button>
-            <button class="btn btn-download-4k" onclick="downloadWallpaper(3840, 2160, '진일라벨_WiFi_배경화면_4K_3840x2160.png')">
+            <button class="btn btn-download-4k" onclick="downloadWallpaper(this, 3840, 2160, '진일라벨_WiFi_배경화면_4K_3840x2160.png')">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
                 </svg>
@@ -640,6 +640,7 @@
         function resizePreview() {
             const wrap = document.getElementById('wallpaperWrap');
             const fhd = document.getElementById('wallpaperFHD');
+            if (!wrap || !fhd) return;
             const wrapW = wrap.clientWidth;
             const scale = wrapW / 1920;
             fhd.style.transform = `scale(${scale})`;
@@ -651,14 +652,12 @@
         resizePreview();
 
         // Download Wallpaper with custom resolution (1080p / 4K)
-        async function downloadWallpaper(targetWidth, targetHeight, filename) {
-            const fhd = document.getElementById('wallpaperFHD');
-            const btn = event.currentTarget;
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<span>생성 중...</span>';
+        async function downloadWallpaper(btn, targetWidth, targetHeight, filename) {
+            const originalText = btn ? btn.innerHTML : '';
+            if (btn) btn.innerHTML = '<span>생성 중...</span>';
 
             try {
-                // Temporarily reset transform for clean render
+                const fhd = document.getElementById('wallpaperFHD');
                 const currentTransform = fhd.style.transform;
                 fhd.style.transform = 'none';
 
@@ -674,25 +673,43 @@
 
                 fhd.style.transform = currentTransform;
 
-                canvas.toBlob((blob) => {
-                    if (blob) {
-                        const url = URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.download = filename;
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                        setTimeout(() => URL.revokeObjectURL(url), 1000);
-                    }
-                }, 'image/png', 1.0);
+                if (canvas && canvas.toBlob) {
+                    canvas.toBlob((blob) => {
+                        if (blob) {
+                            const url = URL.createObjectURL(blob);
+                            const link = document.createElement('a');
+                            link.href = url;
+                            link.download = filename;
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
+                            setTimeout(() => URL.revokeObjectURL(url), 1000);
+                        } else {
+                            directDownload(filename);
+                        }
+                    }, 'image/png', 1.0);
+                } else {
+                    directDownload(filename);
+                }
             } catch (err) {
-                alert('다운로드 중 오류: ' + err.message);
+                console.warn('Canvas render error, using fallback:', err);
+                directDownload(filename);
             } finally {
-                setTimeout(() => {
-                    btn.innerHTML = originalText;
-                }, 800);
+                if (btn) {
+                    setTimeout(() => {
+                        btn.innerHTML = originalText;
+                    }, 800);
+                }
             }
+        }
+
+        function directDownload(filename) {
+            const link = document.createElement('a');
+            link.href = '/jinil_wifi_wallpaper_1920x1080.png';
+            link.download = filename || '진일라벨_WiFi_배경화면_1920x1080.png';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
         }
     </script>
 </body>

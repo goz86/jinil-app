@@ -250,9 +250,11 @@ export default function InTransitShipmentModal({ isOpen, onClose, onRefreshCount
   }, [shipments]);
 
   const filteredShipments = shipments.filter((s) => {
-    const label = s.tracking_status_label || s.tracking_status || '배송 준비 중';
-    if (hideCancelledAndPreparing && (label === '반품취소' || label === '배송 준비 중')) {
-      return false;
+    const label = (s.tracking_status_label || s.tracking_status || '배송시작').trim();
+    if (hideCancelledAndPreparing && statusFilter === 'all') {
+      if (label === '반품취소' || label === '배송 준비 중' || label === '배송준비중' || label === '배송 시작' || label === '배송시작') {
+        return false;
+      }
     }
     if (statusFilter !== 'all') {
       const cfg = getDeliveryStatusConfig(label);

@@ -15,13 +15,22 @@ export function getDeliveryStatusConfig(statusLabel) {
         raw.includes('지연') ||
         raw.includes('취소') ||
         raw.includes('미배달') ||
+        raw.includes('미배송') ||
         raw.includes('사고') ||
         raw.includes('반송') ||
+        raw.includes('반품') ||
+        raw.includes('회수') ||
         raw.includes('거절') ||
         raw.includes('문제') ||
+        raw.includes('이상') ||
         raw.includes('중단') ||
         raw.includes('불명') ||
-        raw.includes('오발송')
+        raw.includes('오발송') ||
+        raw.includes('오배송') ||
+        raw.includes('부재') ||
+        raw.includes('보류') ||
+        raw.includes('분실') ||
+        raw.includes('파손')
     ) {
         return {
             key: 'error',
@@ -36,35 +45,22 @@ export function getDeliveryStatusConfig(statusLabel) {
         };
     }
 
-    // 2. Đang phát trong ngày / Đang giao / Giao hoàn tất (Xanh lá đậm - Emerald / Green)
+    // 2. Đang lấy hàng / Đang chuẩn bị / Bắt đầu giao (Vàng - Amber / Yellow)
+    // Theo đúng chu trình Lotte Logistics (물품접수): 배송시작, 집하, 운송장등록, 접수, 물품인수...
     if (
-        raw.includes('배달출발') ||
-        raw.includes('배송출발') ||
-        raw.includes('배달중') ||
-        raw.includes('도착') ||
-        raw.includes('배달완료') ||
-        raw.includes('배송완료')
-    ) {
-        return {
-            key: 'delivering',
-            label: raw,
-            categoryName: '배달출발/도착',
-            bg: 'bg-emerald-50 dark:bg-emerald-950/40',
-            text: 'text-emerald-700 dark:text-emerald-300',
-            border: 'border-emerald-200 dark:border-emerald-800/60',
-            dot: 'bg-emerald-500',
-            pulseDot: 'bg-emerald-400',
-            ring: 'ring-emerald-500/20'
-        };
-    }
-
-    // 3. Đang lấy hàng / Đang chuẩn bị (Vàng - Amber / Yellow)
-    if (
+        raw.includes('배송시작') ||
+        raw.includes('배송 시작') ||
+        raw.includes('배송준비') ||
+        raw.includes('배송 준비') ||
+        raw.includes('상품준비') ||
+        raw.includes('상품 준비') ||
+        raw.includes('출고준비') ||
+        raw.includes('발송준비') ||
         raw.includes('집하') ||
+        raw.includes('운송장등록') ||
         raw.includes('접수') ||
         raw.includes('준비') ||
-        raw.includes('인수') ||
-        raw.includes('상품준비')
+        (raw.includes('인수') && !raw.includes('인수자'))
     ) {
         return {
             key: 'pickup',
@@ -79,7 +75,45 @@ export function getDeliveryStatusConfig(statusLabel) {
         };
     }
 
-    // 4. Đang trung chuyển / Vận chuyển (Xanh dương - Blue)
+    // 3. Đang phát trong ngày / Đang giao / Chuẩn bị giao / Giao hoàn tất (Xanh lá đậm - Emerald / Green)
+    // Theo đúng chu trình Lotte Logistics (배달출발, 배송완료): 배달전, 배달출발, 배송출발, 배달완료, 인수자등록...
+    // CHÚ Ý: Tuyệt đối không dùng raw.includes('도착') chung chung vì sẽ nuốt '셔틀도착', '터미널도착', 'HUB도착' (vốn là trung chuyển)
+    if (
+        raw.includes('배달전') ||
+        raw.includes('배달출발') ||
+        raw.includes('배송출발') ||
+        raw.includes('배달중') ||
+        raw.includes('배달예정') ||
+        raw.includes('배송예정') ||
+        raw.includes('배달준비') ||
+        raw.includes('배달완료') ||
+        raw.includes('배송완료') ||
+        raw.includes('인수자등록') ||
+        raw.includes('인수자') ||
+        raw.includes('수령완료') ||
+        raw.includes('배달도착') ||
+        raw.includes('배송도착') ||
+        raw.includes('고객도착') ||
+        raw.includes('배달지도착') ||
+        raw.includes('고객전달') ||
+        raw === '배달' ||
+        raw === '배송'
+    ) {
+        return {
+            key: 'delivering',
+            label: raw,
+            categoryName: '배달출발/도착',
+            bg: 'bg-emerald-50 dark:bg-emerald-950/40',
+            text: 'text-emerald-700 dark:text-emerald-300',
+            border: 'border-emerald-200 dark:border-emerald-800/60',
+            dot: 'bg-emerald-500',
+            pulseDot: 'bg-emerald-400',
+            ring: 'ring-emerald-500/20'
+        };
+    }
+
+    // 4. Đang trung chuyển / Vận chuyển / Shuttle / Tuyến chính (Xanh dương - Blue)
+    // Theo đúng chu trình Lotte Logistics (배송 이동중): 셔틀도착, 셔틀발송, 셔틀출발, 간선상하차, HUB입출고, 터미널...
     return {
         key: 'transit',
         label: raw,
