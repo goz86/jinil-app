@@ -128,6 +128,9 @@ const translations = {
         labelTip: "Mẹo",
         labelTipText: "Chọn kích cỡ giấy phù hợp với máy in. Thiết lập kích cỡ giấy tùy chỉnh trong cài đặt máy in trước khi in.",
         labelShowBarcodeText: "Hiện mã số",
+        labelPasteExcel: "Dán từ Excel",
+        labelPasteExcelDesc: "Dán dữ liệu copy từ Excel vào bảng",
+        labelPasteSuccess: "Đã dán thành công {count} dòng dữ liệu.",
         notes: "노트",
         notesModalTitle: "Ghi chú công việc & Bảo mật",
         searchNotesPlaceholder: "Tìm kiếm ghi chú, khách hàng, mật khẩu...",
@@ -293,6 +296,9 @@ const translations = {
         labelTip: "팁",
         labelTipText: "프린터에 맞는 용지 크기를 선택하세요. 인쇄 전 프린터 설정에서 사용자 정의 용지 크기를 설정하세요.",
         labelShowBarcodeText: "바코드 텍스트 표시",
+        labelPasteExcel: "엑셀 붙여넣기",
+        labelPasteExcelDesc: "Excel에서 복사한 셀을 표에 바로 붙여넣기",
+        labelPasteSuccess: "엑셀 데이터 {count}개 행이 붙여넣기 되었습니다.",
         notes: "노트",
         notesModalTitle: "업무 노트 & 계정 관리",
         searchNotesPlaceholder: "노트, 거래처, 비밀번호 검색...",
@@ -457,7 +463,10 @@ const translations = {
         labelSelectProduct: "Select Product",
         labelTip: "Tip",
         labelTipText: "Select matching paper size. Set custom paper size in printer settings before printing.",
-        labelShowBarcodeText: "Show Barcode Text"
+        labelShowBarcodeText: "Show Barcode Text",
+        labelPasteExcel: "Paste from Excel",
+        labelPasteExcelDesc: "Paste copied cells from Excel into table",
+        labelPasteSuccess: "Successfully pasted {count} rows from Excel."
     }
 };
 
