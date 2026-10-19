@@ -6,7 +6,10 @@ import JsBarcode from 'jsbarcode';
 import Swal from 'sweetalert2';
 import BarTenderPrintPanel from './BarTenderPrintPanel';
 import * as XLSX from 'xlsx';
-import { parseClipboardTSV, applyPastedDataToItems } from '../utils/clipboardExcelParser';
+import { parseClipboardTSV, applyPastedDataToItems, smartApplyPastedGrid, parseBtwBufferClient } from '../utils/clipboardExcelParser';
+import BarTenderPrintModal from './BarTenderPrintModal';
+import ColumnUnitBadge from './ColumnUnitBadge';
+import ExcelImportModal from './ExcelImportModal';
 const MM_TO_PX = 3.78; // 96 DPI standard conversion
 
 /* ───────── Constants ───────── */
@@ -325,7 +328,8 @@ const TemplateCard = React.memo(({
     showPriceUnit,
     showExtra1Prefix,
     showExtra2Prefix,
-    showBarcodeText
+    showBarcodeText,
+    columnUnits
 }) => {
     const tW = tpl.paperSize?.key === 'custom' ? (tpl.customWidth ?? tpl.paperSize?.width) : tpl.paperSize?.width || 50;
     const tH = tpl.paperSize?.key === 'custom' ? (tpl.customHeight ?? tpl.paperSize?.height) : tpl.paperSize?.height || 30;
@@ -343,6 +347,12 @@ const TemplateCard = React.memo(({
             className={`group relative w-[170px] shrink-0 bg-white border rounded-xl p-3.5 cursor-pointer transition-all ${isActive ? 'border-blue-500 shadow-[0_0_0_1.5px_#3b82f6]' : 'border-slate-200 hover:border-slate-300 hover:shadow-sm'}`}>
             <div className={`text-[13px] font-bold mb-2 truncate ${isActive ? 'text-blue-600' : 'text-slate-800'}`}>{tpl.name}</div>
             <div className="h-[120px] w-full bg-slate-50/50 rounded-lg border border-slate-100 flex items-center justify-center overflow-hidden mb-2 relative">
+                {tpl.previewImage ? (
+                    <div className="relative w-full h-full flex items-center justify-center p-1 bg-white">
+                        <img src={tpl.previewImage} alt={tpl.name} className="max-h-full max-w-full object-contain rounded shadow-2xs" />
+                        <span className="absolute bottom-1 right-1 px-1.5 py-0.2 bg-amber-500 text-white text-[8px] font-extrabold rounded shadow-xs">BTW</span>
+                    </div>
+                ) : (
                 <div className="bg-white border border-slate-200 relative overflow-hidden shadow-sm"
                     style={{ width: `${pW}px`, height: `${pH}px`, transform: `scale(${scale})`, transformOrigin: 'center center' }}>
                     {Object.entries(tpl.fieldPositions || {}).map(([fk, pos]) => {
@@ -366,11 +376,23 @@ const TemplateCard = React.memo(({
                             }}>
                                 {isBc ? (
                                     <img src={generateBarcodeBase64(val || '12345678', fs, showBarcodeText) || ''} style={{ height: `${fs * 5.2}px`, pointerEvents: 'none', maxWidth: '100%' }} />
-                                ) : (fk === 'price' && showPriceUnit && dummy[fk]) ? `₩${Number(dummy[fk]).toLocaleString()} 원` : (fk === 'extra1' && showExtra1Prefix && val) ? `NO.${val}` : (fk === 'extra2' && showExtra2Prefix && val) ? `수량:${val}` : val}
+                                ) : (() => {
+                                    const conf = columnUnits?.[fk];
+                                    if (conf && conf.enabled && conf.text) {
+                                        const u = conf.text.trim();
+                                        const sep = /^[.:#₩$]/.test(u) || /[:#]$/.test(u) ? '' : ' ';
+                                        return conf.pos === 'suffix' ? `${val || dummy[fk]}${sep}${u}` : `${u}${sep}${val || dummy[fk]}`;
+                                    }
+                                    if (fk === 'price' && showPriceUnit && dummy[fk]) return `₩${Number(dummy[fk]).toLocaleString()} 원`;
+                                    if (fk === 'extra1' && showExtra1Prefix && val) return `NO.${val}`;
+                                    if (fk === 'extra2' && showExtra2Prefix && val) return `수량:${val}`;
+                                    return val || dummy[fk];
+                                })()}
                             </div>
                         );
                     })}
                 </div>
+                )}
             </div>
             <div className="flex justify-between items-center">
                 <span className="text-[10px] font-bold text-slate-400">{(tW && tH) ? `${tW} x ${tH} mm` : tpl.paperSize?.label || 'Custom'}</span>
@@ -465,11 +487,55 @@ export default function LabelPrinter({ user }) {
     const [fontSize, setFontSize] = useState('auto');
     const [copies, setCopies] = useState(1);
     const [orientation, setOrientation] = useState('portrait');
+
+    /* ── Universal Column Units Config (LocalStorage) ── */
+    const [columnUnits, setColumnUnits] = useState(() => {
+        try {
+            const saved = localStorage.getItem('label_printer_column_units');
+            if (saved) return JSON.parse(saved);
+        } catch (e) {
+            console.warn('Error reading column units from localStorage', e);
+        }
+        return {
+            price: { enabled: false, text: '₩', pos: 'prefix' },
+            extra1: { enabled: false, text: 'NO.', pos: 'prefix' },
+            extra2: { enabled: false, text: '수량', pos: 'prefix' },
+            productName: { enabled: false, text: '개', pos: 'suffix' },
+            option: { enabled: false, text: '', pos: 'prefix' },
+            productCode: { enabled: false, text: '', pos: 'prefix' },
+            _copies: { enabled: false, text: '장', pos: 'suffix' }
+        };
+    });
+
+    useEffect(() => {
+        try {
+            localStorage.setItem('label_printer_column_units', JSON.stringify(columnUnits));
+        } catch (e) {
+            console.warn('Error saving column units to localStorage', e);
+        }
+    }, [columnUnits]);
+
+    const formatFieldValue = useCallback((val, colKey) => {
+        if (val === undefined || val === null || val === '') return '';
+        const conf = columnUnits[colKey];
+        if (!conf || !conf.enabled || !conf.text) return String(val);
+        const unitText = String(conf.text).trim();
+        if (!unitText) return String(val);
+        const sep = /^[.:#₩$]/.test(unitText) || /[:#]$/.test(unitText) ? '' : ' ';
+        if (conf.pos === 'suffix') {
+            return `${val}${sep}${unitText}`.trim();
+        } else {
+            return `${unitText}${sep}${val}`.trim();
+        }
+    }, [columnUnits]);
     const [showPriceUnit, setShowPriceUnit] = useState(false);
     const [showBarcodeText] = useState(false);
     const [showExtra1Prefix, setShowExtra1Prefix] = useState(() => ls('label_printer_show_extra1_prefix', false));
     const [showExtra2Prefix, setShowExtra2Prefix] = useState(() => ls('label_printer_show_extra2_prefix', false));
     const [isImporting, setIsImporting] = useState(false);
+    const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
+    const [showBtwPreviewInCanvas, setShowBtwPreviewInCanvas] = useState(false);
+    const btwFileInputRef = useRef(null);
     const [showGrid, setShowGrid] = useState(false);
     const [showSafeZone, setShowSafeZone] = useState(() => ls('label_printer_show_safe_zone', true));
     useEffect(() => { localStorage.setItem('label_printer_show_safe_zone', JSON.stringify(showSafeZone)); }, [showSafeZone]);
@@ -499,6 +565,95 @@ export default function LabelPrinter({ user }) {
     const [inventorySearch, setInventorySearch] = useState('');
 
     /* ── Excel ── */
+    const processExcelWorkbook = useCallback(async (file) => {
+        if (!file) return;
+        try {
+            Swal.fire({
+                title: 'Excel 파일을 분석하는 중...',
+                text: '잠시만 기다려 주세요.',
+                allowOutsideClick: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            const data = await file.arrayBuffer();
+            const wb = XLSX.read(data, { type: 'array' });
+            Swal.close();
+
+            if (!wb || !wb.SheetNames || !wb.SheetNames.length) {
+                await Swal.fire('알림', '유효한 Excel 시트를 찾을 수 없습니다.', 'warning');
+                return;
+            }
+
+            const parsedSheetsData = {};
+            wb.SheetNames.forEach(sheetName => {
+                const ws = wb.Sheets[sheetName];
+                if (!ws) return;
+                const { range: cappedRange } = capSheetRange(ws);
+                if (!cappedRange) return;
+                const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', range: cappedRange });
+                if (!rows.length) return;
+
+                const { headerRowIndex, labels, dataStartIndex, maxCol } = buildExcelColumnLabels(rows);
+                const dataRows = rows.slice(dataStartIndex).filter(r => r.some(c => String(c ?? '').trim() !== ''));
+
+                const { updatedItems } = applyPastedDataToItems({
+                    pastedGrid: dataRows,
+                    startRowIdx: 0,
+                    startColKey: 'productCode',
+                    fieldOrder,
+                    existingItems: [],
+                    createItemFn: createLabelItem
+                });
+
+                const vendors = {};
+                updatedItems.forEach(it => {
+                    const v = String(it.extra1 || '').trim() || '기타';
+                    if (!vendors[v]) vendors[v] = { count: 0, qty: 0 };
+                    vendors[v].count += 1;
+                    const q = parseInt(it._copies || it.수량 || 1, 10);
+                    vendors[v].qty += isNaN(q) || q < 1 ? 1 : q;
+                });
+
+                parsedSheetsData[sheetName] = {
+                    rows: dataRows,
+                    mappedItems: updatedItems,
+                    vendors,
+                    rawPreviewRows: dataRows.slice(0, 10)
+                };
+            });
+
+            setExcelModalData({
+                isOpen: true,
+                fileName: file.name,
+                workbook: wb,
+                sheetNames: wb.SheetNames,
+                parsedSheetsData
+            });
+        } catch (err) {
+            console.error('Excel processing error:', err);
+            Swal.close();
+            await Swal.fire({ icon: 'error', title: '오류', text: 'Excel 파일 읽기 실패: ' + err.message });
+        }
+    }, [fieldOrder]);
+
+    const handleConfirmExcelImport = useCallback((importedItems, sheetName) => {
+        setExcelModalData(prev => ({ ...prev, isOpen: false }));
+        if (!importedItems || !importedItems.length) return;
+
+        setLabelItems(importedItems);
+        setSelectedRows({});
+        setCurrentPage(1);
+        setSelectedBatchVendor('all');
+
+        Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: `[${sheetName}] 시트에서 ${importedItems.length}개 품목을 가져왔습니다.`,
+            showConfirmButton: false,
+            timer: 2000
+        });
+    }, []);
     const [detectedHeaders, setDetectedHeaders] = useState(() => ls('label_printer_detected_headers', []));
     const [fieldToExcelMap, setFieldToExcelMap] = useState(() => ls('label_printer_field_to_excel_map', {}));
     const [showMappingMenu, setShowMappingMenu] = useState(null);
@@ -526,14 +681,51 @@ export default function LabelPrinter({ user }) {
     const [activeItemIndex, setActiveItemIndex] = useState(0);
     const [selectedRows, setSelectedRows] = useState({});
 
-    /* ── Pagination ── */
+    /* ── Pagination & Smart Batching ── */
     const [pageSize, setPageSize] = useState(50);
     const [currentPage, setCurrentPage] = useState(1);
-    const totalPages = useMemo(() => Math.ceil(labelItems.length / pageSize), [labelItems.length, pageSize]);
+    /* ── Excel Drag & Drop & Smart Batching State ── */
+    const [isDraggingExcel, setIsDraggingExcel] = useState(false);
+    const [selectedBatchVendor, setSelectedBatchVendor] = useState('all');
+    const [excelModalData, setExcelModalData] = useState({
+        isOpen: false,
+        fileName: '',
+        workbook: null,
+        sheetNames: [],
+        parsedSheetsData: {}
+    });
+
+    // Extract unique vendor batches
+    const vendorBatches = useMemo(() => {
+        const map = {};
+        labelItems.forEach(it => {
+            const v = String(it.extra1 || it.업체명 || it.거래처 || '').trim();
+            const key = v || '기타';
+            if (!map[key]) map[key] = { count: 0, totalLabels: 0, itemIds: [] };
+            map[key].count += 1;
+            const q = parseInt(it._copies || it.수량 || 1, 10);
+            map[key].totalLabels += isNaN(q) || q < 1 ? 1 : q;
+            map[key].itemIds.push(it.id);
+        });
+        return map;
+    }, [labelItems]);
+
+    const vendorBatchKeys = useMemo(() => Object.keys(vendorBatches), [vendorBatches]);
+
+    const filteredLabelItems = useMemo(() => {
+        if (selectedBatchVendor === 'all') return labelItems;
+        return labelItems.filter(it => {
+            const v = String(it.extra1 || it.업체명 || it.거래처 || '').trim();
+            const key = v || '기타';
+            return key === selectedBatchVendor;
+        });
+    }, [labelItems, selectedBatchVendor]);
+
+    const totalPages = useMemo(() => Math.max(1, Math.ceil(filteredLabelItems.length / pageSize)), [filteredLabelItems.length, pageSize]);
     const paginatedItems = useMemo(() => {
         const start = (currentPage - 1) * pageSize;
-        return labelItems.slice(start, start + pageSize);
-    }, [labelItems, currentPage, pageSize]);
+        return filteredLabelItems.slice(start, start + pageSize);
+    }, [filteredLabelItems, currentPage, pageSize]);
 
     // Reset to page 1 when data changes significantly (like import)
     useEffect(() => {
@@ -768,14 +960,31 @@ export default function LabelPrinter({ user }) {
         if (!grid.length) return;
 
         setLabelItems(prevItems => {
-            const { updatedItems, affectedCount } = applyPastedDataToItems({
-                pastedGrid: grid,
-                startRowIdx,
-                startColKey: startColKey || 'productCode',
-                fieldOrder,
-                existingItems: prevItems,
-                createItemFn: createLabelItem
-            });
+            let pasteResult = null;
+            if (grid.length > 1) {
+                const smart = smartApplyPastedGrid({
+                    pastedGrid: grid,
+                    fieldOrder,
+                    existingItems: prevItems,
+                    createItemFn: createLabelItem
+                });
+                if (smart.matchedHeaders) {
+                    pasteResult = smart;
+                }
+            }
+
+            if (!pasteResult) {
+                pasteResult = applyPastedDataToItems({
+                    pastedGrid: grid,
+                    startRowIdx,
+                    startColKey: startColKey || 'productCode',
+                    fieldOrder,
+                    existingItems: prevItems,
+                    createItemFn: createLabelItem
+                });
+            }
+
+            const { updatedItems, affectedCount } = pasteResult;
 
             // Ensure pagination navigates to the start row of pasted data
             const targetPage = Math.floor(startRowIdx / pageSize) + 1;
@@ -882,122 +1091,12 @@ export default function LabelPrinter({ user }) {
 
     /* ── Excel ── */
 
-    const handleFileUpload = async (e) => {
-        const input = e.target;
-        const file = input?.files?.[0];
-        if (!file) return;
-
-        Swal.fire({
-            title: '데이터를 읽는 중...',
-            text: '잠시만 기다려 주세요.',
-            allowOutsideClick: false,
-            didOpen: () => { Swal.showLoading(); }
-        });
-        setIsImporting(true);
-
-        try {
-            const data = await file.arrayBuffer();
-            const wb = XLSX.read(data, { type: 'array' });
-            const ws = wb.Sheets[wb.SheetNames[0]];
-            if (!ws) {
-                Swal.close();
-                await Swal.fire('알림', '시트를 찾을 수 없습니다.', 'info');
-                return;
-            }
-
-            const { range: cappedRange, sheetTruncated } = capSheetRange(ws);
-            if (!cappedRange) {
-                Swal.close();
-                await Swal.fire('알림', '시트 범위가 비어 있습니다.', 'info');
-                return;
-            }
-
-            const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '', range: cappedRange });
-            Swal.close();
-            await new Promise((r) => setTimeout(r, 0));
-
-            const { headerRowIndex, labels, dataStartIndex, maxCol } = buildExcelColumnLabels(rows);
-            setDetectedHeaders(labels);
-
-            const dataRowsAll = rows.slice(dataStartIndex);
-            const isSummaryRow = (row) => row.some(cell => {
-                const txt = String(cell ?? '').replace(/\s+/g, '').toLowerCase();
-                return txt === '합계' || txt === '총계' || txt === '총합' || txt === '총합계' || txt === 'total' || txt === '소계';
-            });
-
-            const validDataRows = cloneDataRowsForFill(dataRowsAll).filter(row => {
-                if (isSummaryRow(row)) return false;
-                return row.some(cell => String(cell ?? '').trim() !== '');
-            });
-
-            const capped = validDataRows.length > EXCEL_IMPORT_MAX_DATA_ROWS;
-            const cappedRows = capped ? validDataRows.slice(0, EXCEL_IMPORT_MAX_DATA_ROWS) : validDataRows;
-
-            const hdrRow = rows[headerRowIndex] || [];
-            const map = { ...fieldToExcelMap };
-            Object.keys(map).forEach(k => { if (map[k] >= maxCol) delete map[k]; });
-
-            for (let i = 0; i < maxCol; i++) {
-                const v = String(hdrRow[i] ?? '').trim().toLowerCase();
-                if (!('productCode' in map) && (v.includes('스타일') || v.includes('상품코드') || v.includes('코드') || v.includes('code') || v.includes('sku') || v.includes('품번') || v.includes('자재') || v.includes('재고') || v.includes('바코드'))) map.productCode = i;
-                if (!('productName' in map) && (v.includes('상품명') || v.includes('제품명') || v.includes('품목') || v.includes('명칭') || v.includes('명') || v.includes('name') || v.includes('product') || v.includes('item') || v.includes('품명'))) map.productName = i;
-                if (!('option' in map) && (v.includes('옵션') || v.includes('사이즈') || v.includes('규격') || v.includes('option') || v.includes('size'))) map.option = i;
-                if (!('price' in map) && (v.includes('가격') || v.includes('단가') || v.includes('price') || v.includes('amt') || v.includes('cost'))) map.price = i;
-                if (!('_copies' in map) && (v.includes('매수') || v.includes('인쇄') || v.includes('qty') || v.includes('count') || v.includes('copy') || v.includes('copies'))) map._copies = i;
-            }
-            setFieldToExcelMap(map);
-
-            setRawExcelRows(cappedRows);
-
-            let items = cappedRows.map((row) => {
-                const item = { id: createStableId('row_') };
-                Object.entries(map).forEach(([k, ci]) => { item[k] = String(row[ci] ?? '').trim(); });
-                return item;
-            }).filter(i => Object.keys(map).some(k => i[k] !== ''));
-
-            applyItemForwardFill(items);
-
-            if (items.length === 0 && rows.length > dataStartIndex) {
-                items = cappedRows.slice(0, 100).map((row) => ({
-                    id: createStableId('row_'),
-                    productCode: String(row[0] || '').trim(),
-                    productName: String(row[1] || '').trim(),
-                    option: String(row[2] || '').trim(),
-                    price: String(row[3] || '').trim(),
-                    extra1: String(row[4] || '').trim(),
-                    extra2: String(row[5] || '').trim()
-                })).filter(i => i.productCode || i.productName || i.option || i.price || i.extra1 || i.extra2);
-                await Swal.fire('알림', '헤더를 인식하지 못했습니다. 아래 매핑 도구로 직접 연결해 주세요.', 'info');
-            } else if (items.length) {
-                const isNearingLimits = items.length >= EXCEL_IMPORT_MAX_DATA_ROWS * 0.8;
-                const tailNote = (sheetTruncated && isNearingLimits) ? `시트가 너무 커서 처음 ${(EXCEL_IMPORT_PREAMBLE_ROWS + EXCEL_IMPORT_MAX_DATA_ROWS).toLocaleString()}행만 분석했습니다.` : null;
-                const capNote = capped ? `처음 ${EXCEL_IMPORT_MAX_DATA_ROWS.toLocaleString()}개 데이터 행만 불러왔습니다.` : null;
-                const subtitle = [capNote, tailNote].filter(Boolean).join(' ');
-
-                await Swal.fire({
-                    icon: 'success',
-                    title: `${items.length}개 행 가져옴`,
-                    text: subtitle || undefined,
-                    timer: subtitle ? 3000 : 1500,
-                    showConfirmButton: false
-                });
-            } else {
-                await Swal.fire('알림', '가져올 데이터가 없습니다.', 'info');
-            }
-
-            if (items.length) {
-                setLabelItems(items);
-                setSelectedRows({});
-                setCurrentPage(1); // Reset to first page on new import
-            }
-        } catch (err) {
-            console.error(err);
-            Swal.close();
-            await Swal.fire({ icon: 'error', title: '오류', text: err?.message ? String(err.message) : 'Excel 파일 읽기 실패' });
-        } finally {
-            setIsImporting(false);
-            input.value = '';
+    const handleFileUpload = (e) => {
+        const file = e.target?.files?.[0];
+        if (file) {
+            processExcelWorkbook(file);
         }
+        if (e.target) e.target.value = '';
     };
 
     const updateExcelMapping = (fieldKey, colIdx) => {
@@ -1097,7 +1196,7 @@ export default function LabelPrinter({ user }) {
             return next;
         });
     }, []);
-    const allSelected = useMemo(() => labelItems.length > 0 && labelItems.every(i => selectedRows[i.id]), [labelItems, selectedRows]);
+    const allSelected = useMemo(() => filteredLabelItems.length > 0 && filteredLabelItems.every(i => selectedRows[i.id]), [filteredLabelItems, selectedRows]);
 
     const toggleAllRows = useCallback(() => {
         setSelectedRows(prev => {
@@ -1110,6 +1209,194 @@ export default function LabelPrinter({ user }) {
     }, [labelItems]);
 
     /* ── Keyboard shortcuts ── */
+
+    /* ── BarTender (.btw) Import ── */
+    const handleImportBtw = async () => {
+        if (window.electronAPI?.pickBarTenderTemplate) {
+            try {
+                const parsed = await window.electronAPI.pickBarTenderTemplate();
+                if (!parsed) return;
+
+                const newTpl = {
+                    id: `btw_${Date.now()}`,
+                    name: parsed.fileName.replace(/\.btw$/i, ''),
+                    isBtw: true,
+                    btwPath: parsed.path,
+                    previewImage: parsed.previewImage,
+                    targetPrinter: parsed.targetPrinter || 'TSC TTP-345',
+                    paperSize: parsed.detectedPaperSize || paperSize,
+                    createdAt: new Date().toISOString(),
+                    orientation: 'portrait',
+                    fontSize: 'auto',
+                };
+
+                setTemplates(prev => [newTpl, ...prev.filter(t => t.name !== newTpl.name)]);
+                setActiveTemplateId(newTpl.id);
+                if (parsed.detectedPaperSize) {
+                    setPaperSize(parsed.detectedPaperSize);
+                }
+
+                Swal.fire({
+                    toast: true,
+                    position: 'top-end',
+                    icon: 'success',
+                    title: `BarTender 서식 가져오기 성공: ${parsed.fileName}`,
+                    showConfirmButton: false,
+                    timer: 2500
+                });
+                return;
+            } catch (err) {
+                console.error('Pick btw error:', err);
+            }
+        }
+        btwFileInputRef.current?.click();
+    };
+
+    const handleBtwFileChange = async (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        try {
+            const buf = await file.arrayBuffer();
+            const parsed = parseBtwBufferClient(new Uint8Array(buf), file.name);
+
+            const newTpl = {
+                id: `btw_${Date.now()}`,
+                name: file.name.replace(/\.btw$/i, ''),
+                isBtw: true,
+                previewImage: parsed.previewImage,
+                targetPrinter: parsed.targetPrinter || 'TSC TTP-345',
+                paperSize: parsed.paperSize || paperSize,
+                createdAt: new Date().toISOString(),
+                orientation: 'portrait',
+                fontSize: 'auto',
+            };
+
+            setTemplates(prev => [newTpl, ...prev.filter(t => t.name !== newTpl.name)]);
+            setActiveTemplateId(newTpl.id);
+            if (parsed.paperSize) {
+                setPaperSize(parsed.paperSize);
+            }
+
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: `BarTender 서식 가져오기 성공: ${file.name}`,
+                showConfirmButton: false,
+                timer: 2500
+            });
+        } catch (err) {
+            Swal.fire({ icon: 'error', title: 'BarTender 파일 읽기 실패', text: err.message });
+        } finally {
+            e.target.value = '';
+        }
+    };
+
+    /* ── Execute Print via Modal ── */
+    const handleExecutePrint = async ({ printerName, printScope, targetItems, copies: printCopies, isTestPrint }) => {
+        const pw = getPrintWidth(), ph = getPrintHeight(), fs = calculateFontSize(getWidth(), getHeight());
+        
+        let html = '';
+        targetItems.forEach((item) => {
+            const rowQty = printScope === 'quantity_column'
+                ? Math.max(1, parseInt(item._copies || item.수량 || item.qty || 1, 10))
+                : 1;
+            const repeatCopies = isTestPrint ? 1 : (rowQty * Math.max(1, printCopies || 1));
+
+            for (let c = 0; c < repeatCopies; c++) {
+                let fields = '';
+                fieldOrder.forEach(k => {
+                    const pos = fieldPositions[k];
+                    if (!pos || pos.hidden) return;
+                    let val = item[k] || '';
+                    if (!val && k === 'productCode') val = item.code || '';
+                    if (!val) return;
+
+                    const st = fieldStyles[k] || DEFAULT_FIELD_STYLES.productName;
+                    const baseFfs = fs + (st.sizeOffset || 0);
+                    const safeMarginMm = 2.2;
+                    let availMm = pw - (safeMarginMm * 2);
+                    if (st.textAlign === 'center') {
+                        availMm = Math.max(10, 2 * (Math.min(pos.x, 100 - pos.x) / 100 * pw - safeMarginMm));
+                    } else if (st.textAlign === 'left') {
+                        availMm = Math.max(10, (1 - pos.x / 100) * pw - safeMarginMm);
+                    } else if (st.textAlign === 'right') {
+                        availMm = Math.max(10, (pos.x / 100) * pw - safeMarginMm);
+                    }
+
+                    const ffs = st.fontFamily === 'Barcode' ? baseFfs : calculateFitFontSize(val, baseFfs, availMm, st.fontFamily, st.fontWeight);
+                    const tr = st.textAlign === 'left' ? '0,-50%' : st.textAlign === 'right' ? '-100%,-50%' : '-50%,-50%';
+
+                    if (st.fontFamily === 'Barcode') {
+                        const b64 = generateBarcodeBase64(val, ffs, showBarcodeText);
+                        if (b64) {
+                            fields += `<div style="position:absolute;left:${pos.x}%;top:${pos.y}%;transform:translate(${tr});font-family:sans-serif;font-size:${ffs}pt;font-weight:${st.fontWeight};text-align:${st.textAlign};white-space:nowrap;line-height:1.25;"><img src="${b64}" style="height:${ffs * 5.2}pt;max-width:${pw - safeMarginMm * 2}mm;" /></div>`;
+                        } else {
+                            fields += `<div style="position:absolute;left:${pos.x}%;top:${pos.y}%;transform:translate(${tr});font-family:sans-serif;font-size:${ffs}pt;font-weight:${st.fontWeight};text-align:${st.textAlign};white-space:nowrap;line-height:1.25;">${val}</div>`;
+                        }
+                    } else {
+                        fields += `<div style="position:absolute;left:${pos.x}%;top:${pos.y}%;transform:translate(${tr});font-family:'${st.fontFamily}', 'Nanum Gothic', 'Malgun Gothic', sans-serif;font-size:${ffs}pt;font-weight:${st.fontWeight};text-align:${st.textAlign};white-space:nowrap;line-height:1.25;">${val}</div>`;
+                    }
+                });
+                html += `<div class="label-page"><div class="label-inner">${fields}</div></div>`;
+            }
+        });
+
+        const ox = printOffsetX || 0;
+        const oy = printOffsetY || 0;
+        const win = window.open('', '_blank');
+        if (!win) {
+            Swal.fire({ icon: 'error', title: '팝업 차단됨', text: '인쇄를 위해 브라우저 팝업 차단을 허용해주세요.' });
+            return;
+        }
+
+        win.document.write(`<!DOCTYPE html>
+<html>
+<head>
+    <title>진일 라벨 인쇄 - ${printerName || 'TSC TTP-345'}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        @page { size: ${pw}mm ${ph}mm; margin: 0; }
+        @media print {
+            html, body { margin: 0; padding: 0; width: ${pw}mm; height: ${ph}mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .label-page { page-break-after: always; break-after: page; }
+        }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; font-family: 'Nanum Gothic', 'Malgun Gothic', sans-serif; overflow: hidden; background: #fff; }
+        .label-page {
+            width: ${pw}mm;
+            height: ${ph}mm;
+            position: relative;
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+        .label-inner {
+            position: absolute;
+            left: ${ox}mm;
+            top: ${oy}mm;
+            width: ${pw}mm;
+            height: ${ph}mm;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    ${html}
+    <script>
+        window.onload = function() {
+            document.fonts.ready.then(function() {
+                setTimeout(function() {
+                    window.print();
+                    setTimeout(function() { window.close(); }, 500);
+                }, 400);
+            });
+        };
+    </script>
+</body>
+</html>`);
+        win.document.close();
+    };
 
     /* ── Print ── */
     const handlePrint = () => {
@@ -1369,9 +1656,23 @@ export default function LabelPrinter({ user }) {
                     <div className="flex-1 min-w-0 w-full flex flex-col gap-5">
                         {/* ═══ ROW 1: Templates ═══ */}
                         <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-3">
-                                <span className="text-[14px] font-extrabold text-slate-700">저장된 서식</span>
-                                <span className="text-[13px] text-slate-400 font-bold">{templates.length}개</span>
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[14px] font-extrabold text-slate-700">저장된 서식</span>
+                                    <span className="text-[13px] text-slate-400 font-bold">{templates.length}개</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <input type="file" accept=".btw" ref={btwFileInputRef} onChange={handleBtwFileChange} className="hidden" />
+                                    <button
+                                        type="button"
+                                        onClick={handleImportBtw}
+                                        className="h-7 px-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-[11px] font-bold flex items-center gap-1.5 shadow-2xs transition-all active:scale-95 cursor-pointer"
+                                        title="기존 BarTender (.btw) 라벨 파일 가져오기"
+                                    >
+                                        <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                                        BarTender (.btw) 가져오기
+                                    </button>
+                                </div>
                             </div>
                             <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                                 {templates.map(tpl => (
@@ -1385,6 +1686,7 @@ export default function LabelPrinter({ user }) {
                                         showExtra1Prefix={showExtra1Prefix}
                                         showExtra2Prefix={showExtra2Prefix}
                                         showBarcodeText={showBarcodeText}
+                                        columnUnits={columnUnits}
                                     />
                                 ))}
                                 {templates.length === 0 && (
@@ -1399,7 +1701,7 @@ export default function LabelPrinter({ user }) {
 
                         {/* ═══ ROW 2: Actions Bar ═══ */}
                         <div className="flex items-center justify-end gap-2.5 flex-wrap">
-                            <button onClick={handlePrint} className="h-10 px-6 bg-[#00c896] hover:bg-[#00b085] text-white font-bold rounded-xl text-[14px] shadow-md shadow-emerald-200/60 transition-all active:scale-[0.98] flex items-center gap-2 cursor-pointer">
+                            <button onClick={() => setIsPrintModalOpen(true)} className="h-10 px-6 bg-[#00c896] hover:bg-[#00b085] text-white font-bold rounded-xl text-[14px] shadow-md shadow-emerald-200/60 transition-all active:scale-[0.98] flex items-center gap-2 cursor-pointer">
                                 <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm-1 10H8v3h4v-3z" clipRule="evenodd" /></svg>
                                 인쇄
                             </button>
@@ -1602,7 +1904,14 @@ export default function LabelPrinter({ user }) {
                         <div className="w-[300px] shrink-0">
                             <div className="flex items-center justify-between mb-3">
                                 <div className="flex items-center gap-2">
-                                    <span className="text-[14px] font-extrabold text-slate-700">미리 보기</span>
+                                    <div className="flex items-center gap-2">
+                                <span className="text-[14px] font-extrabold text-slate-700">미리 보기</span>
+                                <span className="text-[11px] font-bold text-slate-400">({labelItems.length > 0 ? activeItemIndex + 1 : 0} / {labelItems.length})</span>
+                                <div className="flex items-center gap-0.5 ml-1">
+                                    <button type="button" onClick={() => setActiveItemIndex(p => Math.max(0, p - 1))} disabled={activeItemIndex <= 0} className="w-5 h-5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-20 text-[10px] font-bold flex items-center justify-center cursor-pointer">‹</button>
+                                    <button type="button" onClick={() => setActiveItemIndex(p => Math.min(labelItems.length - 1, p + 1))} disabled={activeItemIndex >= labelItems.length - 1} className="w-5 h-5 rounded bg-slate-100 hover:bg-slate-200 text-slate-600 disabled:opacity-20 text-[10px] font-bold flex items-center justify-center cursor-pointer">›</button>
+                                </div>
+                            </div>
                                     <button onClick={() => setIsLayoutLocked(!isLayoutLocked)} className={`h-6 px-2.5 rounded-full flex items-center justify-center gap-1.5 transition-all outline-none ${isLayoutLocked ? 'bg-amber-50 text-amber-600 border border-amber-200 hover:bg-amber-100' : 'bg-emerald-50 text-emerald-600 border border-emerald-200 hover:bg-emerald-100'}`}>
                                         {isLayoutLocked ? (
                                             <>
@@ -1715,7 +2024,7 @@ export default function LabelPrinter({ user }) {
                                                     style={{ left: `${actualPos.x}%`, top: `${actualPos.y}%`, transform: `translate(${tr})`, fontWeight: st.fontWeight, fontSize: `${fs}px`, fontFamily: st.fontFamily, textAlign: st.textAlign, whiteSpace: 'nowrap' }}>
                                                     {st.fontFamily === 'Barcode' ? (
                                                         <img src={generateBarcodeBase64(val || '123456789', fs, showBarcodeText) || ''} style={{ height: `${fs * 5.2}px`, pointerEvents: 'none', maxWidth: `${(pw - safeMarginMm * 2) * MM_TO_PX}px` }} />
-                                                    ) : (k === 'price' && showPriceUnit && val) ? `₩${Number(val).toLocaleString()} 원` : (k === 'extra1' && showExtra1Prefix && val) ? `NO.${val}` : (k === 'extra2' && showExtra2Prefix && val) ? `수량:${val}` : val || <span className="bg-blue-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full">데이터 입력...</span>}
+                                                    ) : formatFieldValue(val, k) || <span className="bg-blue-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full">데이터 입력...</span>}
                                                 </div>
                                             );
                                         })}
@@ -1741,6 +2050,90 @@ export default function LabelPrinter({ user }) {
 
                 {/* ═══ Full-Width Data Table ═══ */}
                 <div className="bg-white rounded-xl border border-slate-200 overflow-hidden flex flex-col mt-5">
+                    {/* ═══ Smart Batching (거래처/업체별 묶음 필터 바) ═══ */}
+                    {vendorBatchKeys.length > 1 && (
+                        <div className="mb-2.5 px-3.5 py-2 bg-slate-50/90 rounded-xl border border-slate-200/80 flex flex-wrap items-center justify-between gap-2 shadow-2xs">
+                            <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-hide py-0.5">
+                                <span className="text-[11px] font-black text-slate-500 flex items-center gap-1 whitespace-nowrap mr-1">
+                                    <svg className="w-3.5 h-3.5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>
+                                    스마트 묶음:
+                                </span>
+                                <button
+                                    type="button"
+                                    onClick={() => { setSelectedBatchVendor('all'); setCurrentPage(1); }}
+                                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap ${
+                                        selectedBatchVendor === 'all'
+                                            ? 'bg-blue-600 text-white shadow-xs'
+                                            : 'bg-white text-slate-600 border border-slate-200 hover:bg-slate-100'
+                                    }`}
+                                >
+                                    전체 ({labelItems.length}종)
+                                </button>
+                                {vendorBatchKeys.map(k => {
+                                    const b = vendorBatches[k];
+                                    const isSel = selectedBatchVendor === k;
+                                    return (
+                                        <button
+                                            key={k}
+                                            type="button"
+                                            onClick={() => { setSelectedBatchVendor(k); setCurrentPage(1); }}
+                                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1 ${
+                                                isSel
+                                                    ? 'bg-blue-600 text-white shadow-xs'
+                                                    : 'bg-white text-slate-700 border border-slate-200 hover:border-blue-300 hover:bg-blue-50/50'
+                                            }`}
+                                        >
+                                            <span>{k}</span>
+                                            <span className={`text-[9.5px] px-1.5 py-0.2 rounded-full font-extrabold ${isSel ? 'bg-blue-700 text-blue-100' : 'bg-slate-100 text-slate-500'}`}>
+                                                {b.count}종 • {b.totalLabels}장
+                                            </span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+
+                            {/* Quick Actions for Selected Vendor */}
+                            {selectedBatchVendor !== 'all' && (
+                                <div className="flex items-center gap-1.5 ml-auto">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const targetIds = vendorBatches[selectedBatchVendor]?.itemIds || [];
+                                            setSelectedRows(prev => {
+                                                const next = { ...prev };
+                                                targetIds.forEach(id => { next[id] = true; });
+                                                return next;
+                                            });
+                                            Swal.fire({
+                                                toast: true,
+                                                position: 'top-end',
+                                                icon: 'info',
+                                                title: `${selectedBatchVendor} (${targetIds.length}개) 선택됨`,
+                                                showConfirmButton: false,
+                                                timer: 1500
+                                            });
+                                        }}
+                                        className="h-7 px-2.5 bg-white border border-blue-200 hover:bg-blue-50 text-blue-600 rounded-lg text-[11px] font-bold flex items-center gap-1 transition-all shadow-2xs cursor-pointer"
+                                    >
+                                        ✔️ 이 업체 전체 선택
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            const targetIds = vendorBatches[selectedBatchVendor]?.itemIds || [];
+                                            const newSel = {};
+                                            targetIds.forEach(id => { newSel[id] = true; });
+                                            setSelectedRows(newSel);
+                                            setIsPrintModalOpen(true);
+                                        }}
+                                        className="h-7 px-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-[11px] font-black flex items-center gap-1 transition-all shadow-2xs cursor-pointer"
+                                    >
+                                        🖨️ {selectedBatchVendor}만 인쇄
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    )}
                             <div className="overflow-x-auto max-h-[600px] scrollbar-thin">
                                 <table className="w-full">
                                     <thead className="sticky top-0 z-10">
@@ -1758,24 +2151,13 @@ export default function LabelPrinter({ user }) {
                                                                 <svg className="w-2.5 h-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3"><path d="M18 6L6 18M6 6l12 12" /></svg>
                                                             </button>
                                                         )}
-                                                        {k === 'price' && (
-                                                            <label className="flex items-center gap-1 cursor-pointer ml-auto bg-white px-1.5 py-0.5 rounded border border-slate-200 hover:border-blue-300 transition-all">
-                                                                <input type="checkbox" checked={showPriceUnit} onChange={e => setShowPriceUnit(e.target.checked)} className="w-3 h-3 rounded accent-blue-600" />
-                                                                <span className="text-[9px] font-bold text-slate-500">₩</span>
-                                                            </label>
-                                                        )}
-                                                        {k === 'extra1' && (
-                                                            <label className="flex items-center gap-1 cursor-pointer ml-auto bg-white px-1.5 py-0.5 rounded border border-slate-200 hover:border-blue-300 transition-all">
-                                                                <input type="checkbox" checked={showExtra1Prefix} onChange={e => setShowExtra1Prefix(e.target.checked)} className="w-3 h-3 rounded accent-blue-600" />
-                                                                <span className="text-[9px] font-bold text-slate-500">NO.</span>
-                                                            </label>
-                                                        )}
-                                                        {k === 'extra2' && (
-                                                            <label className="flex items-center gap-1 cursor-pointer ml-auto bg-white px-1.5 py-0.5 rounded border border-slate-200 hover:border-blue-300 transition-all">
-                                                                <input type="checkbox" checked={showExtra2Prefix} onChange={e => setShowExtra2Prefix(e.target.checked)} className="w-3 h-3 rounded accent-blue-600" />
-                                                                <span className="text-[9px] font-bold text-slate-500">수량</span>
-                                                            </label>
-                                                        )}
+                                                        <ColumnUnitBadge
+                                                            colKey={k}
+                                                            config={columnUnits[k] || { enabled: false, text: k === 'price' ? '₩' : k === 'extra1' ? 'NO.' : k === 'extra2' ? '수량' : '', pos: 'prefix' }}
+                                                            onChange={(newConf) => {
+                                                                setColumnUnits(prev => ({ ...prev, [k]: newConf }));
+                                                            }}
+                                                        />
                                                     </div>
                                                 </th>
                                             ))}
@@ -1874,7 +2256,42 @@ export default function LabelPrinter({ user }) {
                         </div>
 
 
-                {/* ═══ Inventory Modal ═══ */}
+                            {/* ═══ Drag & Drop Excel Overlay ═══ */}
+            {isDraggingExcel && (
+                <div className="fixed inset-0 z-50 bg-blue-600/25 backdrop-blur-xs border-4 border-dashed border-blue-500 rounded-3xl flex flex-col items-center justify-center pointer-events-none transition-all">
+                    <div className="bg-white/95 px-8 py-6 rounded-2xl shadow-2xl flex flex-col items-center gap-2.5 border border-blue-100 animate-in zoom-in-95">
+                        <div className="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-3xl font-black shadow-inner">
+                            📊
+                        </div>
+                        <div className="text-lg font-black text-slate-800">Excel 파일을 여기에 놓으세요</div>
+                        <p className="text-xs font-bold text-slate-400">.xlsx, .xls, .csv 파일을 자동으로 분석하고 매핑합니다</p>
+                    </div>
+                </div>
+            )}
+
+            {/* ═══ Excel Smart Import Modal ═══ */}
+            <ExcelImportModal
+                isOpen={excelModalData.isOpen}
+                onClose={() => setExcelModalData(prev => ({ ...prev, isOpen: false }))}
+                fileName={excelModalData.fileName}
+                workbook={excelModalData.workbook}
+                sheetNames={excelModalData.sheetNames}
+                parsedSheetsData={excelModalData.parsedSheetsData}
+                onConfirmImport={handleConfirmExcelImport}
+            />
+
+            {/* ═══ BarTender Print Modal ═══ */}
+            <BarTenderPrintModal
+                isOpen={isPrintModalOpen}
+                onClose={() => setIsPrintModalOpen(false)}
+                items={labelItems}
+                selectedRowIds={selectedRows}
+                activeItem={activeItem}
+                paperSize={paperSize}
+                onPrintExecute={handleExecutePrint}
+            />
+
+            {/* ═══ Inventory Modal ═══ */}
                 {showInventoryPicker && (
                     <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
                         <div className="bg-white rounded-2xl w-[400px] max-h-[500px] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">

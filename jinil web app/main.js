@@ -268,7 +268,91 @@ async function resolveBarTenderExecutable(preferredPath) {
     return null;
 }
 
-function buildBarTenderXml({ templatePath, rows, mappings, copies }) {
+
+function parseBtwBuffer(buffer, filePath = '') {
+    const fileName = filePath ? path.basename(filePath) : '';
+    const result = {
+        path: filePath,
+        fileName,
+        version: '',
+        previewImage: null,
+        targetPrinter: '',
+        printerPort: '',
+        linkedExcel: '',
+        fields: [],
+        quantityField: null,
+        detectedPaperSize: null,
+    };
+
+    const headerAscii = buffer.slice(0, 300).toString('latin1');
+    const vMatch = headerAscii.match(/Version:\s*([^\r\n]+)/);
+    if (vMatch) result.version = vMatch[1].trim();
+
+    // Embedded PNG extraction
+    let pngStart = -1;
+    for (let i = 0; i < Math.min(1000, buffer.length - 4); i++) {
+        if (buffer[i] === 0x89 && buffer[i + 1] === 0x50 && buffer[i + 2] === 0x4E && buffer[i + 3] === 0x47) {
+            pngStart = i;
+            break;
+        }
+    }
+    if (pngStart !== -1) {
+        for (let i = pngStart; i < buffer.length - 8; i++) {
+            if (buffer[i] === 0x49 && buffer[i + 1] === 0x45 && buffer[i + 2] === 0x4E && buffer[i + 3] === 0x44) {
+                const pngEnd = i + 8;
+                const pngBuf = buffer.slice(pngStart, pngEnd);
+                result.previewImage = 'data:image/png;base64,' + pngBuf.toString('base64');
+                break;
+            }
+        }
+    }
+
+    const rawUnicode = buffer.toString('utf16le');
+    const printerMatch = rawUnicode.match(/(TSC\s+TTP-[0-9]+|BIXOLON\s+[A-Za-z0-9-]+|PS100|NOVEXX[^\x00]+)/i);
+    if (printerMatch) result.targetPrinter = printerMatch[1].trim();
+
+    const portMatch = rawUnicode.match(/USB[0-9]{3}/);
+    if (portMatch) result.printerPort = portMatch[0];
+
+    const excelMatch = rawUnicode.match(/[A-Z]:\\[^\x00\r\n]+\.xls[x]?/i);
+    if (excelMatch) result.linkedExcel = excelMatch[0];
+
+    const bindingRegex = /[A-Za-z0-9가-힣_]+\$\.([A-Za-z0-9가-힣_]+)/g;
+    const fieldSet = new Set();
+    let m;
+    while ((m = bindingRegex.exec(rawUnicode)) !== null) {
+        const f = m[1].trim();
+        if (f && f !== 'Print_Area' && !f.startsWith('_')) {
+            fieldSet.add(f);
+        }
+    }
+    if (fieldSet.size === 0) {
+        const candidates = extractTemplateFieldCandidates(buffer);
+        candidates.forEach(f => fieldSet.add(f));
+    }
+    result.fields = Array.from(fieldSet);
+    if (result.fields.includes('수량')) result.quantityField = '수량';
+    else if (result.fields.includes('스티커수량')) result.quantityField = '스티커수량';
+
+    const normalizedName = fileName.toLowerCase().replace(/\s+/g, '');
+    if (normalizedName.includes('5x2.5') || normalizedName.includes('50x25') || normalizedName.includes('5x25')) {
+        result.detectedPaperSize = { key: 'custom_50x25', label: '50 × 25 mm', width: 50, height: 25 };
+    } else if (normalizedName.includes('5x3') || normalizedName.includes('50x30') || normalizedName.includes('5x30')) {
+        result.detectedPaperSize = { key: 'custom_50x30', label: '50 × 30 mm', width: 50, height: 30 };
+    } else if (normalizedName.includes('40x30') || normalizedName.includes('4x3')) {
+        result.detectedPaperSize = { key: 'custom_40x30', label: '40 × 30 mm', width: 40, height: 30 };
+    } else if (normalizedName.includes('40x20') || normalizedName.includes('4x2')) {
+        result.detectedPaperSize = { key: 'custom_40x20', label: '40 × 20 mm', width: 40, height: 20 };
+    } else if (normalizedName.includes('60x40') || normalizedName.includes('6x4')) {
+        result.detectedPaperSize = { key: 'custom_60x40', label: '60 × 40 mm', width: 60, height: 40 };
+    } else {
+        result.detectedPaperSize = { key: 'custom_50x30', label: '50 × 30 mm', width: 50, height: 30 };
+    }
+
+    return result;
+}
+
+function buildBarTenderXml({ templatePath, rows, mappings, copies, printerName }) {
     const commands = rows.map((row, index) => {
         const namedFields = mappings.map((mapping) => {
             const value = row.values?.[mapping.excelColumnKey] ?? '';
@@ -279,12 +363,14 @@ function buildBarTenderXml({ templatePath, rows, mappings, copies }) {
             ].join('\n');
         }).join('\n');
 
+        const labelCopies = Math.max(1, Number(row.copies || row._copies || copies || 1));
+        const printerXml = printerName ? `\n        <Printer>${xmlEscape(printerName)}</Printer>` : '';
         return [
             `  <Command Name="Job${index + 1}">`,
             '    <Print>',
             `      <Format>${xmlEscape(templatePath)}</Format>`,
             '      <PrintSetup>',
-            `        <IdenticalCopiesOfLabel>${Math.max(1, copies || 1)}</IdenticalCopiesOfLabel>`,
+            `        <IdenticalCopiesOfLabel>${labelCopies}</IdenticalCopiesOfLabel>${printerXml}`,
             '      </PrintSetup>',
             namedFields,
             '    </Print>',
@@ -554,6 +640,34 @@ function createWindow() {
         return true;
     });
 
+    ipcMain.handle('get-printers', async (event) => {
+        try {
+            const win = BrowserWindow.fromWebContents(event.sender) || mainWindow;
+            if (!win) return [];
+            return await win.webContents.getPrintersAsync();
+        } catch (err) {
+            console.error('get-printers error:', err);
+            return [];
+        }
+    });
+
+    ipcMain.handle('bartender-parse-btw', async (event, payload) => {
+        try {
+            let buffer;
+            if (typeof payload === 'string') {
+                buffer = await fs.readFile(payload);
+                return parseBtwBuffer(buffer, payload);
+            } else if (payload?.buffer) {
+                buffer = Buffer.from(payload.buffer);
+                return parseBtwBuffer(buffer, payload.fileName || '');
+            }
+            return null;
+        } catch (err) {
+            console.error('bartender-parse-btw error:', err);
+            return null;
+        }
+    });
+
     ipcMain.handle('bartender-get-config', async () => {
         const executablePath = await resolveBarTenderExecutable();
         return {
@@ -592,10 +706,10 @@ function createWindow() {
 
         const templatePath = result.filePaths[0];
         const buffer = await fs.readFile(templatePath);
+        const parsed = parseBtwBuffer(buffer, templatePath);
         return {
-            path: templatePath,
-            fileName: path.basename(templatePath),
-            detectedFields: extractTemplateFieldCandidates(buffer),
+            ...parsed,
+            detectedFields: parsed.fields.length > 0 ? parsed.fields : extractTemplateFieldCandidates(buffer),
         };
     });
 

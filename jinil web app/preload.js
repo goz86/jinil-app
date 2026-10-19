@@ -19,5 +19,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     pickBarTenderTemplate: () => ipcRenderer.invoke('bartender-pick-template'),
     pickBarTenderExcel: () => ipcRenderer.invoke('bartender-pick-excel'),
     printWithBarTender: (payload) => ipcRenderer.invoke('bartender-print', payload),
+    getPrinters: () => ipcRenderer.invoke('get-printers'),
+    parseBtwBuffer: (data) => ipcRenderer.invoke('bartender-parse-btw', data),
     openExternal: (url) => ipcRenderer.invoke('open-external', url),
 });
