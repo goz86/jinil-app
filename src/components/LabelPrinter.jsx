@@ -1362,13 +1362,45 @@ export default function LabelPrinter({ user }) {
     <title>진일 라벨 인쇄 - ${printerName || 'TSC TTP-345'}</title>
     <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
     <style>
-        @page { size: ${pw}mm ${ph}mm; margin: 0; }
+        @page {
+            size: ${pw}mm ${ph}mm;
+            margin: 0;
+        }
         @media print {
-            html, body { margin: 0; padding: 0; width: ${pw}mm; height: ${ph}mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .label-page { page-break-after: always; break-after: page; }
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                width: ${pw}mm !important;
+                height: auto !important;
+                min-height: 100% !important;
+                overflow: visible !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .label-page {
+                page-break-after: always !important;
+                break-after: page !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                width: ${pw}mm !important;
+                height: ${ph}mm !important;
+                display: block !important;
+            }
+            .label-page:last-child {
+                page-break-after: auto !important;
+                break-after: auto !important;
+            }
         }
         * { box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; font-family: 'Nanum Gothic', 'Malgun Gothic', sans-serif; overflow: hidden; background: #fff; }
+        html, body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Nanum Gothic', 'Malgun Gothic', sans-serif;
+            background: #fff;
+            width: 100%;
+            height: auto;
+            overflow: visible;
+        }
         .label-page {
             width: ${pw}mm;
             height: ${ph}mm;
@@ -1376,6 +1408,11 @@ export default function LabelPrinter({ user }) {
             overflow: hidden;
             margin: 0;
             padding: 0;
+            page-break-after: always;
+            break-after: page;
+            page-break-inside: avoid;
+            break-inside: avoid;
+            display: block;
         }
         .label-inner {
             position: absolute;
@@ -1393,10 +1430,13 @@ export default function LabelPrinter({ user }) {
         window.onload = function() {
             document.fonts.ready.then(function() {
                 setTimeout(function() {
+                    window.focus();
                     window.print();
-                    setTimeout(function() { window.close(); }, 500);
-                }, 400);
+                }, 300);
             });
+        };
+        window.onafterprint = function() {
+            setTimeout(function() { window.close(); }, 500);
         };
     </script>
 </body>
@@ -1473,13 +1513,45 @@ export default function LabelPrinter({ user }) {
     <title>진일 라벨 인쇄</title>
     <link href="https://fonts.googleapis.com/css2?family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
     <style>
-        @page { size: ${pw}mm ${ph}mm; margin: 0; }
+        @page {
+            size: ${pw}mm ${ph}mm;
+            margin: 0;
+        }
         @media print {
-            html, body { margin: 0; padding: 0; width: ${pw}mm; height: ${ph}mm; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .label-page { page-break-after: always; break-after: page; }
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                width: ${pw}mm !important;
+                height: auto !important;
+                min-height: 100% !important;
+                overflow: visible !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .label-page {
+                page-break-after: always !important;
+                break-after: page !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                width: ${pw}mm !important;
+                height: ${ph}mm !important;
+                display: block !important;
+            }
+            .label-page:last-child {
+                page-break-after: auto !important;
+                break-after: auto !important;
+            }
         }
         * { box-sizing: border-box; }
-        html, body { margin: 0; padding: 0; font-family: 'Nanum Gothic', 'Malgun Gothic', sans-serif; overflow: hidden; background: #fff; }
+        html, body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Nanum Gothic', 'Malgun Gothic', sans-serif;
+            background: #fff;
+            width: 100%;
+            height: auto;
+            overflow: visible;
+        }
         .label-page {
             width: ${pw}mm;
             height: ${ph}mm;
@@ -1487,6 +1559,11 @@ export default function LabelPrinter({ user }) {
             overflow: hidden;
             margin: 0;
             padding: 0;
+            page-break-after: always;
+            break-after: page;
+            page-break-inside: avoid;
+            break-inside: avoid;
+            display: block;
         }
         .label-inner {
             position: absolute;
@@ -1504,10 +1581,13 @@ export default function LabelPrinter({ user }) {
         window.onload = function() {
             document.fonts.ready.then(function() {
                 setTimeout(function() {
+                    window.focus();
                     window.print();
-                    setTimeout(function() { window.close(); }, 500);
-                }, 400);
+                }, 300);
             });
+        };
+        window.onafterprint = function() {
+            setTimeout(function() { window.close(); }, 500);
         };
     </script>
 </body>
