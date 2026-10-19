@@ -1314,6 +1314,11 @@ export default function LabelPrinter({ user }) {
                     if (!val) return;
 
                     const st = fieldStyles[k] || DEFAULT_FIELD_STYLES.productName;
+
+                    // Apply custom unit badge (prefix / suffix) for non-barcode fields
+                    if (st.fontFamily !== 'Barcode') {
+                        val = formatFieldValue(val, k);
+                    }
                     const baseFfs = fs + (st.sizeOffset || 0);
                     const safeMarginMm = 2.2;
                     let availMm = pw - (safeMarginMm * 2);
@@ -1414,15 +1419,18 @@ export default function LabelPrinter({ user }) {
                 let fields = '';
                 fieldOrder.forEach(key => {
                     let val = item[key];
-                    if (key === 'price' && showPriceUnit && val) val += ' 원';
-                    if (key === 'extra1' && showExtra1Prefix && val) val = 'NO.' + val;
-                    if (key === 'extra2' && showExtra2Prefix && val) val = '수량:' + val;
+                    if (!val && key === 'productCode') val = item.code || '';
                     if (!val) return;
+
+                    const st = fieldStyles[key] || DEFAULT_FIELD_STYLES.productName;
+
+                    // Apply custom unit badge (prefix / suffix) for non-barcode fields
+                    if (st.fontFamily !== 'Barcode') {
+                        val = formatFieldValue(val, key);
+                    }
 
                     const pos = fieldPositions[key];
                     if (!pos || pos.hidden) return;
-
-                    const st = fieldStyles[key] || DEFAULT_FIELD_STYLES.productName;
                     const baseFfs = fs + (st.sizeOffset || 0);
 
                     // Dynamic Auto-Shrink: Calculate available width based on position & alignment
