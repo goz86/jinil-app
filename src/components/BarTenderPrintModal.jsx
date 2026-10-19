@@ -111,6 +111,9 @@ export default function BarTenderPrintModal({
             return;
         }
 
+        // Close modal immediately on print
+        onClose();
+
         setIsPrinting(true);
         try {
             await onPrintExecute({
@@ -121,9 +124,6 @@ export default function BarTenderPrintModal({
                 isTestPrint: isTest,
                 totalCount: isTest ? 1 : totalLabelCount,
             });
-            if (!isTest) {
-                onClose();
-            }
         } catch (err) {
             console.error('Print failed:', err);
             Swal.fire({ icon: 'error', title: '인쇄 중 오류 발생', text: err.message });

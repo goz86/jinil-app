@@ -1294,6 +1294,7 @@ export default function LabelPrinter({ user }) {
 
     /* ── Execute Print via Modal ── */
     const handleExecutePrint = async ({ printerName, printScope, targetItems, copies: printCopies, isTestPrint }) => {
+        setIsPrintModalOpen(false); // Close print modal immediately
         const pw = getPrintWidth(), ph = getPrintHeight(), fs = calculateFontSize(getWidth(), getHeight());
         
         let html = '';
