@@ -4,6 +4,7 @@ import DeliveryWidget from './DeliveryWidget';
 import InvoiceWidget from './InvoiceWidget';
 import InvoiceModal from './InvoiceModal';
 import InTransitShipmentModal from './InTransitShipmentModal';
+import RecentShipmentsModal from './RecentShipmentsModal';
 import NotesModal from './NotesModal';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
@@ -12,6 +13,7 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
     const { t } = useLanguage();
     const [activeTab, setActiveTab] = useState('market'); // Only for market and delivery inline
     const [isInTransitModalOpen, setIsInTransitModalOpen] = useState(false);
+    const [isRecentShipmentsOpen, setIsRecentShipmentsOpen] = useState(false);
     const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
     const [isNotesModalOpen, setIsNotesModalOpen] = useState(false);
     const [liveActiveCount, setLiveActiveCount] = useState(null);
@@ -207,6 +209,7 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
                         selectedDate={selectedDate}
                         deliveries={deliveries}
                         onOpenInTransitModal={() => setIsInTransitModalOpen(true)}
+                        onOpenRecentShipments={() => setIsRecentShipmentsOpen(true)}
                     />
                 )}
             </div>
@@ -216,6 +219,13 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
                 isOpen={isInTransitModalOpen}
                 onClose={() => setIsInTransitModalOpen(false)}
                 onRefreshCount={(count) => setLiveActiveCount(count)}
+                onOpenRecentShipments={() => setIsRecentShipmentsOpen(true)}
+            />
+
+            {/* Recent Shipments / Shipment History Popup Modal */}
+            <RecentShipmentsModal
+                isOpen={isRecentShipmentsOpen}
+                onClose={() => setIsRecentShipmentsOpen(false)}
             />
 
             {/* Invoice Statement Generator Popup Modal */}

@@ -383,8 +383,14 @@ export default function InventoryManagement({ user }) {
 
             {/* Form Modal */}
             {showForm && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg overflow-y-auto max-h-[90vh] p-6 border border-gray-100 dark:border-gray-700">
+                <div 
+                    className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200 cursor-pointer"
+                    onClick={() => setShowForm(false)}
+                >
+                    <div 
+                        className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl w-full max-w-lg overflow-y-auto max-h-[90vh] p-6 border border-gray-100 dark:border-gray-700 cursor-default"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <h2 className="text-xl font-bold mb-6 text-gray-800 dark:text-white">{editingId ? t('edit') : t('addNew')}</h2>
                         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                             <InputField label={t('category')} value={formData.category} onChange={v => setFormData({ ...formData, category: v })} required />

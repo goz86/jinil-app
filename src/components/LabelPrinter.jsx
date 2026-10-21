@@ -2382,8 +2382,14 @@ export default function LabelPrinter({ user }) {
 
             {/* ═══ Inventory Modal ═══ */}
                 {showInventoryPicker && (
-                    <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4">
-                        <div className="bg-white rounded-2xl w-[400px] max-h-[500px] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
+                    <div 
+                        className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 cursor-pointer"
+                        onClick={() => setShowInventoryPicker(false)}
+                    >
+                        <div 
+                            className="bg-white rounded-2xl w-[400px] max-h-[500px] flex flex-col shadow-2xl border border-slate-200 overflow-hidden cursor-default"
+                            onClick={(e) => e.stopPropagation()}
+                        >
                             <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                                 <h3 className="text-lg font-bold text-slate-800">재고 데이터 가져오기</h3>
                                 <button onClick={() => setShowInventoryPicker(false)} className="text-slate-400 hover:text-slate-600 font-bold text-lg cursor-pointer">✕</button>
@@ -2411,8 +2417,14 @@ export default function LabelPrinter({ user }) {
                 )}
             {/* ═══ Excel Quick Paste Modal Fallback ═══ */}
             {showPasteModal && (
-                <div className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in">
-                    <div className="bg-white rounded-2xl w-[520px] max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden">
+                <div 
+                    className="fixed inset-0 bg-black/40 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in cursor-pointer"
+                    onClick={() => setShowPasteModal(false)}
+                >
+                    <div 
+                        className="bg-white rounded-2xl w-[520px] max-h-[90vh] flex flex-col shadow-2xl border border-slate-200 overflow-hidden cursor-default"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/70">
                             <div className="flex items-center gap-2.5">
                                 <div className="p-2 bg-indigo-600 rounded-xl text-white shadow-sm">

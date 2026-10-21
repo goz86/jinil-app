@@ -45,8 +45,14 @@ export default function SystemAnnouncementModal({ isOpen, announcement, onClose 
   };
 
   return (
-    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-100 dark:border-slate-800 p-6 flex flex-col gap-5 text-gray-800 dark:text-slate-100">
+    <div 
+      className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 animate-in fade-in duration-200 cursor-pointer"
+      onClick={handleClose}
+    >
+      <div 
+        className="bg-white dark:bg-slate-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-100 dark:border-slate-800 p-6 flex flex-col gap-5 text-gray-800 dark:text-slate-100 cursor-default"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex justify-between items-start border-b border-gray-100 dark:border-slate-800 pb-3">
           <div className="flex items-center gap-3">

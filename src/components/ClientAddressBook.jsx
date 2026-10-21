@@ -332,8 +332,14 @@ export default function ClientAddressBook({ user }) {
 
             {/* Form Modal */}
             {showForm && (
-                <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden p-6 border border-gray-100 dark:border-slate-700">
+                <div 
+                    className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-in fade-in duration-200 cursor-pointer"
+                    onClick={() => setShowForm(false)}
+                >
+                    <div 
+                        className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl w-full max-w-lg overflow-hidden p-6 border border-gray-100 dark:border-slate-700 cursor-default"
+                        onClick={(e) => e.stopPropagation()}
+                    >
                         <h2 className="text-xl font-bold mb-6 text-gray-800 dark:text-slate-100">{editingId ? t('edit') : t('addNew')}</h2>
                         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
                             <InputField label={t('companyName')} value={formData.name} onChange={v => setFormData({ ...formData, name: v })} required />

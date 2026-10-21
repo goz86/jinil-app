@@ -86,8 +86,14 @@ export default function InvoiceModal({ isOpen, onClose }) {
     if (!isOpen) return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-md transition-all duration-300 p-2 sm:p-4">
-            <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl w-[98%] max-w-7xl h-[94vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-300 border border-gray-100 dark:border-slate-700/80">
+        <div 
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-md transition-all duration-300 p-2 sm:p-4 cursor-pointer"
+            onClick={onClose}
+        >
+            <div 
+                className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl w-[98%] max-w-7xl h-[94vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-300 border border-gray-100 dark:border-slate-700/80 cursor-default"
+                onClick={(e) => e.stopPropagation()}
+            >
                 {/* Modal Header */}
                 <div className="px-6 py-4 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-900/80">
                     <div className="flex items-center gap-3">

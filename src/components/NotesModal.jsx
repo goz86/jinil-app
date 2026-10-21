@@ -2540,8 +2540,14 @@ export default function NotesModal({ isOpen, onClose, user }) {
     const currentColorPreset = COLOR_PRESETS.find(c => c.id === color) || COLOR_PRESETS[0];
 
     return createPortal(
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-md transition-all duration-300 p-2 sm:p-4 md:p-6 font-['Pretendard',_'Noto_Sans_KR',_'Apple_SD_Gothic_Neo',_'Malgun_Gothic',_sans-serif]">
-            <div className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl w-full max-w-7xl h-[92vh] flex flex-col overflow-hidden border border-gray-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200">
+        <div 
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/60 backdrop-blur-md transition-all duration-300 p-2 sm:p-4 md:p-6 font-['Pretendard',_'Noto_Sans_KR',_'Apple_SD_Gothic_Neo',_'Malgun_Gothic',_sans-serif] cursor-pointer"
+            onClick={onClose}
+        >
+            <div 
+                className="bg-white dark:bg-slate-900 rounded-[2rem] shadow-2xl w-full max-w-7xl h-[92vh] flex flex-col overflow-hidden border border-gray-200 dark:border-slate-800 animate-in fade-in zoom-in-95 duration-200 cursor-default"
+                onClick={(e) => e.stopPropagation()}
+            >
                 
                 {/* Top Header Bar */}
                 <div className="px-7 py-4 border-b border-gray-100 dark:border-slate-800/80 flex items-center justify-between bg-gray-50/50 dark:bg-slate-900/60">

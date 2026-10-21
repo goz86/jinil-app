@@ -8,7 +8,7 @@ import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { DeliveryStatusBadge } from '../lib/deliveryStatus';
 
-export default function DeliveryWidget({ selectedDate, deliveries = [], onOpenInTransitModal }) {
+export default function DeliveryWidget({ selectedDate, deliveries = [], onOpenInTransitModal, onOpenRecentShipments }) {
     const { lang, t } = useLanguage();
     const [loading, setLoading] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
@@ -352,9 +352,21 @@ export default function DeliveryWidget({ selectedDate, deliveries = [], onOpenIn
                         type="button"
                         onClick={onOpenInTransitModal}
                         className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all duration-200
-                            bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shadow-sm active:scale-95 whitespace-nowrap"
+                            bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 shadow-sm active:scale-95 whitespace-nowrap cursor-pointer"
+                        title="배송 중인 운송장 내역 조회"
                     >
                         배송 중인 운송장 내역
+                    </button>
+                )}
+                {onOpenRecentShipments && (
+                    <button
+                        type="button"
+                        onClick={onOpenRecentShipments}
+                        className="flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-xs font-bold transition-all duration-200
+                            bg-blue-50 hover:bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border border-blue-200 dark:border-blue-800 shadow-sm active:scale-95 whitespace-nowrap cursor-pointer"
+                        title="최근 저장된 운송장 (출고 이력) 조회"
+                    >
+                        최근 저장된 운송장
                     </button>
                 )}
                 {filteredDeliveries.length > 0 && (
