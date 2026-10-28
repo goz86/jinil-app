@@ -128,7 +128,7 @@
     }
 
     h2.card-title {
-      font-size: 15px;
+      font-size: 17px;
       font-weight: 700;
       color: var(--slate-900);
       display: flex;
@@ -137,7 +137,7 @@
     }
 
     span.subtitle-hint {
-      font-size: 11px;
+      font-size: 12.5px;
       color: var(--slate-400);
       font-weight: 400;
     }
@@ -160,7 +160,7 @@
     }
 
     label {
-      font-size: 12px;
+      font-size: 13.5px;
       font-weight: 600;
       color: var(--slate-600);
     }
@@ -170,10 +170,10 @@
     input[type="number"],
     textarea {
       width: 100%;
-      padding: 8px 12px;
+      padding: 9px 12px;
       border: 1px solid var(--slate-200);
       border-radius: 8px;
-      font-size: 13px;
+      font-size: 14.5px;
       color: var(--slate-900);
       outline: none;
       transition: all 0.2s ease;
@@ -197,8 +197,8 @@
       align-items: center;
       justify-content: center;
       gap: 6px;
-      padding: 6px 12px;
-      font-size: 12px;
+      padding: 7px 14px;
+      font-size: 13.5px;
       font-weight: 600;
       border-radius: 8px;
       border: 1px solid var(--slate-200);
@@ -207,7 +207,7 @@
       cursor: pointer;
       transition: all 0.2s ease;
       user-select: none;
-      height: 32px;
+      height: 36px;
     }
 
     .btn:hover {
@@ -245,7 +245,7 @@
     table.item-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 13px;
+      font-size: 14px;
     }
 
     table.item-table th {
@@ -253,9 +253,10 @@
       top: 0;
       z-index: 10;
       background: #ffffff;
-      color: var(--slate-600);
-      font-weight: 600;
-      padding: 10px 8px;
+      color: var(--slate-700);
+      font-weight: 700;
+      font-size: 14px;
+      padding: 11px 8px;
       text-align: center;
       border-bottom: 1px solid var(--slate-200);
       box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
@@ -268,8 +269,8 @@
 
     /* Tối ưu hóa padding và ô nhập trong bảng nhập liệu, chống co chữ / mất số */
     table.item-table td input {
-      padding: 6px 8px;
-      font-size: 13px;
+      padding: 7px 9px;
+      font-size: 14px;
       box-sizing: border-box;
     }
 
@@ -282,18 +283,18 @@
     table.item-table td input[type="number"] {
       -moz-appearance: textfield;
       appearance: textfield;
-      padding: 6px 8px;
+      padding: 7px 9px;
     }
 
     /* Input 날짜 có icon lịch và định dạng chuẩn */
     table.item-table td input[type="date"] {
       text-align: center;
-      padding: 6px 6px;
-      font-size: 13px;
+      padding: 7px 6px;
+      font-size: 13.5px;
       font-family: inherit;
       color: var(--slate-800);
       cursor: pointer;
-      min-width: 120px;
+      min-width: 128px;
       box-sizing: border-box;
     }
 
@@ -343,8 +344,8 @@
       display: inline-flex;
       align-items: center;
       gap: 3px;
-      padding: 3px 10px;
-      font-size: 11.5px;
+      padding: 4px 12px;
+      font-size: 13px;
       font-weight: 600;
       color: #334155;
       background: #ffffff;
@@ -372,8 +373,8 @@
     .btn-add-tag {
       display: inline-flex;
       align-items: center;
-      padding: 2.5px 8px;
-      font-size: 11px;
+      padding: 3px 10px;
+      font-size: 12.5px;
       font-weight: 600;
       color: #2563eb;
       background: #eff6ff;
@@ -388,23 +389,32 @@
       transform: scale(1.05);
     }
 
-    /* Floating Autocomplete Dropdown for Table Inputs */
+    /* Floating Autocomplete Dropdown for Table Inputs (Modern Glass & Shadow) */
     .table-suggest-popover {
       position: absolute;
       z-index: 99999;
       background: #ffffff;
-      border: 1.5px solid #2563eb;
-      border-radius: 10px;
-      box-shadow: 0 10px 25px -5px rgba(15, 23, 42, 0.2), 0 8px 10px -6px rgba(15, 23, 42, 0.1);
-      max-height: 250px;
+      border: 1px solid #bfdbfe;
+      border-radius: 14px;
+      box-shadow: 0 16px 36px -4px rgba(15, 23, 42, 0.16), 0 6px 16px -2px rgba(15, 23, 42, 0.08);
+      max-height: 270px;
       overflow-y: auto;
-      min-width: 190px;
+      min-width: 220px;
       font-size: 13px;
-      animation: fadeInPop 0.12s ease-out;
+      animation: fadeInPop 0.14s cubic-bezier(0.16, 1, 0.3, 1);
+      padding: 6px;
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 transparent;
     }
-    @keyframes fadeInPop {
-      from { opacity: 0; transform: translateY(-4px); }
-      to { opacity: 1; transform: translateY(0); }
+    .table-suggest-popover::-webkit-scrollbar {
+      width: 5px;
+    }
+    .table-suggest-popover::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .table-suggest-popover::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
     }
     .table-suggest-item {
       padding: 8px 12px;
@@ -412,55 +422,207 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      border-bottom: 1px solid #f1f5f9;
+      border-radius: 8px;
       color: #1e293b;
       font-weight: 500;
-      transition: background 0.1s ease;
+      transition: all 0.12s ease;
+      margin-bottom: 2px;
     }
     .table-suggest-item:last-child {
-      border-bottom: none;
+      margin-bottom: 0;
     }
     .table-suggest-item.highlighted,
     .table-suggest-item:hover {
       background: #eff6ff;
       color: #1d4ed8;
       font-weight: 600;
+      padding-left: 14px;
     }
     .table-suggest-item .match-text {
-      color: #2563eb;
+      color: #1d4ed8;
       font-weight: 700;
-      text-decoration: underline;
+      background: #dbeafe;
+      padding: 1px 5px;
+      border-radius: 4px;
+      text-decoration: none;
     }
     .table-suggest-item .item-del-btn {
-      opacity: 0;
+      width: 22px;
+      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      line-height: 1;
       color: #94a3b8;
-      font-size: 14px;
-      padding: 1px 6px;
-      border-radius: 4px;
-      transition: opacity 0.15s, color 0.15s;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      opacity: 0.65;
+      flex-shrink: 0;
+      margin-left: 8px;
     }
     .table-suggest-item:hover .item-del-btn {
       opacity: 1;
+      color: #64748b;
     }
     .table-suggest-item .item-del-btn:hover {
-      color: #ef4444;
-      background: #fee2e2;
+      color: #dc2626 !important;
+      background: #fee2e2 !important;
+      transform: scale(1.18);
     }
     .table-suggest-add-row {
-      padding: 8px 12px;
-      background: #f8fafc;
-      color: #2563eb;
-      font-weight: 600;
+      padding: 9px 12px;
+      background: #f0fdf4;
+      color: #15803d;
+      font-weight: 700;
       cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 6px;
-      border-top: 1px dashed #cbd5e1;
-      font-size: 12px;
+      gap: 8px;
+      border-radius: 8px;
+      border-top: 1px dashed #86efac;
+      font-size: 12.5px;
+      margin-top: 4px;
+      transition: all 0.15s ease;
     }
     .table-suggest-add-row:hover {
+      background: #dcfce7;
+      color: #166534;
+      transform: translateX(2px);
+    }
+    .table-suggest-tip {
+      font-size: 10.5px;
+      color: #94a3b8;
+      padding: 6px 8px 2px 8px;
+      display: flex;
+      justify-content: space-between;
+      border-top: 1px solid #f1f5f9;
+      margin-top: 4px;
+      font-weight: 500;
+    }
+
+    /* Interactive Confirmation Modal Styling */
+    .confirm-modal-card {
+      background: #ffffff;
+      width: 100%;
+      max-width: 390px;
+      border-radius: 20px;
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.35), 0 10px 20px -5px rgba(15, 23, 42, 0.1);
+      padding: 26px 24px 22px 24px;
+      text-align: center;
+      animation: fadeInPop 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .confirm-modal-icon {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: #fef2f2;
+      color: #ef4444;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      margin-bottom: 14px;
+      box-shadow: 0 0 0 8px #fef2f2;
+    }
+    .confirm-modal-icon.info {
       background: #eff6ff;
-      color: #1d4ed8;
+      color: #2563eb;
+      box-shadow: 0 0 0 8px #eff6ff;
+    }
+    .confirm-modal-title {
+      font-size: 17px;
+      font-weight: 800;
+      color: var(--slate-900);
+      margin: 0 0 8px 0;
+    }
+    .confirm-modal-msg {
+      font-size: 13.5px;
+      color: var(--slate-600);
+      margin: 0 0 22px 0;
+      line-height: 1.55;
+      white-space: pre-line;
+    }
+    .confirm-modal-actions {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+    }
+    .btn-confirm-cancel {
+      flex: 1;
+      height: 42px;
+      border-radius: 10px;
+      border: 1px solid var(--slate-200);
+      background: #ffffff;
+      color: var(--slate-700);
+      font-weight: 700;
+      font-size: 13.5px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+    .btn-confirm-cancel:hover {
+      background: var(--slate-100);
+    }
+    .btn-confirm-ok {
+      flex: 1;
+      height: 42px;
+      border-radius: 10px;
+      border: none;
+      background: #ef4444;
+      color: #ffffff;
+      font-weight: 700;
+      font-size: 13.5px;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+      transition: all 0.15s ease;
+    }
+    .btn-confirm-ok:hover {
+      background: #dc2626;
+      transform: translateY(-1px);
+    }
+    .btn-confirm-ok.primary {
+      background: #2563eb;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+    }
+    .btn-confirm-ok.primary:hover {
+      background: #1d4ed8;
+    }
+
+    /* Custom Word Chips Styling */
+    .custom-word-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 12.5px;
+      font-weight: 600;
+      border: 1px solid #cbd5e1;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+      transition: all 0.15s ease;
+    }
+    .custom-word-chip .chip-del-btn {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: none;
+      background: transparent;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      color: #94a3b8;
+      cursor: pointer;
+      transition: all 0.12s ease;
+    }
+    .custom-word-chip .chip-del-btn:hover {
+      color: #ffffff;
+      background: #ef4444;
     }
 
     /* ─── PIN Security Lock Modal: Apple iOS Spring Dissolve (Ultra Smooth 120fps) ─── */
@@ -700,52 +862,62 @@
       box-shadow: 0 4px 12px rgba(37, 99, 235, 0.08) !important;
     }
 
-    /* Client Address Book Autocomplete Dropdown */
+    /* Client Address Book Autocomplete Dropdown (Modern Floating Card) */
     .autocomplete-dropdown {
       position: absolute;
-      top: 100%;
+      top: calc(100% + 4px);
       left: 0;
       right: 0;
       z-index: 1000;
       background: #ffffff;
-      border: 1.5px solid var(--accent-blue);
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(37, 99, 235, 0.18);
-      max-height: 240px;
+      border: 1px solid #bfdbfe;
+      border-radius: 14px;
+      box-shadow: 0 16px 36px -4px rgba(15, 23, 42, 0.16), 0 6px 16px -2px rgba(15, 23, 42, 0.08);
+      max-height: 260px;
       overflow-y: auto;
-      margin-top: 4px;
+      padding: 6px;
+      animation: fadeInPop 0.14s cubic-bezier(0.16, 1, 0.3, 1);
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 transparent;
     }
-
+    .autocomplete-dropdown::-webkit-scrollbar {
+      width: 5px;
+    }
+    .autocomplete-dropdown::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    .autocomplete-dropdown::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
     .autocomplete-item {
       padding: 10px 14px;
       cursor: pointer;
-      border-bottom: 1px solid var(--slate-100);
-      transition: all 0.15s ease;
+      border-radius: 10px;
+      transition: all 0.12s ease;
       display: flex;
       flex-direction: column;
-      gap: 2px;
+      gap: 3px;
+      margin-bottom: 2px;
     }
-
     .autocomplete-item:last-child {
-      border-bottom: none;
+      margin-bottom: 0;
     }
-
     .autocomplete-item:hover {
       background: #eff6ff;
+      padding-left: 18px;
     }
-
     .autocomplete-item .comp-title {
       font-weight: 700;
       font-size: 13.5px;
-      color: var(--accent-blue);
+      color: #1d4ed8;
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
-
     .autocomplete-item .comp-info {
       font-size: 11.5px;
-      color: var(--slate-600);
+      color: #64748b;
     }
 
     /* Summary Row */
@@ -773,19 +945,19 @@
     }
 
     .total-line {
-      font-size: 14px;
+      font-size: 16px;
       font-weight: 700;
       color: var(--accent-blue);
     }
 
     .tax-line {
-      font-size: 12px;
+      font-size: 14px;
       font-weight: 600;
       color: var(--slate-600);
     }
 
     .grand-total-line {
-      font-size: 18px;
+      font-size: 20px;
       font-weight: 800;
       color: #dc2626;
       border-top: 1px solid var(--slate-200);
@@ -797,8 +969,8 @@
     .tax-checkbox-label {
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: 12px;
+      gap: 8px;
+      font-size: 13.5px;
       color: var(--slate-600);
       cursor: pointer;
       margin-top: 4px;
@@ -817,20 +989,168 @@
 
     header.preview-toolbar {
       display: flex;
+      flex-direction: column;
+      width: 100%;
+      margin-bottom: 16px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid var(--slate-200);
+      gap: 12px;
+    }
+
+    /* Tier 1: Top Bar (Tiêu đề + Chọn mẫu 서식) */
+    .preview-top-bar {
+      display: flex;
       justify-content: space-between;
       align-items: center;
       width: 100%;
-      margin-bottom: 16px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid var(--slate-200);
       flex-wrap: wrap;
       gap: 12px;
     }
 
-    .toolbar-actions {
+    .preview-title-wrap {
       display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .preview-badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 2.5px 9px;
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 9999px;
+      font-size: 11.5px;
+      font-weight: 600;
+      color: #2563eb;
+      letter-spacing: -0.2px;
+    }
+
+    /* Template Switcher Buttons (Mac/iOS segmented pill style) */
+    .template-switch-pill {
+      display: inline-flex;
+      align-items: center;
+      background: #f1f5f9;
+      border: 1px solid #cbd5e1;
+      padding: 3px;
+      border-radius: 10px;
+      gap: 3px;
+      box-shadow: inset 0 1px 2px rgba(0,0,0,0.04);
+    }
+    .btn-tpl {
+      border: none;
+      background: transparent;
+      color: #64748b;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      line-height: 1.2;
+      user-select: none;
+    }
+    .btn-tpl:hover {
+      color: #0f172a;
+      background: rgba(255, 255, 255, 0.5);
+    }
+    .btn-tpl.active {
+      background: #ffffff;
+      color: #0f172a;
+      font-weight: 700;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+    }
+    .tpl-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .tpl-dot.dot-green {
+      background: #16a34a;
+      box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2);
+    }
+    .tpl-dot.dot-blue {
+      background: #2563eb;
+      box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
+    }
+
+    /* Tier 2: Bottom Command Bar (3 nhóm chức năng rõ ràng) */
+    .toolbar-command-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      flex-wrap: wrap;
+      gap: 10px;
+      background: #f8fafc;
+      padding: 8px 12px;
+      border-radius: 12px;
+      border: 1px solid var(--slate-200);
+      box-sizing: border-box;
+    }
+
+    .toolbar-left-actions {
+      display: flex;
+      align-items: center;
       gap: 8px;
       flex-wrap: wrap;
+    }
+
+    .btn-group-cluster {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar-v-divider {
+      width: 1px;
+      height: 22px;
+      background: var(--slate-300);
+      margin: 0 4px;
+    }
+
+    /* Button specific styles in preview toolbar */
+    .toolbar-command-bar .btn {
+      height: 36px;
+      font-size: 13px;
+      padding: 6px 13px;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+
+    .btn-kakao:hover {
+      background: #f0fdf4;
+      border-color: #86efac;
+      color: #15803d;
+    }
+
+    .btn-excel {
+      color: #16a34a !important;
+      border-color: #bbf7d0 !important;
+      background: #f0fdf4 !important;
+    }
+    .btn-excel:hover {
+      background: #dcfce7 !important;
+      border-color: #86efac !important;
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: #ffffff;
+      border-color: #2563eb;
+      box-shadow: 0 1px 3px rgba(37, 99, 235, 0.2);
+    }
+    .btn-primary:hover {
+      background: #1d4ed8;
+      border-color: #1d4ed8;
+      box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+      transform: translateY(-1px);
     }
 
     /* Preview Outer Box - Tối ưu chống flexbox overflow clipping trên mobile */
@@ -1024,28 +1344,66 @@
         border-radius: 14px !important;
       }
       header.preview-toolbar {
+        gap: 10px !important;
+        margin-bottom: 12px !important;
+      }
+      .preview-top-bar {
         flex-direction: column !important;
         align-items: stretch !important;
-        gap: 10px !important;
+        gap: 8px !important;
       }
-      .toolbar-actions {
-        display: grid !important;
-        grid-template-columns: repeat(3, 1fr) !important;
+      .preview-title-wrap {
+        justify-content: space-between !important;
+      }
+      .template-switch-pill {
+        width: 100% !important;
+        display: flex !important;
+      }
+      .btn-tpl {
+        flex: 1 !important;
+        justify-content: center !important;
+        font-size: 12px !important;
+        padding: 6px 8px !important;
+      }
+      .toolbar-command-bar {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        padding: 8px !important;
+        gap: 8px !important;
+      }
+      .toolbar-left-actions {
+        flex-direction: column !important;
+        align-items: stretch !important;
         gap: 6px !important;
-        width: 100%;
+        width: 100% !important;
       }
-      .toolbar-actions .btn {
-        flex: 1;
-        height: 36px !important;
-        font-size: 11px !important;
-        padding: 4px 6px !important;
-        justify-content: center;
+      .toolbar-v-divider {
+        display: none !important;
       }
-      .toolbar-actions .btn-primary {
-        grid-column: span 3;
+      .btn-group-cluster {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 6px !important;
+        width: 100% !important;
+      }
+      .btn-group-cluster.export-group {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+        width: 100% !important;
+      }
+      .btn-group-cluster.export-group .btn-primary {
+        grid-column: span 2 !important;
         height: 40px !important;
         font-size: 13px !important;
         font-weight: 700;
+      }
+      .toolbar-command-bar .btn {
+        width: 100% !important;
+        justify-content: center !important;
+        font-size: 11.5px !important;
+        padding: 5px 6px !important;
+        height: 36px !important;
       }
 
       .preview-outer-box {
@@ -1164,7 +1522,11 @@
   <script src="lib/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="lib/xlsx.full.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script>
+    if (!window.XLSX) {
+      document.write('<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"><\/script>');
+    }
+  </script>
 </head>
 <body>
 
@@ -1293,7 +1655,7 @@
     <div id="tableSuggestPopover" class="table-suggest-popover" style="display: none;"></div>
 
     <!-- Quick Selection Bar (Không icon ⚡, hỗ trợ thêm từ mới) -->
-    <div class="quick-pills-bar" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 16px; background: #f8fafc; border-bottom: 1px solid var(--slate-200); font-size: 12px;">
+    <div class="quick-pills-bar" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 16px; background: #f8fafc; border-bottom: 1px solid var(--slate-200); font-size: 13.5px;">
       <div class="quick-pill-group" style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">
         <span style="font-weight: 700; color: #1e40af; margin-right: 2px;">품목명:</span>
         <div id="quickItemPills" style="display: inline-flex; flex-wrap: wrap; align-items: center; gap: 5px;"></div>
@@ -1313,13 +1675,13 @@
     <div class="table-container">
       <table class="item-table">
         <colgroup>
-          <col style="width: 135px;" />
+          <col style="width: 138px;" />
           <col />
+          <col style="width: 110px;" />
           <col style="width: 105px;" />
           <col style="width: 105px;" />
-          <col style="width: 100px;" />
-          <col style="width: 120px;" />
-          <col style="width: 105px;" />
+          <col style="width: 125px;" />
+          <col style="width: 110px;" />
           <col style="width: 45px;" />
         </colgroup>
         <thead>
@@ -1367,54 +1729,75 @@
   <!-- Row 3: A4 거래명세서 미리보기 (Single Preview Section) -->
   <section class="preview-card">
     <header class="preview-toolbar no-print">
-      <h2 class="card-title">
-        <!-- Lucide FileText Icon -->
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
-        <span>거래명세서 미리보기</span>
-      </h2>
+      <!-- Tier 1: Tiêu đề + Chuyển đổi mẫu 서식 (Top Bar) -->
+      <div class="preview-top-bar">
+        <div class="preview-title-wrap">
+          <h2 class="card-title" style="margin: 0;">
+            <!-- Lucide FileText Icon -->
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg>
+            <span>거래명세서 미리보기</span>
+          </h2>
+          <span class="preview-badge">A4 실시간 미리보기</span>
+        </div>
 
-      <div class="toolbar-actions">
-        <!-- Folder Button -->
-        <button id="btnSelectFolder" class="btn btn-folder" title="다운로드 저장 폴더 지정" onclick="selectSaveDirectory()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
-          <span id="lblFolderName">폴더 지정</span>
-        </button>
+        <!-- 서식 선택 템플릿 스위처 (iOS/Mac Segmented Pill Switcher) -->
+        <div class="template-switch-pill" role="tablist" aria-label="서식 양식 선택">
+          <button type="button" id="btnTplGreen" class="btn-tpl active" onclick="switchTemplate('green')" title="기본 서식 (진일 그린)" role="tab" aria-selected="true">
+            <span class="tpl-dot dot-green"></span>
+            <span>기본 서식 (그린)</span>
+          </button>
+          <button type="button" id="btnTplBlue" class="btn-tpl" onclick="switchTemplate('blue')" title="표준 거래명세표 (클래식 블루)" role="tab" aria-selected="false">
+            <span class="tpl-dot dot-blue"></span>
+            <span>표준 거래명세표 (블루)</span>
+          </button>
+        </div>
+      </div>
 
-        <!-- Print Button -->
-        <button class="btn" onclick="saveCurrentToHistory(); window.print()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
-          <span>인쇄</span>
-        </button>
+      <!-- Tier 2: Thanh công cụ thao tác chia 3 nhóm logic (Bottom Command Bar) -->
+      <div class="toolbar-command-bar">
+        <div class="toolbar-left-actions">
+          <!-- Nhóm 1: Quản lý & Cài đặt (Management) -->
+          <div class="btn-group-cluster" aria-label="관리">
+            <button id="btnSelectFolder" class="btn btn-folder" title="다운로드 저장 폴더 지정" onclick="selectSaveDirectory()">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+              <span id="lblFolderName">폴더 지정</span>
+            </button>
+            <button class="btn" onclick="openHistoryModal()" title="발행 내역 목록 보기">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              <span>발행 내역</span>
+            </button>
+          </div>
 
-        <!-- KakaoTalk Button -->
-        <button class="btn" onclick="copyKakaoSummary()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-          <span>카카오톡</span>
-        </button>
+          <div class="toolbar-v-divider" aria-hidden="true"></div>
 
-        <!-- Image Button -->
-        <button class="btn" onclick="exportImage()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-          <span>이미지</span>
-        </button>
+          <!-- Nhóm 2: Thao tác nhanh (Print & KakaoTalk) -->
+          <div class="btn-group-cluster" aria-label="인쇄 및 공유">
+            <button class="btn" onclick="saveCurrentToHistory(); window.print()" title="명세서 즉시 인쇄 (Ctrl+P)">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+              <span>인쇄</span>
+            </button>
+            <button class="btn btn-kakao" onclick="copyKakaoSummary()" title="카카오톡 거래 내역 요약 복사">
+              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+              <span>카카오톡</span>
+            </button>
+          </div>
+        </div>
 
-        <!-- Excel Button (Direct Download Current Invoice as .xlsx) -->
-        <button class="btn" onclick="exportCurrentToExcel()" title="현재 거래명세서를 엑셀(.xlsx) 파일로 저장" style="color: #16a34a; border-color: #bbf7d0; background: #f0fdf4;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          <span>엑셀</span>
-        </button>
-
-        <!-- History Modal Button -->
-        <button class="btn" onclick="openHistoryModal()" title="발행 내역 목록">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-          <span>발행 내역</span>
-        </button>
-
-        <!-- PDF Button -->
-        <button class="btn btn-primary" onclick="exportPDF()">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg>
-          <span>PDF 저장</span>
-        </button>
+        <!-- Nhóm 3: Xuất dữ liệu (Export Formats) -->
+        <div class="btn-group-cluster export-group" aria-label="파일 내보내기">
+          <button class="btn" onclick="exportImage()" title="고화질 이미지(PNG)로 저장">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+            <span>이미지</span>
+          </button>
+          <button class="btn btn-excel" onclick="exportCurrentToExcel()" title="현재 거래명세서를 엑셀(.xlsx) 파일로 저장">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>엑셀</span>
+          </button>
+          <button class="btn btn-primary" onclick="exportPDF()" title="A4 인쇄용 PDF 파일로 저장">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><path d="M12 18v-6"/><path d="m9 15 3 3 3-3"/></svg>
+            <span>PDF 저장</span>
+          </button>
+        </div>
       </div>
     </header>
 
@@ -1564,6 +1947,19 @@
       <button type="button" class="btn" onclick="closeCustomWordModal()" style="height: 36px; padding: 0 16px; font-size: 13px; font-weight: 600;">닫기</button>
     </div>
 
+  </div>
+</div>
+
+<!-- Interactive Custom Confirm Modal -->
+<div id="confirmActionModalOverlay" class="no-print" style="display: none; position: fixed; inset: 0; z-index: 999999; background: rgba(15, 23, 42, 0.65); backdrop-filter: blur(8px); align-items: center; justify-content: center; padding: 16px;">
+  <div class="confirm-modal-card">
+    <div class="confirm-modal-icon" id="confirmModalIcon">⚠️</div>
+    <h3 class="confirm-modal-title" id="confirmModalTitle">확인</h3>
+    <p class="confirm-modal-msg" id="confirmModalMsg">정말 진행하시겠습니까?</p>
+    <div class="confirm-modal-actions">
+      <button type="button" class="btn-confirm-cancel" onclick="closeConfirmModal(false)">취소</button>
+      <button type="button" class="btn-confirm-ok" id="btnConfirmOk" onclick="closeConfirmModal(true)">확인</button>
+    </div>
   </div>
 </div>
 
@@ -2369,8 +2765,15 @@
   };
 
   async function restoreDefaultSupplier(showNotification = true) {
-    if (showNotification && !confirm('공급자 정보를 진일 라벨 기본 정보(주교동 19-1)로 복원하시겠습니까?')) {
-      return;
+    if (showNotification) {
+      const ok = await showConfirmModal({
+        title: '기본 공급자 정보 복원',
+        message: '공급자 정보를 진일 라벨 기본 정보(주교동 19-1)로 복원하시겠습니까?',
+        icon: '🔄',
+        confirmText: '복원',
+        isDanger: false
+      });
+      if (!ok) return;
     }
     localStorage.removeItem('jinil_custom_encrypted_profile');
     localStorage.setItem('jinil_supplier_info', JSON.stringify(DEFAULT_SUPPLIER_PROFILE));
@@ -2435,13 +2838,19 @@
   }
 
   // Xóa toàn bộ tất cả 품목
-  function removeAllItems() {
-    if (confirm('모든 품목을 삭제하시겠습니까?')) {
-      items = [{ date: getLocalTodayDate(), name: '', spec: '', qty: 1, price: 0, sub: 0, note: '' }];
-      renderItemTable();
-      renderStatement();
-      showToast('전체 품목이 삭제되었습니다.');
-    }
+  async function removeAllItems() {
+    const ok = await showConfirmModal({
+      title: '품목 전체 삭제',
+      message: '입력된 모든 품목을 삭제하시겠습니까?',
+      icon: '🗑️',
+      confirmText: '전체 삭제',
+      isDanger: true
+    });
+    if (!ok) return;
+    items = [{ date: getLocalTodayDate(), name: '', spec: '', qty: 1, price: 0, sub: 0, note: '' }];
+    renderItemTable();
+    renderStatement();
+    showToast('전체 품목이 삭제되었습니다.');
   }
 
   // Cập nhật thông tin 품목 (Cho phép sửa thủ công cả 금액 sub)
@@ -2496,7 +2905,7 @@
     if (saved) {
       try {
         const arr = JSON.parse(saved);
-        if (Array.isArray(arr) && arr.length > 0) return arr;
+        if (Array.isArray(arr)) return arr;
       } catch(e) {}
     }
     return [...DEFAULT_ITEM_NAMES];
@@ -2507,7 +2916,7 @@
     if (saved) {
       try {
         const arr = JSON.parse(saved);
-        if (Array.isArray(arr) && arr.length > 0) return arr;
+        if (Array.isArray(arr)) return arr;
       } catch(e) {}
     }
     return [...DEFAULT_SPEC_SIZES];
@@ -2537,10 +2946,10 @@
 
   let currentCustomModalType = 'name'; // 'name' hoặc 'spec'
 
-  function deleteCustomSuggestion(field, value, e, skipConfirm = false) {
+  function deleteCustomSuggestion(field, value, e, skipConfirm = true) {
     if (e) {
-      e.preventDefault();
-      e.stopPropagation();
+      if (typeof e.preventDefault === 'function') e.preventDefault();
+      if (typeof e.stopPropagation === 'function') e.stopPropagation();
     }
     if (!skipConfirm) {
       if (!confirm(`'${value}' 단어를 추천 목록에서 삭제하시겠습니까?`)) return;
@@ -2554,7 +2963,14 @@
       localStorage.setItem('jinil_custom_spec_sizes', JSON.stringify(current));
     }
     renderSuggestionPills();
-    hideTableSuggest();
+    renderCustomWordModalChips();
+
+    // Nếu dropdown popover đang mở và có ô input active, cập nhật lại popover ngay lập tức để người dùng thấy biến mất ngay
+    const pop = document.getElementById('tableSuggestPopover');
+    if (pop && pop.style.display !== 'none' && activeSuggestInput) {
+      showTableSuggest(activeSuggestInput, activeSuggestIndex, activeSuggestField);
+    }
+
     showToast(`'${value}' 단어가 추천 목록에서 삭제되었습니다.`);
   }
 
@@ -2632,9 +3048,9 @@
     const tagBorder = isName ? '#bfdbfe' : '#bbf7d0';
 
     chipsContainer.innerHTML = list.map(word => `
-      <span style="display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; background: ${tagBg}; color: ${tagColor}; border: 1px solid ${tagBorder}; border-radius: 9999px; font-size: 12px; font-weight: 600;">
+      <span class="custom-word-chip" style="background: ${tagBg}; color: ${tagColor}; border-color: ${tagBorder};">
         <span>${esc(word)}</span>
-        <button type="button" onclick="deleteCustomWordFromModal('${esc(word)}', event)" title="이 단어 삭제" style="border: none; background: transparent; color: #94a3b8; cursor: pointer; font-size: 14px; line-height: 1; padding: 0 2px; border-radius: 50%; font-weight: bold;">&times;</button>
+        <button type="button" class="chip-del-btn" onclick="deleteCustomWordFromModal('${esc(word)}', event)" title="이 단어 삭제">&times;</button>
       </span>
     `).join('');
   }
@@ -2775,13 +3191,17 @@
         const isSelected = mIdx === 0 ? 'highlighted' : '';
         return `
           <div class="table-suggest-item ${isSelected}" data-idx="${mIdx}" onmousedown="selectTableSuggestItem('${esc(m)}', event)">
-            <span>${highlightedText}</span>
-            <span class="item-del-btn" title="이 단어 삭제" onmousedown="deleteCustomSuggestion('${field}', '${esc(m)}', event)">×</span>
+            <span class="suggest-text-label">${highlightedText}</span>
+            <span class="item-del-btn" title="추천 목록에서 삭제"
+                  onmousedown="event.stopPropagation(); event.preventDefault();"
+                  onclick="event.stopPropagation(); event.preventDefault(); deleteCustomSuggestion('${field}', '${esc(m)}', event, true);">
+              &times;
+            </span>
           </div>
         `;
       }).join('');
     } else {
-      html += `<div style="padding: 10px 14px; color: #94a3b8; font-size: 12px; text-align: center;">일치하는 추천어가 없습니다</div>`;
+      html += `<div style="padding: 12px 14px; color: #94a3b8; font-size: 12px; text-align: center; font-weight: 500;">일치하는 추천어가 없습니다</div>`;
     }
 
     // Nếu người dùng nhập từ mới chưa có trong danh sách -> Hiển thị nút thêm từ mới
@@ -2795,13 +3215,21 @@
       `;
     }
 
+    // Gợi ý phím tắt dưới popover
+    html += `
+      <div class="table-suggest-tip">
+        <span>💡 Tab/Enter: 선택</span>
+        <span>×: 단어 삭제</span>
+      </div>
+    `;
+
     pop.innerHTML = html;
 
     // Định vị bảng popover ngay dưới ô input đang gõ
     const rect = inputEl.getBoundingClientRect();
     pop.style.top = (rect.bottom + window.scrollY + 2) + 'px';
     pop.style.left = (rect.left + window.scrollX) + 'px';
-    pop.style.width = Math.max(rect.width, 190) + 'px';
+    pop.style.width = Math.max(rect.width, 210) + 'px';
     pop.style.display = 'block';
   }
 
@@ -3260,8 +3688,289 @@
     return (Number(n) || 0).toLocaleString();
   }
 
+  // =========================================================================
+  // TEMPLATE ENGINE: GREEN (DEFAULT) & BLUE (CLASSIC TRADITIONAL FORM)
+  // =========================================================================
+  let currentTemplate = localStorage.getItem('jinil_invoice_template') || 'green';
+
+  function switchTemplate(templateKey) {
+    currentTemplate = templateKey;
+    localStorage.setItem('jinil_invoice_template', templateKey);
+    updateTemplateButtonUI();
+    renderStatement();
+    const tplName = templateKey === 'blue' ? '표준 거래명세표 (블루)' : '기본 서식 (그린)';
+    showToast(`'${tplName}' 서식이 적용되었습니다.`);
+  }
+
+  function updateTemplateButtonUI() {
+    const btnGreen = document.getElementById('btnTplGreen');
+    const btnBlue = document.getElementById('btnTplBlue');
+    if (btnGreen && btnBlue) {
+      if (currentTemplate === 'blue') {
+        btnGreen.classList.remove('active');
+        btnBlue.classList.add('active');
+      } else {
+        btnBlue.classList.remove('active');
+        btnGreen.classList.add('active');
+      }
+    }
+  }
+
+  // Trích xuất tháng và ngày (월 / 일) từ ngày của mặt hàng hoặc ngày hóa đơn
+  function parseItemMonthDay(itemDate, fallbackDate) {
+    const raw = String(itemDate || '').trim();
+    let m = raw.match(/\d{4}[^\d]?(\d{1,2})[^\d]?(\d{1,2})/);
+    if (m) {
+      return { m: String(parseInt(m[1], 10)), d: String(parseInt(m[2], 10)) };
+    }
+    m = raw.match(/^(\d{1,2})[\/\.-](\d{1,2})$/);
+    if (m) {
+      return { m: String(parseInt(m[1], 10)), d: String(parseInt(m[2], 10)) };
+    }
+    if (/^\d{1,2}$/.test(raw)) {
+      const fbMatch = String(fallbackDate || '').match(/\d{4}[^\d]?(\d{1,2})/);
+      const fbM = fbMatch ? String(parseInt(fbMatch[1], 10)) : String(new Date().getMonth() + 1);
+      return { m: fbM, d: String(parseInt(raw, 10)) };
+    }
+    const fb = String(fallbackDate || getLocalTodayDate()).trim();
+    m = fb.match(/\d{4}[^\d]?(\d{1,2})[^\d]?(\d{1,2})/);
+    if (m) {
+      return { m: String(parseInt(m[1], 10)), d: String(parseInt(m[2], 10)) };
+    }
+    const now = new Date();
+    return { m: String(now.getMonth() + 1), d: String(now.getDate()) };
+  }
+
+  // Tạo 일련번호 (Serial No.) tự động chuẩn B2B Hàn Quốc: YYYYMMDD-01, 02...
+  function getInvoiceSerialNo(invDate) {
+    const baseDate = invDate || getLocalTodayDate();
+    const dateMatch = (baseDate || '').match(/(\d{4})[^\d]?(\d{1,2})[^\d]?(\d{1,2})/);
+    const now = new Date();
+    const yStr = dateMatch ? dateMatch[1] : String(now.getFullYear());
+    const mStr = dateMatch ? String(parseInt(dateMatch[2], 10)).padStart(2, '0') : String(now.getMonth() + 1).padStart(2, '0');
+    const dStr = dateMatch ? String(parseInt(dateMatch[3], 10)).padStart(2, '0') : String(now.getDate()).padStart(2, '0');
+    const ymd = `${yStr}${mStr}${dStr}`;
+    try {
+      const history = (typeof getInvoiceHistory === 'function') ? getInvoiceHistory() : [];
+      const sameDayCount = history.filter(h => (h.date === invDate || (h.date && h.date.replace(/-/g, '') === ymd))).length;
+      const seq = String(sameDayCount + 1).padStart(2, '0');
+      return `${ymd}-${seq}`;
+    } catch (e) {
+      return `${ymd}-01`;
+    }
+  }
+
+  function renderBlueStatementHtml(data) {
+    const { toName, toRep, invDate, includeTax, note, supplier, items, subtotal, tax, grandTotal } = data;
+
+    const baseDate = invDate || getLocalTodayDate();
+    const dateMatch = (baseDate || '').match(/(\d{4})[^\d]?(\d{1,2})[^\d]?(\d{1,2})/);
+    const now = new Date();
+    const yStr = dateMatch ? dateMatch[1] : String(now.getFullYear());
+    const mStr = dateMatch ? String(parseInt(dateMatch[2], 10)) : String(now.getMonth() + 1);
+    const dStr = dateMatch ? String(parseInt(dateMatch[3], 10)) : String(now.getDate());
+    const dateSpaced = `${yStr} 년  ${mStr} 월  ${dStr} 일`;
+    const serialNo = getInvoiceSerialNo(invDate);
+
+    const itemRowsHtml = items.map((it) => {
+      const { m: itM, d: itD } = parseItemMonthDay(it.date, invDate);
+      const nameSpec = esc(it.name) + (it.spec ? ' / ' + esc(it.spec) : '');
+      const taxVal = includeTax ? (it.tax !== undefined ? Number(it.tax) : Math.round(it.sub * 0.1)) : 0;
+
+      return `
+        <tr style="height: 32px; font-size: 10pt;">
+          <td style="border: 1px solid #1b4b9b; text-align: center; padding: 2px;">${itM}</td>
+          <td style="border: 1px solid #1b4b9b; text-align: center; padding: 2px;">${itD}</td>
+          <td style="border: 1px solid #1b4b9b; text-align: left; padding: 3px 8px; font-size: 10.5pt; font-weight: 600;">${nameSpec}</td>
+          <td style="border: 1px solid #1b4b9b; text-align: center; padding: 2px;">${esc(it.unit || '')}</td>
+          <td style="border: 1px solid #1b4b9b; text-align: right; padding: 3px 8px; font-weight: 600;">${fmt(it.qty)}</td>
+          <td style="border: 1px solid #1b4b9b; text-align: right; padding: 3px 8px;">${fmt(it.price)}</td>
+          <td style="border: 1px solid #1b4b9b; text-align: right; padding: 3px 8px; font-weight: 700;">${fmt(it.sub)}</td>
+          <td style="border: 1px solid #1b4b9b; text-align: right; padding: 3px 8px;">${includeTax ? fmt(taxVal) : ''}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const remainderRow = `
+      <tr style="height: 28px; font-size: 9.5pt; color: #475569;">
+        <td style="border: 1px solid #1b4b9b; text-align: center;"></td>
+        <td style="border: 1px solid #1b4b9b; text-align: center;"></td>
+        <td style="border: 1px solid #1b4b9b; text-align: center; font-weight: 700; letter-spacing: 2px; color: #64748b;">*** 이  하  여  백 ***</td>
+        <td style="border: 1px solid #1b4b9b; text-align: center;"></td>
+        <td style="border: 1px solid #1b4b9b; text-align: center;"></td>
+        <td style="border: 1px solid #1b4b9b; text-align: center;"></td>
+        <td style="border: 1px solid #1b4b9b; text-align: center;"></td>
+        <td style="border: 1px solid #1b4b9b; text-align: center;"></td>
+      </tr>
+    `;
+
+    const minRows = 7;
+    let fillerRows = '';
+    const needed = minRows - items.length - 1;
+    for (let i = 0; i < Math.max(0, needed); i++) {
+      fillerRows += `
+        <tr style="height: 28px;">
+          <td style="border: 1px solid #1b4b9b;"></td>
+          <td style="border: 1px solid #1b4b9b;"></td>
+          <td style="border: 1px solid #1b4b9b;"></td>
+          <td style="border: 1px solid #1b4b9b;"></td>
+          <td style="border: 1px solid #1b4b9b;"></td>
+          <td style="border: 1px solid #1b4b9b;"></td>
+          <td style="border: 1px solid #1b4b9b;"></td>
+          <td style="border: 1px solid #1b4b9b;"></td>
+        </tr>
+      `;
+    }
+
+    return `
+      <div style="border: 2.5px solid #1b4b9b; width: 100%; background: #ffffff; color: #111111; font-family: 'Noto Sans KR', Arial, sans-serif; font-size: 10pt; box-sizing: border-box;">
+        
+        <!-- Top Header -->
+        <div style="display: flex; border-bottom: 2px solid #1b4b9b;">
+          <div style="flex: 1; display: flex; align-items: center; justify-content: center; padding: 12px 0 8px 0;">
+            <span style="font-size: 22pt; font-weight: 900; color: #1b4b9b; letter-spacing: 12px; margin-right: -12px;">거 래 명 세 표</span>
+            <span style="font-size: 11.5pt; font-weight: 700; color: #1b4b9b; margin-left: 14px;">(공급받는자보관용)</span>
+          </div>
+          
+          <div style="width: 210px; border-left: 2px solid #1b4b9b; display: flex; flex-direction: column;">
+            <div style="display: flex; height: 32px; border-bottom: 1px solid #1b4b9b;">
+              <div style="width: 70px; background: #f2f6fc; color: #1b4b9b; font-weight: 700; font-size: 9.5pt; display: flex; align-items: center; justify-content: center; border-right: 1px solid #1b4b9b;">책 번 호</div>
+              <div style="flex: 1; display: flex; align-items: center; justify-content: space-around; font-size: 9.5pt; font-weight: 600; padding: 0 4px;">
+                <span>권</span><span>호</span>
+              </div>
+            </div>
+            <div style="display: flex; height: 32px;">
+              <div style="width: 70px; background: #f2f6fc; color: #1b4b9b; font-weight: 700; font-size: 9.5pt; display: flex; align-items: center; justify-content: center; border-right: 1px solid #1b4b9b;">일련번호</div>
+              <div style="flex: 1; display: flex; align-items: center; justify-content: center; font-size: 9pt; font-weight: 600; color: #475569;">
+                ${serialNo}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Subheader: 2 Box Trái (Khách hàng) & Phải (Nhà cung cấp) -->
+        <div style="display: flex; border-bottom: 2px solid #1b4b9b;">
+          
+          <!-- Box Trái (Khách hàng) -->
+          <div style="flex: 1; display: flex; flex-direction: column; justify-content: space-between; padding: 10px 14px; border-right: 2px solid #1b4b9b;">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 10.5pt; font-weight: 700; color: #111;">
+              <span>${dateSpaced}</span>
+              <span style="color: #1b4b9b; font-style: italic; font-weight: 800; font-size: 11pt;">No.</span>
+            </div>
+            
+            <div style="margin: 10px 0 6px 0;">
+              <span style="font-size: 15pt; font-weight: 900; color: #111; letter-spacing: 0.5px;">${esc(toName || '거래처')}</span>
+              <span style="font-size: 13pt; font-weight: 700; color: #111; margin-left: 8px;">귀하</span>
+            </div>
+            
+            <div style="font-size: 9.5pt; color: #475569; margin-bottom: 10px; font-weight: 500;">아래와 같이 계산합니다.</div>
+            
+            <div style="display: flex; align-items: center; border: 1.5px solid #1b4b9b; background: #ffffff;">
+              <div style="width: 85px; padding: 6px 4px; background: #ebf2fa; color: #1b4b9b; font-weight: 800; font-size: 10.5pt; text-align: center; border-right: 1.5px solid #1b4b9b; white-space: nowrap;">합계금액</div>
+              <div style="flex: 1; padding: 6px 12px; text-align: right; font-weight: 900; font-size: 13pt; color: #1b4b9b;">${fmt(grandTotal)} 원정</div>
+            </div>
+          </div>
+
+          <!-- Box Phải (Nhà cung cấp 공급자) -->
+          <div style="width: 53%; display: flex;">
+            <div style="width: 28px; background: #ebf2fa; border-right: 1.5px solid #1b4b9b; color: #1b4b9b; font-weight: 900; display: flex; align-items: center; justify-content: center; font-size: 11pt; letter-spacing: 4px; padding: 6px 0; text-align: center; line-height: 1.6;">
+              공<br/>급<br/>자
+            </div>
+            
+            <table style="flex: 1; width: 100%; border-collapse: collapse; font-size: 9.5pt; table-layout: fixed;">
+              <tbody>
+                <tr style="height: 32px;">
+                  <td style="width: 82px; background: #f2f6fc; color: #1b4b9b; font-weight: 700; text-align: center; border-right: 1px solid #1b4b9b; border-bottom: 1px solid #1b4b9b;">등록번호</td>
+                  <td colspan="3" style="padding: 0 8px; font-weight: 800; font-size: 11pt; letter-spacing: 0.5px; border-bottom: 1px solid #1b4b9b;">${esc(supplier.biz)}</td>
+                </tr>
+                <tr style="height: 34px;">
+                  <td style="background: #f2f6fc; color: #1b4b9b; font-weight: 700; text-align: center; border-right: 1px solid #1b4b9b; border-bottom: 1px solid #1b4b9b; line-height: 1.2;">상 호<br/><span style="font-size: 7.5pt; font-weight: 600;">(법인명)</span></td>
+                  <td style="padding: 0 8px; font-weight: 800; font-size: 10pt; border-right: 1px solid #1b4b9b; border-bottom: 1px solid #1b4b9b;">${esc(supplier.name)}</td>
+                  <td style="width: 48px; background: #f2f6fc; color: #1b4b9b; font-weight: 700; text-align: center; border-right: 1px solid #1b4b9b; border-bottom: 1px solid #1b4b9b;">성 명</td>
+                  <td style="padding: 0 6px; font-weight: 800; border-bottom: 1px solid #1b4b9b;">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                      <span>${esc(supplier.rep)}</span>
+                      <span style="display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border:1.5px solid #dc2626; border-radius:50%; color:#dc2626; font-size:8pt; font-weight:900; transform:rotate(-8deg);">인</span>
+                    </div>
+                  </td>
+                </tr>
+                <tr style="height: 34px;">
+                  <td style="background: #f2f6fc; color: #1b4b9b; font-weight: 700; text-align: center; border-right: 1px solid #1b4b9b; border-bottom: 1px solid #1b4b9b; line-height: 1.2;">사업장<br/><span style="font-size: 7.5pt; font-weight: 600;">소재지</span></td>
+                  <td colspan="3" style="padding: 0 8px; font-size: 9pt; line-height: 1.3; border-bottom: 1px solid #1b4b9b;">${esc(supplier.addr)}</td>
+                </tr>
+                <tr style="height: 32px;">
+                  <td style="background: #f2f6fc; color: #1b4b9b; font-weight: 700; text-align: center; border-right: 1px solid #1b4b9b;">업 태</td>
+                  <td style="padding: 0 8px; font-size: 9pt; border-right: 1px solid #1b4b9b;">${esc(supplier.bizType)}</td>
+                  <td style="background: #f2f6fc; color: #1b4b9b; font-weight: 700; text-align: center; border-right: 1px solid #1b4b9b;">종 목</td>
+                  <td style="padding: 0 8px; font-size: 9pt;">${esc(supplier.itemType)}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+        </div>
+
+        <!-- Bảng 품목 List -->
+        <table style="width: 100%; border-collapse: collapse; table-layout: fixed;">
+          <colgroup>
+            <col style="width: 36px;" />
+            <col style="width: 36px;" />
+            <col />
+            <col style="width: 44px;" />
+            <col style="width: 65px;" />
+            <col style="width: 95px;" />
+            <col style="width: 115px;" />
+            <col style="width: 100px;" />
+          </colgroup>
+          <thead>
+            <tr style="height: 34px; background: #ffffff; color: #1b4b9b; font-weight: 800; font-size: 10pt;">
+              <th style="border: 1px solid #1b4b9b; border-top: none; text-align: center;">월</th>
+              <th style="border: 1px solid #1b4b9b; border-top: none; text-align: center;">일</th>
+              <th style="border: 1px solid #1b4b9b; border-top: none; text-align: center; letter-spacing: 2px;">품  목  /  규  격</th>
+              <th style="border: 1px solid #1b4b9b; border-top: none; text-align: center;">단 위</th>
+              <th style="border: 1px solid #1b4b9b; border-top: none; text-align: center;">수 량</th>
+              <th style="border: 1px solid #1b4b9b; border-top: none; text-align: center;">단 가</th>
+              <th style="border: 1px solid #1b4b9b; border-top: none; text-align: center;">공 급 가 액</th>
+              <th style="border: 1px solid #1b4b9b; border-top: none; text-align: center;">세 액</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${itemRowsHtml}
+            ${remainderRow}
+            ${fillerRows}
+          </tbody>
+          <tfoot>
+            <!-- Hàng 소 계 -->
+            <tr style="height: 32px; background: #ffffff; font-size: 10pt;">
+              <td colspan="6" style="border: 1px solid #1b4b9b; text-align: center; color: #1b4b9b; font-weight: 800; letter-spacing: 4px;">소    계</td>
+              <td style="border: 1px solid #1b4b9b; text-align: right; padding: 0 8px; font-weight: 800; color: #1b4b9b; font-size: 10.5pt; white-space: nowrap;">${fmt(subtotal)}</td>
+              <td style="border: 1px solid #1b4b9b; text-align: right; padding: 0 8px; font-weight: 800; color: #1b4b9b; font-size: 10.5pt; white-space: nowrap;">${includeTax ? fmt(tax) : ''}</td>
+            </tr>
+            <!-- Hàng 미수금 | 합 계 | 인수자 -->
+            <tr style="height: 34px; background: #ffffff; font-size: 10pt;">
+              <td colspan="2" style="border: 1px solid #1b4b9b; text-align: center; color: #1b4b9b; font-weight: 800;">미수금</td>
+              <td colspan="2" style="border: 1px solid #1b4b9b; text-align: center; color: #1b4b9b; font-weight: 900; letter-spacing: 2px;">합    계</td>
+              <td colspan="2" style="border: 1px solid #1b4b9b; text-align: right; padding: 0 8px; font-weight: 900; color: #1b4b9b; font-size: 11pt; white-space: nowrap;">${fmt(grandTotal)}</td>
+              <td style="border: 1px solid #1b4b9b; text-align: center; color: #1b4b9b; font-weight: 800;">인  수  자</td>
+              <td style="border: 1px solid #1b4b9b; text-align: center; font-weight: 800; font-size: 10.5pt; color: #111;">${esc(toRep || toName)}</td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <!-- Footer thanh tài khoản ngân hàng & ghi chú -->
+        <div style="border-top: 1.5px solid #1b4b9b; background: #f8fbff; padding: 6px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 9.5pt;">
+          <div><strong style="color: #1b4b9b;">입금 계좌:</strong> <span style="font-weight: 800; color: #111; margin-left: 4px;">${esc(supplier.bank)}</span></div>
+          ${note ? `<div><strong style="color: #1b4b9b;">비고:</strong> <span style="color: #333; margin-left: 4px;">${esc(note)}</span></div>` : ''}
+        </div>
+
+      </div>
+    `;
+  }
+
   // Render 단일 (1 ảnh duy nhất) 거래명세서 서식 - Giống 100% project gốc
   function renderStatement() {
+    updateTemplateButtonUI();
+
     const toName = document.getElementById('toName').value;
     const toRep = document.getElementById('toRep').value;
     const toAddr = document.getElementById('toAddr').value;
@@ -3298,6 +4007,17 @@
     } else {
       document.getElementById('txtTax').style.display = 'none';
       document.getElementById('txtGrandTotal').style.display = 'none';
+    }
+
+    // Nếu người dùng chọn mẫu Xanh Cổ Điển (Blue Classic Form)
+    if (currentTemplate === 'blue') {
+      const blueHtml = renderBlueStatementHtml({
+        toName, toRep, toAddr, toBiz, toTel, toBizType, toItemType,
+        invDate: dateStrInput, includeTax, note, supplier, items, subtotal, tax, grandTotal
+      });
+      document.getElementById('statementCanvas').innerHTML = blueHtml;
+      applyPreviewScale();
+      return;
     }
 
     // Định dạng ngày hiển thị (VD: 2026년 10월 23일) chuẩn giờ máy tính local
@@ -3616,9 +4336,11 @@
     a.download = filename;
     document.body.appendChild(a);
     a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
     showToast(`'${filename}' 다운로드 완료!`);
+    setTimeout(() => {
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 2000);
   }
 
   // Xuất file ảnh PNG (1 tờ duy nhất)
@@ -4411,99 +5133,52 @@
     }, 250);
   }
 
-  // Lưu bảng dữ liệu thành file Excel (.xlsx) chuẩn với độ rộng cột, định dạng số và ngày tháng chuẩn
-  function saveRowsAsExcel(rowsData, filenameBase) {
-    if (window.XLSX) {
-      try {
-        const ws = XLSX.utils.aoa_to_sheet(rowsData);
+  // =========================================================================
+  // EXCEL EXPORT ENGINE (B2B TRANSACTION STATEMENT & LEDGER STYLED EXPORT)
+  // =========================================================================
 
-        // Định dạng kiểu ô để Excel hiển thị đúng ngày dạng chuỗi (không bị đổi thành số 46318)
-        // và các cột số tiền có dấu phân cách hàng nghìn (3,230)
-        const range = XLSX.utils.decode_range(ws['!ref']);
-        for (let R = 0; R <= range.e.r; ++R) {
-          for (let C = 0; C <= range.e.c; ++C) {
-            const addr = XLSX.utils.encode_cell({ r: R, c: C });
-            const cell = ws[addr];
-            if (!cell) continue;
+  const EXCEL_THEME = {
+    PRIMARY: '236C4E',    // Jinil Dark Forest Green
+    LIGHT: 'EAF4EF',      // Mint soft background
+    ZEBRA: 'F6FAF8',      // Alternate row soft color
+    BORDER: 'CBD5E1',     // Slate-300 border
+    BORDER_ROW: 'E2E8F0', // Light slate row border
+    TEXT_DARK: '0F172A',  // Slate-900 text
+    TEXT_MUTED: '64748B', // Slate-500 text
+    TOTAL_GREEN: '166534' // Deep green for totals
+  };
 
-            if (R === 0) {
-              cell.t = 's';
-              continue;
-            }
+  function getExcelBorder(style = 'thin', color = EXCEL_THEME.BORDER) {
+    return {
+      top: { style: style, color: { rgb: color } },
+      bottom: { style: style, color: { rgb: color } },
+      left: { style: style, color: { rgb: color } },
+      right: { style: style, color: { rgb: color } }
+    };
+  }
 
-            // Cột số (Cột 17 đến 21: 수량, 단가, 공급가액, 세액, 합계금액)
-            if (C >= 17 && C <= 21) {
-              cell.t = 'n';
-              cell.v = Number(cell.v) || 0;
-              cell.z = '#,##0';
-            } else {
-              // Cột ngày & chữ: lưu kiểu chuỗi để Excel không tự đổi format
-              cell.t = 's';
-              cell.v = String(cell.v === undefined || cell.v === null ? '' : cell.v);
-            }
-          }
-        }
+  function downloadExcelWorkbook(wb, filenameBase) {
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const filename = `${filenameBase}.xlsx`;
+    saveFileLocally(blob, filename);
+    showToast(`'${filename}' 엑셀(.xlsx) 파일 저장 완료!`);
+  }
 
-        // Tự động căn chỉnh độ rộng cột chuẩn (23 cột: 공급자 8 cột + 공급받는자 5 cột + 품목 9 cột + 날짜 1 cột)
-        ws['!cols'] = [
-          { wch: 13 }, // 0. 발행일자
-          { wch: 16 }, // 1. 공급자 상호
-          { wch: 16 }, // 2. 공급자 등록번호
-          { wch: 12 }, // 3. 공급자 대표자
-          { wch: 14 }, // 4. 공급자 Tel
-          { wch: 35 }, // 5. 공급자 주소
-          { wch: 12 }, // 6. 공급자 업태
-          { wch: 12 }, // 7. 공급자 종목
-          { wch: 32 }, // 8. 입금 계좌번호
-          { wch: 20 }, // 9. 공급받는자 상호(거래처명)
-          { wch: 12 }, // 10. 공급받는자 대표자
-          { wch: 14 }, // 11. 공급받는자 Tel
-          { wch: 30 }, // 12. 공급받는자 주소
-          { wch: 16 }, // 13. 공급받는자 사업자등록번호
-          { wch: 13 }, // 14. 품목 날짜
-          { wch: 26 }, // 15. 품목명
-          { wch: 12 }, // 16. 규격
-          { wch: 9 },  // 17. 수량
-          { wch: 13 }, // 18. 단가
-          { wch: 13 }, // 19. 공급가액
-          { wch: 11 }, // 20. 세액
-          { wch: 15 }, // 21. 합계금액
-          { wch: 22 }  // 22. 비고
-        ];
-
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, '거래명세서');
-        const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-        const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-        const filename = `${filenameBase}.xlsx`;
-        saveFileLocally(blob, filename);
-        showToast(`'${filename}' 엑셀(.xlsx) 파일 저장 완료!`);
-        return;
-      } catch (err) {
-        console.error('XLSX export failed, fallback to CSV', err);
-      }
-    }
-
-    // Fallback: Xuất CSV nếu thư viện XLSX chưa tải xong
+  function downloadCsvFallback(rows, filenameBase) {
     const csvRows = [];
-    rowsData.forEach((row, rIdx) => {
-      const line = row.map((cell, cIdx) => {
-        if (rIdx === 0) {
-          return `"${String(cell).replace(/"/g, '""')}"`;
+    rows.forEach((row, rIdx) => {
+      const line = row.map(cell => {
+        if (cell === null || cell === undefined) return '""';
+        if (typeof cell === 'number') return cell;
+        const str = String(cell);
+        if (/^\d{4}-\d{2}-\d{2}$/.test(str) || /^\d{2,3}-\d{3,4}-\d{4}$/.test(str)) {
+          return `="${str.replace(/"/g, '""')}"`;
         }
-        // Với ngày hoặc số điện thoại / mã số thuế, dùng công thức ="..." để Excel không tự đổi format
-        if (cIdx === 0 || cIdx === 2 || cIdx === 4 || cIdx === 8 || cIdx === 11 || cIdx === 13 || cIdx === 14) {
-          const val = String(cell || '');
-          return val ? `="${val.replace(/"/g, '""')}"` : '""';
-        }
-        if (typeof cell === 'number') {
-          return cell;
-        }
-        return `"${String(cell || '').replace(/"/g, '""')}"`;
+        return `"${str.replace(/"/g, '""')}"`;
       });
       csvRows.push(line.join(','));
     });
-
     const csvContent = '\uFEFF' + csvRows.join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const filename = `${filenameBase}.csv`;
@@ -4511,9 +5186,13 @@
     showToast(`'${filename}' 엑셀(CSV) 저장 완료!`);
   }
 
-  // Xuất 거래명세서 hiện tại ra file Excel (.xlsx) bao gồm cả 공급자 và 공급받는자
+  // 1. Xuất 거래명세서 hiện tại (Single Statement) với layout chuẩn trực quan & chuyên nghiệp
   function exportCurrentToExcel() {
     saveCurrentToHistory();
+    if (currentTemplate === 'blue') {
+      exportCurrentToExcelBlue();
+      return;
+    }
     const supBiz = (document.getElementById('supBiz')?.value || '').trim();
     const supName = (document.getElementById('supName')?.value || '').trim();
     const supRep = (document.getElementById('supRep')?.value || '').trim();
@@ -4525,9 +5204,6 @@
 
     const toName = (document.getElementById('toName')?.value || '거래처').trim();
     const toRep = (document.getElementById('toRep')?.value || '').trim();
-    const toTel = (document.getElementById('toTel')?.value || '').trim();
-    const toAddr = (document.getElementById('toAddr')?.value || '').trim();
-    const toBiz = (document.getElementById('toBiz')?.value || '').trim();
     const invDate = document.getElementById('invDate')?.value || getLocalTodayDate();
     const memo = (document.getElementById('invNote')?.value || '').trim();
     const includeTax = document.getElementById('chkTax') ? document.getElementById('chkTax').checked : true;
@@ -4537,51 +5213,618 @@
       return;
     }
 
-    const headers = [
-      '발행일자',
-      '공급자 상호', '공급자 등록번호', '공급자 대표자', '공급자 Tel', '공급자 주소', '공급자 업태', '공급자 종목', '입금 계좌번호',
-      '공급받는자 상호(거래처명)', '공급받는자 대표자', '공급받는자 Tel', '공급받는자 주소', '공급받는자 사업자등록번호',
-      '품목 날짜', '품목명', '규격', '수량', '단가', '공급가액', '세액', '합계금액', '비고'
-    ];
-
-    const rows = [headers];
-    items.forEach(it => {
-      const sub = Number(it.sub || 0);
-      const itemTax = includeTax ? Math.round(sub * 0.1) : 0;
-      const itemTotal = sub + itemTax;
-
-      rows.push([
-        invDate,
-        supName,
-        supBiz,
-        supRep,
-        supTel,
-        supAddr,
-        supBizType,
-        supItemType,
-        supBank,
-        toName,
-        toRep,
-        toTel,
-        toAddr,
-        toBiz,
-        it.date || invDate,
-        it.name || '',
-        it.spec || '',
-        Number(it.qty) || 0,
-        Number(it.price) || 0,
-        sub,
-        itemTax,
-        itemTotal,
-        it.note || memo
-      ]);
-    });
-
     const filenameBase = `거래명세서_${toName}_${invDate}`;
-    saveRowsAsExcel(rows, filenameBase);
+
+    if (window.XLSX) {
+      try {
+        const ws = {};
+        const borderThin = getExcelBorder('thin', EXCEL_THEME.BORDER);
+
+        const styleTitle = {
+          font: { name: '맑은 고딕', sz: 18, bold: true, color: { rgb: EXCEL_THEME.TEXT_DARK } },
+          alignment: { horizontal: 'center', vertical: 'center' }
+        };
+
+        const styleSubLeft = {
+          font: { name: '맑은 고딕', sz: 10, color: { rgb: EXCEL_THEME.TEXT_MUTED } },
+          alignment: { horizontal: 'left', vertical: 'center' }
+        };
+
+        const styleSubRight = {
+          font: { name: '맑은 고딕', sz: 10.5, bold: true, color: { rgb: EXCEL_THEME.TEXT_DARK } },
+          alignment: { horizontal: 'right', vertical: 'center' }
+        };
+
+        const styleSupplierBanner = {
+          font: { name: '맑은 고딕', sz: 10.5, bold: true, color: { rgb: 'FFFFFF' } },
+          fill: { fgColor: { rgb: EXCEL_THEME.PRIMARY } },
+          alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+          border: borderThin
+        };
+
+        const styleSupplierLabel = {
+          font: { name: '맑은 고딕', sz: 9.5, bold: true, color: { rgb: EXCEL_THEME.PRIMARY } },
+          fill: { fgColor: { rgb: EXCEL_THEME.LIGHT } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: borderThin
+        };
+
+        const styleSupplierVal = {
+          font: { name: '맑은 고딕', sz: 9.5, color: { rgb: EXCEL_THEME.TEXT_DARK } },
+          alignment: { horizontal: 'left', vertical: 'center' },
+          border: borderThin
+        };
+
+        const styleTableHeader = {
+          font: { name: '맑은 고딕', sz: 10.5, bold: true, color: { rgb: 'FFFFFF' } },
+          fill: { fgColor: { rgb: EXCEL_THEME.PRIMARY } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: {
+            top: { style: 'medium', color: { rgb: EXCEL_THEME.PRIMARY } },
+            bottom: { style: 'medium', color: { rgb: EXCEL_THEME.PRIMARY } },
+            left: { style: 'thin', color: { rgb: 'FFFFFF' } },
+            right: { style: 'thin', color: { rgb: 'FFFFFF' } }
+          }
+        };
+
+        function getRowStyle(align = 'left', isNumber = false, isZebra = false, isBold = false) {
+          return {
+            font: { name: '맑은 고딕', sz: 9.5, bold: isBold, color: { rgb: EXCEL_THEME.TEXT_DARK } },
+            fill: isZebra ? { fgColor: { rgb: EXCEL_THEME.ZEBRA } } : undefined,
+            alignment: { horizontal: align, vertical: 'center' },
+            border: {
+              top: { style: 'thin', color: { rgb: EXCEL_THEME.BORDER_ROW } },
+              bottom: { style: 'thin', color: { rgb: EXCEL_THEME.BORDER_ROW } },
+              left: { style: 'thin', color: { rgb: EXCEL_THEME.BORDER_ROW } },
+              right: { style: 'thin', color: { rgb: EXCEL_THEME.BORDER_ROW } }
+            },
+            numFmt: isNumber ? '#,##0' : undefined
+          };
+        }
+
+        const styleTotalLabel = {
+          font: { name: '맑은 고딕', sz: 10.5, bold: true, color: { rgb: EXCEL_THEME.TEXT_DARK } },
+          fill: { fgColor: { rgb: EXCEL_THEME.LIGHT } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: {
+            top: { style: 'medium', color: { rgb: EXCEL_THEME.PRIMARY } },
+            bottom: { style: 'double', color: { rgb: EXCEL_THEME.PRIMARY } },
+            left: { style: 'thin', color: { rgb: EXCEL_THEME.BORDER } },
+            right: { style: 'thin', color: { rgb: EXCEL_THEME.BORDER } }
+          }
+        };
+
+        const styleTotalVal = {
+          font: { name: '맑은 고딕', sz: 11, bold: true, color: { rgb: EXCEL_THEME.TOTAL_GREEN } },
+          fill: { fgColor: { rgb: EXCEL_THEME.LIGHT } },
+          alignment: { horizontal: 'right', vertical: 'center' },
+          border: {
+            top: { style: 'medium', color: { rgb: EXCEL_THEME.PRIMARY } },
+            bottom: { style: 'double', color: { rgb: EXCEL_THEME.PRIMARY } },
+            left: { style: 'thin', color: { rgb: EXCEL_THEME.BORDER } },
+            right: { style: 'thin', color: { rgb: EXCEL_THEME.BORDER } }
+          },
+          numFmt: '#,##0'
+        };
+
+        function setCell(cellRef, val, type = 's', style = {}) {
+          ws[cellRef] = { t: type, v: val, s: style };
+          if (type === 'n' && style.numFmt) ws[cellRef].z = style.numFmt;
+        }
+
+        // Row 1: Title (공급받는자용)
+        setCell('A1', '거  래  명  세  서  (공급받는자용)', 's', styleTitle);
+
+        // Row 2: Subheader
+        setCell('A2', `발행일자: ${invDate}`, 's', styleSubLeft);
+        const recipientText = toName ? `인수자 : ${toName}` : '인수자 : ';
+        setCell('E2', recipientText, 's', styleSubRight);
+        setCell('F2', '', 's', styleSubRight);
+        setCell('G2', '', 's', styleSubRight);
+        setCell('H2', '', 's', styleSubRight);
+        setCell('I2', '', 's', styleSubRight);
+
+        // Row 4-6: Supplier Block
+        setCell('A4', '공\n급\n자', 's', styleSupplierBanner);
+        setCell('A5', '', 's', styleSupplierBanner);
+        setCell('A6', '', 's', styleSupplierBanner);
+
+        // Row 4: Registration No, Company Name, Rep
+        setCell('B4', '등록번호', 's', styleSupplierLabel);
+        setCell('C4', supBiz || '104-06-54611', 's', styleSupplierVal);
+        setCell('D4', '', 's', styleSupplierVal);
+        setCell('E4', '상호(법인명)', 's', styleSupplierLabel);
+        setCell('F4', supName || '진일 라벨', 's', styleSupplierVal);
+        setCell('G4', '', 's', styleSupplierVal);
+        setCell('H4', '대표자', 's', styleSupplierLabel);
+        setCell('I4', supRep || '홍성모', 's', styleSupplierVal);
+
+        // Row 5: Address, Tel
+        setCell('B5', '사업장 주소', 's', styleSupplierLabel);
+        setCell('C5', supAddr || '서울시 중구 주교동 19-1, 방산시장 A동 3/221호', 's', styleSupplierVal);
+        setCell('D5', '', 's', styleSupplierVal);
+        setCell('E5', '', 's', styleSupplierVal);
+        setCell('F5', '', 's', styleSupplierVal);
+        setCell('G5', '', 's', styleSupplierVal);
+        setCell('H5', '전화번호', 's', styleSupplierLabel);
+        setCell('I5', supTel || '02-2266-2826', 's', styleSupplierVal);
+
+        // Row 6: BizType/ItemType, Bank Account (G6:I6 rộng rãi cho tài khoản ngân hàng)
+        setCell('B6', '업태 / 종목', 's', styleSupplierLabel);
+        setCell('C6', `${supBizType || '제조,도매'} / ${supItemType || '인쇄,의류부자재'}`, 's', styleSupplierVal);
+        setCell('D6', '', 's', styleSupplierVal);
+        setCell('E6', '', 's', styleSupplierVal);
+        setCell('F6', '입금 계좌', 's', styleSupplierLabel);
+        setCell('G6', supBank || '국민은행 352201-04-022304 홍성모', 's', styleSupplierVal);
+        setCell('H6', '', 's', styleSupplierVal);
+        setCell('I6', '', 's', styleSupplierVal);
+
+        // Row 8: Table Header (9 columns: 품목 날짜, 품목명, 규격, 수량, 단가, 공급가액, 세액, 합계금액, 비고)
+        const headers = ['품목 날짜', '품목명', '규격', '수량', '단가', '공급가액', '세액', '합계금액', '비고'];
+        const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I'];
+        headerCols.forEach((col, idx) => {
+          setCell(`${col}8`, headers[idx], 's', styleTableHeader);
+        });
+
+        const rowHeights = [
+          { hpt: 38 }, // Row 1 Title
+          { hpt: 22 }, // Row 2 Sub
+          { hpt: 6 },  // Row 3 Spacer
+          { hpt: 25 }, // Row 4 Supplier 1
+          { hpt: 25 }, // Row 5 Supplier 2
+          { hpt: 25 }, // Row 6 Supplier 3
+          { hpt: 8 },  // Row 7 Spacer
+          { hpt: 28 }, // Row 8 Header
+        ];
+
+        // Data Rows
+        let curRow = 9;
+        let totalQty = 0;
+        let totalSub = 0;
+        let totalTax = 0;
+        let totalSum = 0;
+
+        items.forEach((it, idx) => {
+          const isZebra = idx % 2 === 1;
+          const qty = Number(it.qty) || 0;
+          const price = Number(it.price) || 0;
+          const sub = Number(it.sub) || (qty * price);
+          const itemTax = it.tax !== undefined ? Number(it.tax) : (includeTax ? Math.round(sub * 0.1) : 0);
+          const itemTotal = sub + itemTax;
+
+          totalQty += qty;
+          totalSub += sub;
+          totalTax += itemTax;
+          totalSum += itemTotal;
+
+          rowHeights.push({ hpt: 21 }); // Chiều cao dòng thoải mái 21pt
+
+          setCell(`A${curRow}`, it.date || invDate, 's', getRowStyle('center', false, isZebra));
+          setCell(`B${curRow}`, it.name || '', 's', getRowStyle('left', false, isZebra));
+          setCell(`C${curRow}`, it.spec || '', 's', getRowStyle('center', false, isZebra));
+          setCell(`D${curRow}`, qty, 'n', getRowStyle('right', true, isZebra));
+          setCell(`E${curRow}`, price, 'n', getRowStyle('right', true, isZebra));
+          setCell(`F${curRow}`, sub, 'n', getRowStyle('right', true, isZebra));
+          setCell(`G${curRow}`, itemTax, 'n', getRowStyle('right', true, isZebra));
+          setCell(`H${curRow}`, itemTotal, 'n', getRowStyle('right', true, isZebra, true));
+          setCell(`I${curRow}`, it.note || memo, 's', getRowStyle('left', false, isZebra));
+
+          curRow++;
+        });
+
+        // Summary Row
+        rowHeights.push({ hpt: 28 });
+        setCell(`A${curRow}`, '합  계  (T O T A L)', 's', styleTotalLabel);
+        setCell(`B${curRow}`, '', 's', styleTotalLabel);
+        setCell(`C${curRow}`, '', 's', styleTotalLabel);
+        setCell(`D${curRow}`, totalQty, 'n', styleTotalVal);
+        setCell(`E${curRow}`, '-', 's', styleTotalLabel);
+        setCell(`F${curRow}`, totalSub, 'n', styleTotalVal);
+        setCell(`G${curRow}`, totalTax, 'n', styleTotalVal);
+        setCell(`H${curRow}`, totalSum, 'n', styleTotalVal);
+        setCell(`I${curRow}`, '', 's', styleTotalLabel);
+
+        ws['!merges'] = [
+          { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } }, // Title A1:I1
+          { s: { r: 1, c: 0 }, e: { r: 1, c: 3 } }, // Date A2:D2
+          { s: { r: 1, c: 4 }, e: { r: 1, c: 8 } }, // Recipient E2:I2
+          { s: { r: 3, c: 0 }, e: { r: 5, c: 0 } }, // Supplier banner A4:A6
+          { s: { r: 3, c: 2 }, e: { r: 3, c: 3 } }, // supBiz C4:D4
+          { s: { r: 3, c: 5 }, e: { r: 3, c: 6 } }, // supName F4:G4
+          { s: { r: 4, c: 2 }, e: { r: 4, c: 6 } }, // supAddr C5:G5
+          { s: { r: 5, c: 2 }, e: { r: 5, c: 4 } }, // supBizType C6:E6 (3 ô)
+          { s: { r: 5, c: 6 }, e: { r: 5, c: 8 } }, // supBank G6:I6 (3 ô rộng rãi)
+          { s: { r: curRow - 1, c: 0 }, e: { r: curRow - 1, c: 2 } } // Total label A:C
+        ];
+
+        ws['!cols'] = [
+          { wch: 13 }, // A. 품목 날짜
+          { wch: 24 }, // B. 품목명
+          { wch: 28 }, // C. 규격 (Rộng 28 ký tự, không bị cắt xén)
+          { wch: 10 }, // D. 수량
+          { wch: 12 }, // E. 단가
+          { wch: 14 }, // F. 공급가액
+          { wch: 12 }, // G. 세액
+          { wch: 15 }, // H. 합계금액
+          { wch: 20 }  // I. 비고
+        ];
+
+        ws['!rows'] = rowHeights;
+        ws['!ref'] = `A1:I${curRow}`;
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, '거래명세서');
+        downloadExcelWorkbook(wb, filenameBase);
+        return;
+      } catch (err) {
+        console.error('XLSX current invoice export failed, fallback to CSV', err);
+      }
+    }
+
+    // Fallback: CSV nếu XLSX chưa tải xong
+    const csvRows = [
+      ['품목 날짜', '품목명', '규격', '수량', '단가', '공급가액', '세액', '합계금액', '비고']
+    ];
+    let totalQty = 0, totalSub = 0, totalTax = 0, totalSum = 0;
+    items.forEach(it => {
+      const qty = Number(it.qty) || 0;
+      const price = Number(it.price) || 0;
+      const sub = Number(it.sub) || (qty * price);
+      const tax = it.tax !== undefined ? Number(it.tax) : (includeTax ? Math.round(sub * 0.1) : 0);
+      const total = sub + tax;
+      totalQty += qty; totalSub += sub; totalTax += tax; totalSum += total;
+      csvRows.push([it.date || invDate, it.name || '', it.spec || '', qty, price, sub, tax, total, it.note || memo]);
+    });
+    csvRows.push(['합계', '', '', totalQty, '-', totalSub, totalTax, totalSum, '']);
+    downloadCsvFallback(csvRows, filenameBase);
   }
 
-  // Xuất danh sách 발행 내역 (Lịch sử) ra file Excel (.xlsx) chuẩn bao gồm cả 공급자 và 공급받는자
+  // 1-B. Xuất 거래명세표 서식 블루 (Classic Blue Statement Excel Export)
+  function exportCurrentToExcelBlue() {
+    const supBiz = (document.getElementById('supBiz')?.value || '104-06-54611').trim();
+    const supName = (document.getElementById('supName')?.value || '진일 라벨').trim();
+    const supRep = (document.getElementById('supRep')?.value || '홍성모').trim();
+    const supTel = (document.getElementById('supTel')?.value || '02-2266-2826').trim();
+    const supAddr = (document.getElementById('supAddr')?.value || '서울시 중구 주교동 19-1 방산시장 A동 3/221호').trim();
+    const supBizType = (document.getElementById('supBizType')?.value || '제조, 도매').trim();
+    const supItemType = (document.getElementById('supItemType')?.value || '인쇄, 의류부자재').trim();
+    const supBank = (document.getElementById('supBank')?.value || '국민은행 352201-04-022304 홍성모').trim();
+
+    const toName = (document.getElementById('toName')?.value || '거래처').trim();
+    const toRep = (document.getElementById('toRep')?.value || '').trim();
+    const invDate = document.getElementById('invDate')?.value || getLocalTodayDate();
+    const memo = (document.getElementById('invNote')?.value || '').trim();
+    const includeTax = document.getElementById('chkTax') ? document.getElementById('chkTax').checked : true;
+
+    if (!items || items.length === 0) {
+      showToast('내보낼 품목이 없습니다.');
+      return;
+    }
+
+    const filenameBase = `거래명세표_${toName}_${invDate}`;
+
+    if (window.XLSX) {
+      try {
+        const ws = {};
+        const EXCEL_BLUE = {
+          PRIMARY: '1B4B9B',
+          LIGHT: 'EBF2FA',
+          BORDER: '1B4B9B',
+          BORDER_THIN: '8FAADC',
+          TEXT_DARK: '0F172A',
+          TEXT_BLUE: '1B4B9B'
+        };
+
+        const borderThin = getExcelBorder('thin', EXCEL_BLUE.BORDER_THIN);
+
+        const styleTitle = {
+          font: { name: '맑은 고딕', sz: 17, bold: true, color: { rgb: EXCEL_BLUE.TEXT_BLUE } },
+          alignment: { horizontal: 'center', vertical: 'center' }
+        };
+
+        const styleSmallBox = {
+          font: { name: '맑은 고딕', sz: 9, bold: true, color: { rgb: EXCEL_BLUE.TEXT_BLUE } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: borderThin
+        };
+
+        const styleDate = {
+          font: { name: '맑은 고딕', sz: 10, bold: true, color: { rgb: EXCEL_BLUE.TEXT_DARK } },
+          alignment: { horizontal: 'left', vertical: 'center' }
+        };
+
+        const styleNo = {
+          font: { name: '맑은 고딕', sz: 10, bold: true, color: { rgb: EXCEL_BLUE.TEXT_BLUE } },
+          alignment: { horizontal: 'right', vertical: 'center' }
+        };
+
+        const styleRecipient = {
+          font: { name: '맑은 고딕', sz: 13, bold: true, color: { rgb: EXCEL_BLUE.TEXT_DARK } },
+          alignment: { horizontal: 'left', vertical: 'center' }
+        };
+
+        const styleCalcText = {
+          font: { name: '맑은 고딕', sz: 9, color: { rgb: '475569' } },
+          alignment: { horizontal: 'left', vertical: 'center' }
+        };
+
+        const styleTotalBannerLabel = {
+          font: { name: '맑은 고딕', sz: 10, bold: true, color: { rgb: EXCEL_BLUE.TEXT_BLUE } },
+          fill: { fgColor: { rgb: EXCEL_BLUE.LIGHT } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: borderThin
+        };
+
+        const styleTotalBannerVal = {
+          font: { name: '맑은 고딕', sz: 11, bold: true, color: { rgb: EXCEL_BLUE.TEXT_BLUE } },
+          fill: { fgColor: { rgb: EXCEL_BLUE.LIGHT } },
+          alignment: { horizontal: 'right', vertical: 'center' },
+          border: borderThin
+        };
+
+        const styleSupplierBanner = {
+          font: { name: '맑은 고딕', sz: 10.5, bold: true, color: { rgb: 'FFFFFF' } },
+          fill: { fgColor: { rgb: EXCEL_BLUE.PRIMARY } },
+          alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+          border: borderThin
+        };
+
+        const styleSupplierLabel = {
+          font: { name: '맑은 고딕', sz: 9, bold: true, color: { rgb: EXCEL_BLUE.TEXT_BLUE } },
+          fill: { fgColor: { rgb: EXCEL_BLUE.LIGHT } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: borderThin
+        };
+
+        const styleSupplierVal = {
+          font: { name: '맑은 고딕', sz: 9, color: { rgb: EXCEL_BLUE.TEXT_DARK } },
+          alignment: { horizontal: 'left', vertical: 'center' },
+          border: borderThin
+        };
+
+        const styleTableHeader = {
+          font: { name: '맑은 고딕', sz: 10, bold: true, color: { rgb: 'FFFFFF' } },
+          fill: { fgColor: { rgb: EXCEL_BLUE.PRIMARY } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: {
+            top: { style: 'medium', color: { rgb: EXCEL_BLUE.PRIMARY } },
+            bottom: { style: 'medium', color: { rgb: EXCEL_BLUE.PRIMARY } },
+            left: { style: 'thin', color: { rgb: 'FFFFFF' } },
+            right: { style: 'thin', color: { rgb: 'FFFFFF' } }
+          }
+        };
+
+        function getRowStyle(align = 'left', isNumber = false, isBold = false) {
+          return {
+            font: { name: '맑은 고딕', sz: 9.5, bold: isBold, color: { rgb: EXCEL_BLUE.TEXT_DARK } },
+            alignment: { horizontal: align, vertical: 'center' },
+            border: borderThin,
+            numFmt: isNumber ? '#,##0' : undefined
+          };
+        }
+
+        function setCell(cellRef, val, type = 's', style = {}) {
+          ws[cellRef] = { t: type, v: val, s: style };
+          if (type === 'n' && style.numFmt) ws[cellRef].z = style.numFmt;
+        }
+
+        const baseDate = invDate || getLocalTodayDate();
+        const dateMatch = (baseDate || '').match(/(\d{4})[^\d]?(\d{1,2})[^\d]?(\d{1,2})/);
+        const now = new Date();
+        const yStr = dateMatch ? dateMatch[1] : String(now.getFullYear());
+        const mStr = dateMatch ? String(parseInt(dateMatch[2], 10)) : String(now.getMonth() + 1);
+        const dStr = dateMatch ? String(parseInt(dateMatch[3], 10)) : String(now.getDate());
+        const dateSpaced = `${yStr} 년  ${mStr} 월  ${dStr} 일`;
+        const serialNo = getInvoiceSerialNo(invDate);
+
+        // Tính tổng tiền
+        let totalQty = 0, totalSub = 0, totalTax = 0, totalSum = 0;
+        items.forEach(it => {
+          const qty = Number(it.qty) || 0;
+          const price = Number(it.price) || 0;
+          const sub = Number(it.sub) || (qty * price);
+          const itemTax = it.tax !== undefined ? Number(it.tax) : (includeTax ? Math.round(sub * 0.1) : 0);
+          totalQty += qty;
+          totalSub += sub;
+          totalTax += itemTax;
+          totalSum += (sub + itemTax);
+        });
+
+        // Row 1: Title & Small Book/Serial box
+        setCell('A1', '거  래  명  세  표  (공급받는자보관용)', 's', styleTitle);
+        setCell('F1', '책 번 호', 's', styleSmallBox);
+        setCell('G1', '   권', 's', styleSmallBox);
+        setCell('H1', '   호', 's', styleSmallBox);
+
+        // Row 2: Serial number
+        setCell('F2', '일련번호', 's', styleSmallBox);
+        setCell('G2', serialNo, 's', styleSmallBox);
+        setCell('H2', '', 's', styleSmallBox);
+
+        // Row 3-6: Left Recipient & Right Supplier
+        setCell('A3', dateSpaced, 's', styleDate);
+        setCell('D3', 'No.', 's', styleNo);
+
+        setCell('A4', `${toName} 귀하`, 's', styleRecipient);
+        setCell('B4', '', 's', styleRecipient);
+        setCell('C4', '', 's', styleRecipient);
+        setCell('D4', '', 's', styleRecipient);
+
+        setCell('A5', '아래와 같이 계산합니다.', 's', styleCalcText);
+        setCell('B5', '', 's', styleCalcText);
+        setCell('C5', '', 's', styleCalcText);
+        setCell('D5', '', 's', styleCalcText);
+
+        setCell('A6', '합계금액', 's', styleTotalBannerLabel);
+        setCell('B6', `${fmt(totalSum)} 원정`, 's', styleTotalBannerVal);
+        setCell('C6', '', 's', styleTotalBannerVal);
+        setCell('D6', '', 's', styleTotalBannerVal);
+
+        // Right Supplier:
+        setCell('E3', '공\n\n급\n\n자', 's', styleSupplierBanner);
+        setCell('E4', '', 's', styleSupplierBanner);
+        setCell('E5', '', 's', styleSupplierBanner);
+        setCell('E6', '', 's', styleSupplierBanner);
+
+        setCell('F3', '등록번호', 's', styleSupplierLabel);
+        setCell('G3', supBiz, 's', styleSupplierVal);
+        setCell('H3', '', 's', styleSupplierVal);
+
+        setCell('F4', '상호(법인명)', 's', styleSupplierLabel);
+        setCell('G4', supName, 's', styleSupplierVal);
+        setCell('H4', `${supRep} (인)`, 's', styleSupplierVal);
+
+        setCell('F5', '사업장 주소', 's', styleSupplierLabel);
+        setCell('G5', supAddr, 's', styleSupplierVal);
+        setCell('H5', '', 's', styleSupplierVal);
+
+        setCell('F6', '업태 / 종목', 's', styleSupplierLabel);
+        setCell('G6', `${supBizType || '제조,도매'} / ${supItemType || '인쇄,의류부자재'}`, 's', styleSupplierVal);
+        setCell('H6', '', 's', styleSupplierVal);
+
+        // Row 8: Table Header (8 columns: 월, 일, 품목 / 규격, 단위, 수량, 단가, 공급가액, 세액)
+        const headers = ['월', '일', '품 목  /  규 격', '단 위', '수 량', '단 가', '공 급 가 액', '세 액'];
+        const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+        headerCols.forEach((col, idx) => {
+          setCell(col + '8', headers[idx], 's', styleTableHeader);
+        });
+
+        const rowHeights = [
+          { hpt: 32 }, // Row 1
+          { hpt: 18 }, // Row 2
+          { hpt: 20 }, // Row 3
+          { hpt: 24 }, // Row 4
+          { hpt: 18 }, // Row 5
+          { hpt: 24 }, // Row 6
+          { hpt: 8 },  // Row 7 Spacer
+          { hpt: 26 }, // Row 8 Header
+        ];
+
+        let curRow = 9;
+        items.forEach((it) => {
+          const { m: itMStr, d: itDStr } = parseItemMonthDay(it.date, invDate);
+          const itM = Number(itMStr) || Number(mStr);
+          const itD = Number(itDStr) || Number(dStr);
+          const nameSpec = (it.name || '') + (it.spec ? ' / ' + it.spec : '');
+          const qty = Number(it.qty) || 0;
+          const price = Number(it.price) || 0;
+          const sub = Number(it.sub) || (qty * price);
+          const itemTax = it.tax !== undefined ? Number(it.tax) : (includeTax ? Math.round(sub * 0.1) : 0);
+
+          rowHeights.push({ hpt: 21 });
+          setCell('A' + curRow, itM, 'n', getRowStyle('center', false));
+          setCell('B' + curRow, itD, 'n', getRowStyle('center', false));
+          setCell('C' + curRow, nameSpec, 's', getRowStyle('left', false));
+          setCell('D' + curRow, it.unit || '', 's', getRowStyle('center', false));
+          setCell('E' + curRow, qty, 'n', getRowStyle('right', true));
+          setCell('F' + curRow, price, 'n', getRowStyle('right', true));
+          setCell('G' + curRow, sub, 'n', getRowStyle('right', true));
+          setCell('H' + curRow, itemTax, 'n', getRowStyle('right', true));
+          curRow++;
+        });
+
+        // Remainder row: *** 이 하 여 백 ***
+        rowHeights.push({ hpt: 20 });
+        setCell('A' + curRow, '', 's', getRowStyle('center'));
+        setCell('B' + curRow, '', 's', getRowStyle('center'));
+        setCell('C' + curRow, '*** 이  하  여  백 ***', 's', {
+          font: { name: '맑은 고딕', sz: 9.5, color: { rgb: '64748B' } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: borderThin
+        });
+        setCell('D' + curRow, '', 's', getRowStyle('center'));
+        setCell('E' + curRow, '', 's', getRowStyle('center'));
+        setCell('F' + curRow, '', 's', getRowStyle('center'));
+        setCell('G' + curRow, '', 's', getRowStyle('center'));
+        setCell('H' + curRow, '', 's', getRowStyle('center'));
+        curRow++;
+
+        // Summary Row 1: 소 계
+        rowHeights.push({ hpt: 26 });
+        setCell('A' + curRow, '소    계', 's', styleTotalBannerLabel);
+        setCell('B' + curRow, '', 's', styleTotalBannerLabel);
+        setCell('C' + curRow, '', 's', styleTotalBannerLabel);
+        setCell('D' + curRow, '', 's', styleTotalBannerLabel);
+        setCell('E' + curRow, '', 's', styleTotalBannerLabel);
+        setCell('F' + curRow, '', 's', styleTotalBannerLabel);
+        setCell('G' + curRow, totalSub, 'n', styleTotalBannerVal);
+        setCell('H' + curRow, totalTax, 'n', styleTotalBannerVal);
+        const subtotalRow = curRow;
+        curRow++;
+
+        // Summary Row 2: 미수금 | 합계 | 인수자
+        rowHeights.push({ hpt: 26 });
+        setCell('A' + curRow, '미수금', 's', styleTotalBannerLabel);
+        setCell('B' + curRow, '', 's', styleTotalBannerLabel);
+        setCell('C' + curRow, '합  계', 's', styleTotalBannerLabel);
+        setCell('D' + curRow, '', 's', styleTotalBannerLabel);
+        setCell('E' + curRow, totalSum, 'n', styleTotalBannerVal);
+        setCell('F' + curRow, '', 'n', styleTotalBannerVal);
+        setCell('G' + curRow, '인수자', 's', styleTotalBannerLabel);
+        setCell('H' + curRow, `${toRep || toName} (인)`, 's', styleTotalBannerVal);
+        const finalRow = curRow;
+
+        ws['!merges'] = [
+          { s: { r: 0, c: 0 }, e: { r: 0, c: 4 } }, // Title A1:E1
+          { s: { r: 1, c: 6 }, e: { r: 1, c: 7 } }, // Serial G2:H2
+          { s: { r: 2, c: 0 }, e: { r: 2, c: 2 } }, // Date A3:C3
+          { s: { r: 3, c: 0 }, e: { r: 3, c: 3 } }, // Recipient A4:D4
+          { s: { r: 4, c: 0 }, e: { r: 4, c: 3 } }, // Calc text A5:D5
+          { s: { r: 5, c: 1 }, e: { r: 5, c: 3 } }, // Total amount B6:D6
+          { s: { r: 2, c: 4 }, e: { r: 5, c: 4 } }, // Supplier banner E3:E6
+          { s: { r: 2, c: 6 }, e: { r: 2, c: 7 } }, // supBiz G3:H3
+          { s: { r: 4, c: 6 }, e: { r: 4, c: 7 } }, // supAddr G5:H5
+          { s: { r: 5, c: 6 }, e: { r: 5, c: 7 } }, // supBizType G6:H6
+          { s: { r: subtotalRow - 1, c: 0 }, e: { r: subtotalRow - 1, c: 5 } }, // 소계 label A:F
+          { s: { r: finalRow - 1, c: 0 }, e: { r: finalRow - 1, c: 1 } }, // 미수금 A:B
+          { s: { r: finalRow - 1, c: 2 }, e: { r: finalRow - 1, c: 3 } }, // 합계 label C:D
+          { s: { r: finalRow - 1, c: 4 }, e: { r: finalRow - 1, c: 5 } }  // 합계 금액 E:F
+        ];
+
+        ws['!cols'] = [
+          { wch: 6 },  // A. 월
+          { wch: 6 },  // B. 일
+          { wch: 34 }, // C. 품목 / 규격
+          { wch: 8 },  // D. 단위
+          { wch: 10 }, // E. 수량
+          { wch: 12 }, // F. 단가
+          { wch: 14 }, // G. 공급가액
+          { wch: 12 }  // H. 세액
+        ];
+        ws['!rows'] = rowHeights;
+        ws['!ref'] = `A1:H${curRow}`;
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, '거래명세표');
+        downloadExcelWorkbook(wb, filenameBase);
+        return;
+      } catch (err) {
+        console.error('XLSX Blue export failed, fallback to CSV', err);
+      }
+    }
+
+    // CSV Fallback for blue
+    const csvRows = [
+      ['월', '일', '품목 / 규격', '단위', '수량', '단가', '공급가액', '세액']
+    ];
+    let totalSub = 0, totalTax = 0;
+    items.forEach(it => {
+      const { m: itM, d: itD } = parseItemMonthDay(it.date, invDate);
+      const nameSpec = (it.name || '') + (it.spec ? ' / ' + it.spec : '');
+      const qty = Number(it.qty) || 0;
+      const price = Number(it.price) || 0;
+      const sub = Number(it.sub) || (qty * price);
+      const tax = it.tax !== undefined ? Number(it.tax) : (includeTax ? Math.round(sub * 0.1) : 0);
+      totalSub += sub; totalTax += tax;
+      csvRows.push([itM, itD, nameSpec, it.unit || '', qty, price, sub, tax]);
+    });
+    csvRows.push(['', '', '*** 이하 여백 ***', '', '', '', '', '']);
+    csvRows.push(['소계', '', '', '', '', '', totalSub, totalTax]);
+    csvRows.push(['합계', '', '', '', '', '', totalSub + totalTax, `인수자: ${toRep || toName}`]);
+    downloadCsvFallback(csvRows, filenameBase);
+  }
+
+  // 2. Xuất danh sách 발행 내역 (Lịch sử) ra file Excel (.xlsx) chuẩn [ 날짜 | 거래처명 | 품목 8개 ]
   function exportHistoryToExcel() {
     const history = getFilteredHistory();
     if (history.length === 0) {
@@ -4589,67 +5832,224 @@
       return;
     }
 
-    // Thông tin 공급자 mặc định từ màn hình hiện tại (dùng khi bản ghi cũ chưa lưu 공급자)
     const curSup = {
-      biz: (document.getElementById('supBiz')?.value || '').trim(),
-      name: (document.getElementById('supName')?.value || '').trim(),
-      rep: (document.getElementById('supRep')?.value || '').trim(),
-      tel: (document.getElementById('supTel')?.value || '').trim(),
-      addr: (document.getElementById('supAddr')?.value || '').trim(),
-      bizType: (document.getElementById('supBizType')?.value || '').trim(),
-      itemType: (document.getElementById('supItemType')?.value || '').trim(),
-      bank: (document.getElementById('supBank')?.value || '').trim()
+      biz: (document.getElementById('supBiz')?.value || '104-06-54611').trim(),
+      name: (document.getElementById('supName')?.value || '진일 라벨').trim(),
+      rep: (document.getElementById('supRep')?.value || '홍성모').trim(),
+      tel: (document.getElementById('supTel')?.value || '02-2266-2826').trim(),
+      addr: (document.getElementById('supAddr')?.value || '서울시 중구 주교동 19-1, 방산시장 A동 3/221호').trim()
     };
 
-    const headers = [
-      '발행일자',
-      '공급자 상호', '공급자 등록번호', '공급자 대표자', '공급자 Tel', '공급자 주소', '공급자 업태', '공급자 종목', '입금 계좌번호',
-      '공급받는자 상호(거래처명)', '공급받는자 대표자', '공급받는자 Tel', '공급받는자 주소', '공급받는자 사업자등록번호',
-      '품목 날짜', '품목명', '규격', '수량', '단가', '공급가액', '세액', '합계금액', '비고'
-    ];
-
-    const rows = [headers];
-    history.forEach(h => {
-      const includeTax = Boolean(h.includeTax);
-      const sup = h.supplier || curSup;
-
-      (h.items || []).forEach(it => {
-        const sub = Number(it.sub || 0);
-        const itemTax = includeTax ? Math.round(sub * 0.1) : 0;
-        const itemTotal = sub + itemTax;
-
-        rows.push([
-          h.date || '',
-          sup.name || curSup.name,
-          sup.biz || curSup.biz,
-          sup.rep || curSup.rep,
-          sup.tel || curSup.tel,
-          sup.addr || curSup.addr,
-          sup.bizType || curSup.bizType,
-          sup.itemType || curSup.itemType,
-          sup.bank || curSup.bank,
-          h.toName || '',
-          h.toRep || '',
-          h.toTel || '',
-          h.toAddr || '',
-          h.toBiz || '',
-          it.date || h.date || '',
-          it.name || '',
-          it.spec || '',
-          Number(it.qty) || 0,
-          Number(it.price) || 0,
-          sub,
-          itemTax,
-          itemTotal,
-          it.note || h.note || ''
-        ]);
-      });
-    });
-
     const selMonth = document.getElementById('selHistoryMonth');
+    const filterMonthText = (selMonth && selMonth.value !== 'ALL') ? selMonth.value : '전체 기간';
     const monthSuffix = (selMonth && selMonth.value !== 'ALL') ? `_${selMonth.value}` : `_전체_${getLocalTodayDate()}`;
     const filenameBase = `거래명세서_발행내역${monthSuffix}`;
-    saveRowsAsExcel(rows, filenameBase);
+
+    if (window.XLSX) {
+      try {
+        const ws = {};
+        const borderThin = getExcelBorder('thin', EXCEL_THEME.BORDER);
+
+        const styleTitle = {
+          font: { name: '맑은 고딕', sz: 18, bold: true, color: { rgb: EXCEL_THEME.TEXT_DARK } },
+          alignment: { horizontal: 'center', vertical: 'center' }
+        };
+
+        const styleSubLeft = {
+          font: { name: '맑은 고딕', sz: 10, color: { rgb: EXCEL_THEME.TEXT_MUTED } },
+          alignment: { horizontal: 'left', vertical: 'center' }
+        };
+
+        const styleSubRight = {
+          font: { name: '맑은 고딕', sz: 10.5, bold: true, color: { rgb: EXCEL_THEME.TEXT_DARK } },
+          alignment: { horizontal: 'right', vertical: 'center' }
+        };
+
+        const styleTableHeader = {
+          font: { name: '맑은 고딕', sz: 10.5, bold: true, color: { rgb: 'FFFFFF' } },
+          fill: { fgColor: { rgb: EXCEL_THEME.PRIMARY } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: {
+            top: { style: 'medium', color: { rgb: EXCEL_THEME.PRIMARY } },
+            bottom: { style: 'medium', color: { rgb: EXCEL_THEME.PRIMARY } },
+            left: { style: 'thin', color: { rgb: 'FFFFFF' } },
+            right: { style: 'thin', color: { rgb: 'FFFFFF' } }
+          }
+        };
+
+        function getRowStyle(align = 'left', isNumber = false, isZebra = false, isBold = false) {
+          return {
+            font: { name: '맑은 고딕', sz: 9.5, bold: isBold, color: { rgb: EXCEL_THEME.TEXT_DARK } },
+            fill: isZebra ? { fgColor: { rgb: EXCEL_THEME.ZEBRA } } : undefined,
+            alignment: { horizontal: align, vertical: 'center' },
+            border: {
+              top: { style: 'thin', color: { rgb: EXCEL_THEME.BORDER_ROW } },
+              bottom: { style: 'thin', color: { rgb: EXCEL_THEME.BORDER_ROW } },
+              left: { style: 'thin', color: { rgb: EXCEL_THEME.BORDER_ROW } },
+              right: { style: 'thin', color: { rgb: EXCEL_THEME.BORDER_ROW } }
+            },
+            numFmt: isNumber ? '#,##0' : undefined
+          };
+        }
+
+        const styleTotalLabel = {
+          font: { name: '맑은 고딕', sz: 10.5, bold: true, color: { rgb: EXCEL_THEME.TEXT_DARK } },
+          fill: { fgColor: { rgb: EXCEL_THEME.LIGHT } },
+          alignment: { horizontal: 'center', vertical: 'center' },
+          border: {
+            top: { style: 'medium', color: { rgb: EXCEL_THEME.PRIMARY } },
+            bottom: { style: 'double', color: { rgb: EXCEL_THEME.PRIMARY } },
+            left: { style: 'thin', color: { rgb: EXCEL_THEME.BORDER } },
+            right: { style: 'thin', color: { rgb: EXCEL_THEME.BORDER } }
+          }
+        };
+
+        const styleTotalVal = {
+          font: { name: '맑은 고딕', sz: 11, bold: true, color: { rgb: EXCEL_THEME.TOTAL_GREEN } },
+          fill: { fgColor: { rgb: EXCEL_THEME.LIGHT } },
+          alignment: { horizontal: 'right', vertical: 'center' },
+          border: {
+            top: { style: 'medium', color: { rgb: EXCEL_THEME.PRIMARY } },
+            bottom: { style: 'double', color: { rgb: EXCEL_THEME.PRIMARY } },
+            left: { style: 'thin', color: { rgb: EXCEL_THEME.BORDER } },
+            right: { style: 'thin', color: { rgb: EXCEL_THEME.BORDER } }
+          },
+          numFmt: '#,##0'
+        };
+
+        function setCell(cellRef, val, type = 's', style = {}) {
+          ws[cellRef] = { t: type, v: val, s: style };
+          if (type === 'n' && style.numFmt) ws[cellRef].z = style.numFmt;
+        }
+
+        // Row 1: Title
+        setCell('A1', '거  래  명  세  서  발  행  내  역', 's', styleTitle);
+
+        // Row 2: Subheader
+        setCell('A2', `공급자: ${curSup.name} (${curSup.biz}) | Tel: ${curSup.tel}`, 's', styleSubLeft);
+        setCell('G2', `조회 기준: ${filterMonthText} | 출력일시: ${getLocalTodayDate()}`, 's', styleSubRight);
+
+        // Row 4: Table Header (10 columns: 품목 날짜, 거래처명, 품목명, 규격, 수량, 단가, 공급가액, 세액, 합계금액, 비고)
+        const headers = ['품목 날짜', '거래처명', '품목명', '규격', '수량', '단가', '공급가액', '세액', '합계금액', '비고'];
+        const headerCols = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'];
+        headerCols.forEach((col, idx) => {
+          setCell(`${col}4`, headers[idx], 's', styleTableHeader);
+        });
+
+        const rowHeights = [
+          { hpt: 38 }, // Row 1 Title
+          { hpt: 22 }, // Row 2 Sub
+          { hpt: 8 },  // Row 3 Spacer
+          { hpt: 28 }, // Row 4 Header
+        ];
+
+        let curRow = 5;
+        let totalQty = 0;
+        let totalSub = 0;
+        let totalTax = 0;
+        let totalSum = 0;
+        let lineIdx = 0;
+
+        history.forEach(h => {
+          const includeTax = Boolean(h.includeTax);
+          const toName = h.toName || '';
+
+          (h.items || []).forEach(it => {
+            const isZebra = lineIdx % 2 === 1;
+            lineIdx++;
+
+            const qty = Number(it.qty) || 0;
+            const price = Number(it.price) || 0;
+            const sub = Number(it.sub) || (qty * price);
+            const itemTax = it.tax !== undefined ? Number(it.tax) : (includeTax ? Math.round(sub * 0.1) : 0);
+            const itemTotal = sub + itemTax;
+
+            totalQty += qty;
+            totalSub += sub;
+            totalTax += itemTax;
+            totalSum += itemTotal;
+
+            rowHeights.push({ hpt: 21 }); // Dòng mặt hàng cao 21pt
+
+            setCell(`A${curRow}`, it.date || h.date || '', 's', getRowStyle('center', false, isZebra));
+            setCell(`B${curRow}`, toName, 's', getRowStyle('left', false, isZebra, true));
+            setCell(`C${curRow}`, it.name || '', 's', getRowStyle('left', false, isZebra));
+            setCell(`D${curRow}`, it.spec || '', 's', getRowStyle('center', false, isZebra));
+            setCell(`E${curRow}`, qty, 'n', getRowStyle('right', true, isZebra));
+            setCell(`F${curRow}`, price, 'n', getRowStyle('right', true, isZebra));
+            setCell(`G${curRow}`, sub, 'n', getRowStyle('right', true, isZebra));
+            setCell(`H${curRow}`, itemTax, 'n', getRowStyle('right', true, isZebra));
+            setCell(`I${curRow}`, itemTotal, 'n', getRowStyle('right', true, isZebra, true));
+            setCell(`J${curRow}`, it.note || h.note || '', 's', getRowStyle('left', false, isZebra));
+
+            curRow++;
+          });
+        });
+
+        // Summary Row
+        rowHeights.push({ hpt: 28 });
+        setCell(`A${curRow}`, '총  합  계  (T O T A L)', 's', styleTotalLabel);
+        setCell(`B${curRow}`, '', 's', styleTotalLabel);
+        setCell(`C${curRow}`, '', 's', styleTotalLabel);
+        setCell(`D${curRow}`, '', 's', styleTotalLabel);
+        setCell(`E${curRow}`, totalQty, 'n', styleTotalVal);
+        setCell(`F${curRow}`, '-', 's', styleTotalLabel);
+        setCell(`G${curRow}`, totalSub, 'n', styleTotalVal);
+        setCell(`H${curRow}`, totalTax, 'n', styleTotalVal);
+        setCell(`I${curRow}`, totalSum, 'n', styleTotalVal);
+        setCell(`J${curRow}`, '', 's', styleTotalLabel);
+
+        ws['!merges'] = [
+          { s: { r: 0, c: 0 }, e: { r: 0, c: 9 } }, // Title A1:J1
+          { s: { r: 1, c: 0 }, e: { r: 1, c: 5 } }, // SubLeft A2:F2
+          { s: { r: 1, c: 6 }, e: { r: 1, c: 9 } }, // SubRight G2:J2
+          { s: { r: curRow - 1, c: 0 }, e: { r: curRow - 1, c: 3 } } // Total label A:D
+        ];
+
+        ws['!cols'] = [
+          { wch: 13 }, // A. 품목 날짜
+          { wch: 22 }, // B. 거래처명
+          { wch: 24 }, // C. 품목명
+          { wch: 28 }, // D. 규격 (Rộng 28 ký tự)
+          { wch: 10 }, // E. 수량
+          { wch: 12 }, // F. 단가
+          { wch: 14 }, // G. 공급가액
+          { wch: 12 }, // H. 세액
+          { wch: 15 }, // I. 합계금액
+          { wch: 20 }  // J. 비고
+        ];
+
+        ws['!rows'] = rowHeights;
+        ws['!ref'] = `A1:J${curRow}`;
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, '발행내역');
+        downloadExcelWorkbook(wb, filenameBase);
+        return;
+      } catch (err) {
+        console.error('XLSX history export failed, fallback to CSV', err);
+      }
+    }
+
+    // Fallback CSV
+    const csvRows = [
+      ['품목 날짜', '거래처명', '품목명', '규격', '수량', '단가', '공급가액', '세액', '합계금액', '비고']
+    ];
+    let totalQty = 0, totalSub = 0, totalTax = 0, totalSum = 0;
+    history.forEach(h => {
+      const includeTax = Boolean(h.includeTax);
+      (h.items || []).forEach(it => {
+        const qty = Number(it.qty) || 0;
+        const price = Number(it.price) || 0;
+        const sub = Number(it.sub) || (qty * price);
+        const itemTax = it.tax !== undefined ? Number(it.tax) : (includeTax ? Math.round(sub * 0.1) : 0);
+        const itemTotal = sub + itemTax;
+        totalQty += qty; totalSub += sub; totalTax += itemTax; totalSum += itemTotal;
+        csvRows.push([it.date || h.date || '', h.toName || '', it.name || '', it.spec || '', qty, price, sub, itemTax, itemTotal, it.note || h.note || '']);
+      });
+    });
+    csvRows.push(['총 합계', '', '', '', totalQty, '-', totalSub, totalTax, totalSum, '']);
+    downloadCsvFallback(csvRows, filenameBase);
   }
 
   // Sao lưu toàn bộ dữ liệu lịch sử ra file JSON
@@ -4717,8 +6117,53 @@
     reader.readAsText(file);
   }
 
-  function deleteHistoryItem(id) {
-    if (!confirm('이 발행 내역을 삭제하시겠습니까?')) return;
+  // ─── Interactive Confirm Modal Helper ───
+  let confirmModalResolve = null;
+  function showConfirmModal({ title = '확인', message = '진행하시겠습니까?', icon = '⚠️', confirmText = '확인', cancelText = '취소', isDanger = true }) {
+    return new Promise((resolve) => {
+      confirmModalResolve = resolve;
+      const modal = document.getElementById('confirmActionModalOverlay');
+      const iconEl = document.getElementById('confirmModalIcon');
+      const titleEl = document.getElementById('confirmModalTitle');
+      const msgEl = document.getElementById('confirmModalMsg');
+      const okBtn = document.getElementById('btnConfirmOk');
+
+      if (iconEl) {
+        iconEl.textContent = icon;
+        iconEl.className = 'confirm-modal-icon' + (isDanger ? '' : ' info');
+      }
+      if (titleEl) titleEl.textContent = title;
+      if (msgEl) msgEl.textContent = message;
+      if (okBtn) {
+        okBtn.textContent = confirmText;
+        okBtn.className = 'btn-confirm-ok' + (isDanger ? '' : ' primary');
+      }
+
+      if (modal) {
+        modal.style.display = 'flex';
+      }
+    });
+  }
+
+  function closeConfirmModal(result) {
+    const modal = document.getElementById('confirmActionModalOverlay');
+    if (modal) modal.style.display = 'none';
+    if (typeof confirmModalResolve === 'function') {
+      confirmModalResolve(Boolean(result));
+      confirmModalResolve = null;
+    }
+  }
+
+  async function deleteHistoryItem(id) {
+    const ok = await showConfirmModal({
+      title: '발행 내역 삭제',
+      message: '선택하신 거래명세서 발행 내역을 삭제하시겠습니까?',
+      icon: '🗑️',
+      confirmText: '삭제',
+      isDanger: true
+    });
+    if (!ok) return;
+
     let history = getInvoiceHistory();
     history = history.filter(h => h.id !== id);
     localStorage.setItem('jinil_invoice_history', JSON.stringify(history));
@@ -4737,23 +6182,30 @@
     showToast('발행 내역이 삭제되었습니다.');
   }
 
-  function clearAllHistory() {
-    if (confirm('모든 발행 내역을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.\n(미리 [백업] 버튼으로 저장해 두시는 것을 권장합니다.)')) {
-      localStorage.removeItem('jinil_invoice_history');
+  async function clearAllHistory() {
+    const ok = await showConfirmModal({
+      title: '발행 내역 전체 삭제',
+      message: '모든 발행 내역을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다. (필요 시 [백업] 버튼으로 저장해 두세요)',
+      icon: '⚠️',
+      confirmText: '영구 삭제',
+      isDanger: true
+    });
+    if (!ok) return;
 
-      try {
-        if (window.parent && window.parent !== window) {
-          window.parent.postMessage({
-            type: 'SYNC_INVOICE_HISTORY',
-            history: []
-          }, '*');
-        }
-      } catch (e) {}
+    localStorage.removeItem('jinil_invoice_history');
 
-      populateMonthFilter();
-      renderHistoryList();
-      showToast('전체 발행 내역이 삭제되었습니다.');
-    }
+    try {
+      if (window.parent && window.parent !== window) {
+        window.parent.postMessage({
+          type: 'SYNC_INVOICE_HISTORY',
+          history: []
+        }, '*');
+      }
+    } catch (e) {}
+
+    populateMonthFilter();
+    renderHistoryList();
+    showToast('전체 발행 내역이 삭제되었습니다.');
   }
 
   // Tiện ích focus và bôi đen toàn bộ chữ (select) để người dùng gõ đè nhanh
@@ -4774,11 +6226,15 @@
   document.getElementById('historyModalOverlay')?.addEventListener('click', function(e) {
     if (e.target === this) closeHistoryModal();
   });
+  document.getElementById('confirmActionModalOverlay')?.addEventListener('click', function(e) {
+    if (e.target === this) closeConfirmModal(false);
+  });
 
   // Tự động nhảy sang ô nhập tiếp theo khi nhấn Enter (như phím Tab) & Phím Escape đóng modal
   document.addEventListener('keydown', function(e) {
     // Phím Escape: Đóng các modal và popover đang mở
     if (e.key === 'Escape') {
+      closeConfirmModal(false);
       closeCustomWordModal();
       closeHistoryModal();
       hideTableSuggest();
