@@ -22,6 +22,7 @@ import AdminDashboardModal from './components/AdminDashboardModal';
 import RealtimeLockOverlay from './components/RealtimeLockOverlay';
 import SystemAnnouncementModal from './components/SystemAnnouncementModal';
 import NotesModal from './components/NotesModal';
+import FullscreenWeatherOverlay from './components/effects/FullscreenWeatherOverlay';
 import { hasAppLockPin } from './lib/appLock';
 import { initializeApp } from 'firebase/app';
 import { auth, db, secondaryAuth, secondaryDb, firebaseConfig } from './firebase';
@@ -1024,7 +1025,9 @@ function App() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
+    <div className="flex flex-col min-h-screen relative">
+      {/* 15-Second Fullscreen Weather Atmosphere Overlay */}
+      <FullscreenWeatherOverlay />
       <StockTicker />
       <div 
         className="flex-1 bg-gray-50 dark:bg-gray-900 flex justify-center py-6 px-4 transition-all duration-300"

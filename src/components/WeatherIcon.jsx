@@ -1,8 +1,11 @@
 import React from 'react';
 
 export default function WeatherIcon({ type, className = "w-10 h-10" }) {
-  switch (type) {
+  const normType = (type || '').toLowerCase();
+
+  switch (normType) {
     case 'clear-day':
+    case 'sunny':
       return (
         <svg viewBox="0 0 64 64" className={`${className} transition-transform duration-300 hover:scale-110 shrink-0`}>
           <defs>
@@ -45,27 +48,59 @@ export default function WeatherIcon({ type, className = "w-10 h-10" }) {
         </svg>
       );
 
+    /* NEW 3D CLAY MOON & STARS (From Reference Image) */
     case 'clear-night':
       return (
-        <svg viewBox="0 0 64 64" className={`${className} transition-transform duration-300 hover:scale-110 shrink-0`}>
+        <svg viewBox="0 0 64 64" className={`${className} transition-transform duration-300 hover:scale-110 shrink-0 filter drop-shadow-sm`}>
           <defs>
-            <linearGradient id="moon-grad-cn" x1="0%" y1="0%" x2="100%" y2="100%">
+            {/* 3D Volumetric Moon Gradient */}
+            <radialGradient id="moon3d-core" cx="35%" cy="30%" r="65%">
+              <stop offset="0%" stopColor="#FFF9C4" />
+              <stop offset="35%" stopColor="#FFD54F" />
+              <stop offset="75%" stopColor="#FFB300" />
+              <stop offset="100%" stopColor="#FB8C00" />
+            </radialGradient>
+
+            {/* 3D Star Gradient */}
+            <linearGradient id="star3d-grad" x1="0%" y1="0%" x2="100%" y2="100%">
               <stop offset="0%" stopColor="#FFF59D" />
-              <stop offset="60%" stopColor="#FBC02D" />
-              <stop offset="100%" stopColor="#F57F17" />
+              <stop offset="60%" stopColor="#FFCA28" />
+              <stop offset="100%" stopColor="#FFA000" />
             </linearGradient>
-            <filter id="moon-shadow-cn" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#F57F17" floodOpacity="0.3" />
+
+            <filter id="moon3d-shadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="3.5" stdDeviation="3.5" floodColor="#B45309" floodOpacity="0.4" />
             </filter>
           </defs>
+
+          {/* Chubby 3D Clay Crescent Moon */}
           <path
-            d="M 40,14 C 27,14 17,25 17,39 C 17,48 22,54 29,56 C 23,51 21,43 22,35 C 24,24 32,16 43,15 C 42.1,14.3 41.1,14 40,14 Z"
-            fill="url(#moon-grad-cn)"
-            filter="url(#moon-shadow-cn)"
+            d="M 38 8 C 22 8 10 20 10 36 C 10 50 21 60 35 60 C 42 60 49 57 54 52 C 38 52 26 40 26 24 C 26 16 30 11 38 8 Z"
+            fill="url(#moon3d-core)"
+            filter="url(#moon3d-shadow)"
           />
-          <circle cx="45" cy="20" r="2" fill="#FFFFFF" opacity="0.9" />
-          <circle cx="49" cy="32" r="1.5" fill="#FFF9C4" opacity="0.85" />
-          <circle cx="19" cy="18" r="1.5" fill="#FFFFFF" opacity="0.75" />
+
+          {/* Moon 3D Clay Specular Gloss Highlight */}
+          <path
+            d="M 20 20 C 15 28 15 39 21 47 C 18 43 16 34 18 26 C 19 23 20 21 20 20 Z"
+            fill="#FFFFFF"
+            opacity="0.45"
+          />
+
+          {/* Big Chubby 3D Star (Top Right) */}
+          <path
+            d="M 48 12 C 49 15 50 16 52 17 C 50 18 49 19 48 22 C 47 19 46 18 44 17 C 46 16 47 15 48 12 Z"
+            fill="url(#star3d-grad)"
+            filter="url(#moon3d-shadow)"
+          />
+          <circle cx="48" cy="17" r="1.8" fill="#FFFDE7" opacity="0.75" />
+
+          {/* Small Chubby 3D Star (Lower Right) */}
+          <path
+            d="M 54 28 C 55 30 56 31 57 32 C 56 33 55 34 54 36 C 53 34 52 33 51 32 C 52 31 53 30 54 28 Z"
+            fill="url(#star3d-grad)"
+            filter="url(#moon3d-shadow)"
+          />
         </svg>
       );
 
@@ -150,6 +185,7 @@ export default function WeatherIcon({ type, className = "w-10 h-10" }) {
       );
 
     case 'cloudy':
+    case 'overcast':
       return (
         <svg viewBox="0 0 64 64" className={`${className} transition-transform duration-300 hover:scale-110 shrink-0`}>
           <defs>
@@ -213,6 +249,7 @@ export default function WeatherIcon({ type, className = "w-10 h-10" }) {
       );
 
     case 'snow':
+    case 'blizzard':
       return (
         <svg viewBox="0 0 64 64" className={`${className} transition-transform duration-300 hover:scale-110 shrink-0`}>
           <defs>
@@ -239,6 +276,7 @@ export default function WeatherIcon({ type, className = "w-10 h-10" }) {
       );
 
     case 'thunder':
+    case 'thunderstorm':
       return (
         <svg viewBox="0 0 64 64" className={`${className} transition-transform duration-300 hover:scale-110 shrink-0`}>
           <defs>
@@ -265,6 +303,7 @@ export default function WeatherIcon({ type, className = "w-10 h-10" }) {
       );
 
     case 'fog':
+    case 'mist':
       return (
         <svg viewBox="0 0 64 64" className={`${className} transition-transform duration-300 hover:scale-110 shrink-0`}>
           <defs>
