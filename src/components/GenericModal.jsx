@@ -36,7 +36,6 @@ export default function GenericModal({ isOpen, onClose, title, children }) {
                 {/* Modal Body */}
                 <div 
                     className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar text-gray-800 dark:text-slate-100"
-                    style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}
                 >
                     {children}
                 </div>

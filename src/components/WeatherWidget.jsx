@@ -198,15 +198,14 @@ const getKoreanCityName = (lat, lon, rawCityName) => {
 const parseWttrConditionCode = (desc) => {
     if (!desc) return 0;
     const lower = desc.toLowerCase();
-    if (lower.includes('sunny') || lower.includes('clear')) return 0;
-    if (lower.includes('partly cloudy')) return 2;
-    if (lower.includes('cloudy') || lower.includes('overcast')) return 3;
-    if (lower.includes('fog') || lower.includes('mist')) return 45;
-    if (lower.includes('drizzle')) return 51;
-    if (lower.includes('heavy rain') || lower.includes('torrential')) return 65;
-    if (lower.includes('rain') || lower.includes('shower')) return 61;
-    if (lower.includes('snow') || lower.includes('blizzard')) return 71;
     if (lower.includes('thunder')) return 95;
+    if (lower.includes('snow') || lower.includes('blizzard') || lower.includes('sleet')) return 71;
+    if (lower.includes('heavy rain') || lower.includes('torrential') || lower.includes('downpour')) return 65;
+    if (lower.includes('rain') || lower.includes('shower') || lower.includes('drizzle')) return 61;
+    if (lower.includes('fog') || lower.includes('mist')) return 45;
+    if (lower.includes('cloudy') || lower.includes('overcast')) return 3;
+    if (lower.includes('partly cloudy')) return 2;
+    if (lower.includes('sunny') || lower.includes('clear')) return 0;
     return 1;
 };
 
@@ -430,7 +429,19 @@ export default function WeatherWidget() {
                 const metData = await metRes.json();
                 const timeseries = metData?.properties?.timeseries;
                 if (timeseries && timeseries.length > 0) {
-                    const currentItem = timeseries[0];
+                    // Smart Real-time Sync: Pick timeseries entry closest to the current minute
+                    const nowMs = Date.now();
+                    let currentItem = timeseries[0];
+                    let minDiff = Infinity;
+                    for (const item of timeseries) {
+                        const itemMs = new Date(item.time).getTime();
+                        const diff = Math.abs(itemMs - nowMs);
+                        if (diff < minDiff) {
+                            minDiff = diff;
+                            currentItem = item;
+                        }
+                    }
+
                     const instant = currentItem?.data?.instant?.details || {};
                     const currentTemp = Math.round(instant.air_temperature ?? 14);
                     const humidity = Math.round(instant.relative_humidity ?? 60);
@@ -439,8 +450,23 @@ export default function WeatherWidget() {
                     const nextSummary = currentItem?.data?.next_1_hours?.summary?.symbol_code ||
                                         currentItem?.data?.next_6_hours?.summary?.symbol_code ||
                                         currentItem?.data?.next_12_hours?.summary?.symbol_code || '';
+                    const precipAmount = currentItem?.data?.next_1_hours?.details?.precipitation_amount ??
+                                         currentItem?.data?.next_6_hours?.details?.precipitation_amount ?? 0;
+
                     const isNight = checkIsNight();
-                    const currentMapped = mapMetNoSymbol(nextSummary, isNight);
+                    let currentMapped = mapMetNoSymbol(nextSummary, isNight);
+
+                    // High-Precision Precipitation Override:
+                    // If actual rainfall mm is detected, force rain classification
+                    if (precipAmount > 0 && currentMapped.iconType !== 'rain' && currentMapped.iconType !== 'snow' && currentMapped.iconType !== 'thunder') {
+                        if (currentTemp <= 1) {
+                            currentMapped = { label: isNight ? '눈 (밤)' : '눈', iconType: 'snow', code: 71 };
+                        } else if (precipAmount >= 2.0) {
+                            currentMapped = { label: isNight ? '강한 밤비' : '소나기', iconType: 'rain', code: 65 };
+                        } else {
+                            currentMapped = { label: isNight ? '밤비' : '비', iconType: 'rain', code: 61 };
+                        }
+                    }
 
                     // Aggregate timeseries into daily forecasts (min/max temps & midday symbols)
                     const dailyMap = new Map();
@@ -521,7 +547,7 @@ export default function WeatherWidget() {
         // --- SECONDARY PROVIDER: Open-Meteo (Fast 3s timeout) ---
         try {
             const weatherRes = await fetchWithTimeout(
-                `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&hourly=relativehumidity_2m,apparent_temperature&timezone=auto`,
+                `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=weathercode,temperature_2m_max,temperature_2m_min&hourly=relativehumidity_2m,apparent_temperature,precipitation,rain&timezone=auto`,
                 {},
                 3000
             );
@@ -535,6 +561,12 @@ export default function WeatherWidget() {
                 const humidity = hourly.relativehumidity_2m ? hourly.relativehumidity_2m[currentHourIndex] || 60 : 60;
                 const apparentTemp = hourly.apparent_temperature ? hourly.apparent_temperature[currentHourIndex] : current.temperature;
                 const isNight = checkIsNight(current.is_day);
+
+                let meteoCode = current.weathercode || 0;
+                const currentPrecip = hourly.precipitation ? (hourly.precipitation[currentHourIndex] || 0) : 0;
+                if (currentPrecip > 0 && meteoCode < 50) {
+                    meteoCode = currentPrecip >= 2.0 ? 65 : 61;
+                }
 
                 // Parse 4-Day Forecast
                 const dailyForecast = [];
@@ -576,7 +608,7 @@ export default function WeatherWidget() {
                     feelsLike: Math.round(apparentTemp),
                     windSpeed: current.windspeed ? (current.windspeed / 3.6).toFixed(1) : '1.5',
                     humidity: humidity,
-                    code: current.weathercode || 0,
+                    code: meteoCode,
                     isNight: isNight,
                     dailyForecast: dailyForecast.slice(1, 5), // Next 4 days
                     tempNotice: tempNotice,
@@ -601,7 +633,11 @@ export default function WeatherWidget() {
                 const curr = wttrData.current_condition && wttrData.current_condition[0];
                 if (curr) {
                     const desc = curr.weatherDesc && curr.weatherDesc[0] ? curr.weatherDesc[0].value : '';
-                    const parsedCode = parseWttrConditionCode(desc);
+                    let parsedCode = parseWttrConditionCode(desc);
+                    const precipMM = parseFloat(curr.precipMM || 0);
+                    if (precipMM > 0 && parsedCode < 50) {
+                        parsedCode = precipMM >= 2.0 ? 65 : 61;
+                    }
                     const isNight = checkIsNight();
 
                     // Parse real weather forecast from wttrData.weather
@@ -682,7 +718,10 @@ export default function WeatherWidget() {
         setLoading(false);
     }, []);
 
-    const getLocationAndFetch = useCallback(() => {
+    const getLocationAndFetch = useCallback((forceRefresh = false) => {
+        if (forceRefresh) {
+            try { localStorage.removeItem('jinil_weather_cache'); } catch (e) {}
+        }
         if ('geolocation' in navigator) {
             navigator.geolocation.getCurrentPosition(
                 (pos) => {
@@ -692,7 +731,7 @@ export default function WeatherWidget() {
                     console.warn('Geolocation position access denied/failed, falling back to Seoul IP location', err);
                     fetchWeatherData(37.5665, 126.9780);
                 },
-                { timeout: 8000, maximumAge: 600000 }
+                { timeout: 8000, maximumAge: forceRefresh ? 0 : 600000 }
             );
         } else {
             fetchWeatherData(37.5665, 126.9780);
@@ -749,17 +788,20 @@ export default function WeatherWidget() {
                         type="button"
                         onClick={(e) => {
                             e.stopPropagation();
-                            getLocationAndFetch();
+                            getLocationAndFetch(true);
                         }}
-                        title="10분 주기 실시간 갱신"
+                        title="날씨 즉시 새로고침 (클릭 시 최신 날씨로 강제 갱신)"
                         className={`text-[10px] font-semibold px-2 py-0.5 rounded-full hover:scale-105 active:scale-95 transition-all flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs ${
                             isNightNow
-                                ? 'bg-white/15 border border-white/20 text-slate-100'
-                                : 'bg-white/80 dark:bg-slate-700/70 border border-white dark:border-slate-600/80 text-slate-700 dark:text-slate-200'
+                                ? 'bg-white/15 border border-white/20 text-slate-100 hover:bg-white/25'
+                                : 'bg-white/80 dark:bg-slate-700/70 border border-white dark:border-slate-600/80 text-slate-700 dark:text-slate-200 hover:bg-white'
                         }`}
                     >
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span className={`w-1.5 h-1.5 rounded-full ${loading ? 'bg-amber-400 animate-ping' : 'bg-emerald-400 animate-pulse'}`}></span>
                         <span className="whitespace-nowrap">{lastUpdated ? `${lastUpdated} 갱신` : '실시간'}</span>
+                        <svg className={`w-2.5 h-2.5 ml-0.5 opacity-60 hover:opacity-100 ${loading ? 'animate-spin text-blue-500' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
                     </button>
                 </div>
 

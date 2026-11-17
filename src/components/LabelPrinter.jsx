@@ -2242,7 +2242,7 @@ export default function LabelPrinter({ user }) {
                             )}
                         </div>
                     )}
-                            <div className="overflow-x-auto max-h-[600px] scrollbar-thin" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
+                            <div className="overflow-x-auto max-h-[600px] scrollbar-thin">
                                 <table className="w-full">
                                     <thead className="sticky top-0 z-10">
                                         <tr className="bg-slate-50 border-b border-slate-200">
