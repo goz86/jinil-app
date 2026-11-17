@@ -315,18 +315,9 @@ export default function WeatherWidget() {
         return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     });
     const [activeSlide, setActiveSlide] = useState(0); // 0: Live Current Weather, 1: 4-Day Forecast
-    const [previewEffect, setPreviewEffect] = useState(null); // null = Live real-time, or 'snow', 'rain', etc.
 
     const isNightNow = weather ? (weather.isNight !== undefined ? weather.isNight : checkIsNight()) : checkIsNight();
     const weatherInfo = weather ? getWeatherInfo(weather.code, isNightNow) : (isNightNow ? { label: '맑은 밤', iconType: 'clear-night', bgClass: 'bg-slate-900/90 text-slate-100 border-indigo-900/80', bgTint: 'from-indigo-950/90 to-slate-900/90' } : { label: '불러오는 중', iconType: 'partly-cloudy-day', bgClass: 'bg-slate-50/90 dark:bg-slate-900/60 border-slate-200/80 dark:border-slate-700/60', bgTint: 'from-blue-500/15 to-indigo-500/15' });
-
-    const togglePreviewEffect = () => {
-        const modes = [null, 'snow', 'rain', 'thunder', 'cloudy', 'clear-day', 'clear-night'];
-        setPreviewEffect(prev => {
-            const nextIdx = (modes.indexOf(prev) + 1) % modes.length;
-            return modes[nextIdx];
-        });
-    };
 
     // Drag / Touch Swipe gesture state
     const [startX, setStartX] = useState(0);
@@ -342,14 +333,13 @@ export default function WeatherWidget() {
     };
 
     const triggerFullscreenWeather = useCallback(() => {
-        const targetEffect = previewEffect || weatherInfo.iconType;
         window.dispatchEvent(new CustomEvent('jinil:trigger-fullscreen-weather', {
             detail: {
-                iconType: targetEffect,
+                iconType: weatherInfo.iconType,
                 isNight: isNightNow
             }
         }));
-    }, [previewEffect, weatherInfo.iconType, isNightNow]);
+    }, [weatherInfo.iconType, isNightNow]);
 
     const handleTouchEnd = (e) => {
         if (!isDragging) return;
@@ -739,8 +729,8 @@ export default function WeatherWidget() {
             {/* Ambient Background Gradient Tint (Dynamic by Weather) */}
             <div className={`absolute -inset-2 bg-gradient-to-br ${weatherInfo.bgTint} pointer-events-none blur-xl opacity-90 transition-colors duration-200`}></div>
 
-            {/* Realtime Ambient Weather Atmosphere (PixelSnow, Rain, Thunder, Mist, Stars, Sun) */}
-            <WeatherAtmosphere iconType={previewEffect || weatherInfo.iconType} isNight={isNightNow} />
+            {/* Realtime Ambient Weather Atmosphere (RealSnow, Rain, Thunder, Mist, Stars, Sun) */}
+            <WeatherAtmosphere iconType={weatherInfo.iconType} isNight={isNightNow} />
 
             <div className="relative z-10 space-y-2 flex-1 flex flex-col justify-between">
                 {/* Header Row: Location & Live Status */}
@@ -810,19 +800,11 @@ export default function WeatherWidget() {
 
                                     {/* Column 2 (Right): Samsung One UI Vector Weather Icon */}
                                     <div className="flex flex-col items-center justify-center text-center">
-                                        <div
-                                            data-no-fullscreen="true"
-                                            className="mb-0.5 select-none flex items-center justify-center cursor-pointer hover:scale-110 active:scale-95 transition-transform"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                togglePreviewEffect();
-                                            }}
-                                            title="아이콘을 클릭하여 날씨 효과 미리보기 (눈, 비, 번개, 안개, 맑음)"
-                                        >
-                                            <WeatherIcon type={previewEffect || weatherInfo.iconType} className="w-12 h-12" />
+                                        <div className="mb-0.5 select-none flex items-center justify-center">
+                                            <WeatherIcon type={weatherInfo.iconType} className="w-12 h-12" />
                                         </div>
                                         <span className={`text-xs font-bold whitespace-nowrap ${isNightNow ? 'text-slate-100' : 'text-slate-800 dark:text-slate-200'}`}>
-                                            {previewEffect ? `${previewEffect.toUpperCase()} (미리보기)` : weatherInfo.label}
+                                            {weatherInfo.label}
                                         </span>
                                     </div>
                                 </div>
