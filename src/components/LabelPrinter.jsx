@@ -123,11 +123,18 @@ function getMeasureContext() {
 /**
  * 2026 Auto-Shrink Font Size: Measures text width and dynamically scales down fontSize (pt)
  * so long strings fit within maxAvailableMm. Prevents text from being cut off at physical label margins.
+ * Equipped with high-performance LRU cache to eliminate redundant canvas layout measuring during scroll.
  */
+const _fitFontSizeCache = new Map();
 function calculateFitFontSize(text, targetPt, maxAvailableMm, fontFamily = 'Nanum Gothic', fontWeight = 600, minPt = 5) {
     if (!text || maxAvailableMm <= 0) return targetPt;
     const str = String(text).trim();
     if (!str) return targetPt;
+
+    const cacheKey = `${str}_${targetPt}_${maxAvailableMm}_${fontFamily}_${fontWeight}`;
+    if (_fitFontSizeCache.has(cacheKey)) {
+        return _fitFontSizeCache.get(cacheKey);
+    }
 
     const ctx = getMeasureContext();
     if (!ctx) return targetPt;
@@ -138,13 +145,22 @@ function calculateFitFontSize(text, targetPt, maxAvailableMm, fontFamily = 'Nanu
     ctx.font = `${fontWeight} ${initialPx}px '${fontFamily}', 'Nanum Gothic', 'Malgun Gothic', sans-serif`;
     const measuredPx = ctx.measureText(str).width;
 
-    if (measuredPx <= maxPx) {
-        return targetPt; // Fits comfortably without shrinking
+    let res = targetPt;
+    if (measuredPx > maxPx) {
+        // Shrink proportionally to fit inside maxPx
+        const scale = maxPx / measuredPx;
+        res = Math.max(minPt, Math.round(targetPt * scale * 10) / 10);
     }
 
-    // Shrink proportionally to fit inside maxPx
-    const scale = maxPx / measuredPx;
-    return Math.max(minPt, Math.round(targetPt * scale * 10) / 10);
+    if (_fitFontSizeCache.size >= 1500) {
+        let toDel = 300;
+        for (const k of _fitFontSizeCache.keys()) {
+            _fitFontSizeCache.delete(k);
+            if (--toDel <= 0) break;
+        }
+    }
+    _fitFontSizeCache.set(cacheKey, res);
+    return res;
 }
 
 /** A, B, … Z, AA, … for fallback column labels */
@@ -409,7 +425,7 @@ const DataTableRow = React.memo(({
     onFocusField, onChangeField, onDuplicate, onRemove, onPasteCell, isRecentlyPasted
 }) => {
     return (
-        <tr onClick={() => onRowClick(originalIdx)} className={`group transition-all duration-300 ${isRecentlyPasted ? 'bg-blue-100/70 ring-1 ring-blue-300' : isActive ? 'bg-blue-50/30' : 'hover:bg-slate-50/40'}`}>
+        <tr onClick={() => onRowClick(originalIdx)} className={`group ${isRecentlyPasted ? 'bg-blue-100/70 ring-1 ring-blue-300' : isActive ? 'bg-blue-50/40' : 'hover:bg-slate-50/70'}`}>
             <td className="px-3 py-1.5 text-center">
                 <input type="checkbox" checked={isSelected} onChange={() => onToggleSelection(item.id)} onClick={e => e.stopPropagation()} className="w-4 h-4 rounded accent-blue-600 cursor-pointer" />
             </td>
@@ -430,7 +446,7 @@ const DataTableRow = React.memo(({
                                 if (onPasteCell) onPasteCell(originalIdx, k, text);
                             }
                         }}
-                        className={`w-full h-8 px-2.5 bg-white border rounded-md text-[13px] font-bold text-slate-800 outline-none transition-all placeholder:text-slate-300 ${selectedField === k ? 'ring-2 ring-blue-400/20 border-blue-300' : 'border-slate-200 group-hover:border-slate-300'}`} 
+                        className={`w-full h-8 px-2.5 bg-white border rounded-md text-[13px] font-bold text-slate-800 outline-none transition-colors duration-100 placeholder:text-slate-300 ${selectedField === k ? 'ring-2 ring-blue-400/20 border-blue-400' : 'border-slate-200 hover:border-slate-300'}`} 
                         placeholder={getFieldLabel(k)} 
                     />
                 </td>
@@ -448,16 +464,16 @@ const DataTableRow = React.memo(({
                             if (onPasteCell) onPasteCell(originalIdx, '_copies', text);
                         }
                     }}
-                    className="w-full h-8 px-3 bg-white border border-slate-200 rounded-md text-[13px] font-bold text-center text-slate-800 outline-none group-hover:border-slate-300" 
+                    className="w-full h-8 px-3 bg-white border border-slate-200 rounded-md text-[13px] font-bold text-center text-slate-800 outline-none hover:border-slate-300 transition-colors duration-100" 
                     placeholder={String(globalCopies)} 
                 />
             </td>
             <td className="px-2 py-1.5">
-                <div className="flex gap-1 justify-end items-center opacity-50 group-hover:opacity-100 transition-opacity">
-                    <button onClick={e => { e.stopPropagation(); onDuplicate(item.id); }} className="w-6 h-6 flex justify-center items-center text-blue-500 hover:bg-blue-50 rounded transition-all">
+                <div className="flex gap-1 justify-end items-center opacity-60 group-hover:opacity-100 transition-opacity duration-150">
+                    <button onClick={e => { e.stopPropagation(); onDuplicate(item.id); }} className="w-6 h-6 flex justify-center items-center text-blue-500 hover:bg-blue-50 rounded transition-colors" title="행 복제">
                         <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
                     </button>
-                    <button onClick={e => { e.stopPropagation(); onRemove(item.id); }} className="w-6 h-6 flex justify-center items-center text-red-400 hover:bg-red-50 rounded transition-all">
+                    <button onClick={e => { e.stopPropagation(); onRemove(item.id); }} className="w-6 h-6 flex justify-center items-center text-red-400 hover:bg-red-50 rounded transition-colors" title="행 삭제">
                         <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="2.5"><path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                     </button>
                 </div>
@@ -1739,7 +1755,7 @@ export default function LabelPrinter({ user }) {
     }, []);
 
     return (
-        <div className="min-h-screen bg-white px-5 py-4">
+        <div className="w-full bg-white px-1 py-1">
             <div className="flex lg:flex-row flex-col gap-8 items-start animate-in fade-in duration-300">
                     {/* ═══ Left Column: All Controls & Data ═══ */}
                     <div className="flex-1 min-w-0 w-full flex flex-col gap-5">
@@ -1988,7 +2004,10 @@ export default function LabelPrinter({ user }) {
 
                     </div>
                     {/* ═══ Right Column: Sticky Preview ═══ */}
-                    <div className="w-[300px] shrink-0 sticky top-4 z-30 self-start">
+                    <div 
+                        className="w-[300px] shrink-0 sticky top-2 z-30 self-start"
+                        style={{ transform: 'translate3d(0, 0, 0)', willChange: 'transform' }}
+                    >
                         {/* Right: Preview */}
                         <div className="w-[300px] shrink-0">
                             <div className="flex items-center justify-between mb-3">
@@ -2118,7 +2137,7 @@ export default function LabelPrinter({ user }) {
                                             );
                                         })}
                                     </div>
-                                    <div className={`absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-full backdrop-blur-sm transition-all shadow-sm whitespace-nowrap z-20 ${isLayoutLocked ? 'bg-amber-500/10 text-amber-600 opacity-0 group-hover:opacity-100' : 'bg-emerald-500/10 text-emerald-600'}`}>
+                                    <div className={`absolute bottom-3 left-1/2 -translate-x-1/2 text-[10px] font-bold flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/95 border border-slate-200/80 shadow-xs whitespace-nowrap z-20 ${isLayoutLocked ? 'text-amber-600 opacity-0 group-hover:opacity-100' : 'text-emerald-600'}`}>
                                         {isLayoutLocked ? (
                                             <>
                                                 <svg className="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" /></svg>
@@ -2223,7 +2242,7 @@ export default function LabelPrinter({ user }) {
                             )}
                         </div>
                     )}
-                            <div className="overflow-x-auto max-h-[600px] scrollbar-thin">
+                            <div className="overflow-x-auto max-h-[600px] scrollbar-thin" style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}>
                                 <table className="w-full">
                                     <thead className="sticky top-0 z-10">
                                         <tr className="bg-slate-50 border-b border-slate-200">

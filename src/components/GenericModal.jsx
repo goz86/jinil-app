@@ -11,6 +11,7 @@ export default function GenericModal({ isOpen, onClose, title, children }) {
             <div 
                 className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-[95%] max-w-6xl h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-300 border border-gray-100 dark:border-slate-700/80 cursor-default"
                 onClick={(e) => e.stopPropagation()}
+                style={{ transform: 'translate3d(0, 0, 0)', willChange: 'transform' }}
             >
                 {/* Modal Header */}
                 <div className="px-8 py-6 border-b border-gray-100 dark:border-slate-800 flex justify-between items-center bg-gray-50/50 dark:bg-slate-900/80">
@@ -33,7 +34,10 @@ export default function GenericModal({ isOpen, onClose, title, children }) {
                 </div>
 
                 {/* Modal Body */}
-                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar text-gray-800 dark:text-slate-100">
+                <div 
+                    className="flex-1 overflow-y-auto p-6 md:p-8 custom-scrollbar text-gray-800 dark:text-slate-100"
+                    style={{ overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch' }}
+                >
                     {children}
                 </div>
             </div>
