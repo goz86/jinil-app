@@ -88,7 +88,7 @@ export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics, wal
                     {/* Dark Mode Quick Toggle */}
                     <button
                         onClick={toggleTheme}
-                        className="w-8.5 h-8.5 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-amber-500 dark:hover:text-indigo-400 hover:bg-amber-50 dark:hover:bg-indigo-950/40 active:scale-95 transition-all duration-200 cursor-pointer group"
+                        className="w-9 h-9 min-w-[36px] min-h-[36px] shrink-0 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-amber-500 dark:hover:text-indigo-400 hover:bg-amber-50 dark:hover:bg-indigo-950/40 active:scale-95 transition-all duration-200 cursor-pointer group"
                         title={theme === 'dark' ? '라이트 모드로 전환' : '다크 모드로 전환'}
                     >
                         {theme === 'dark' ? (
@@ -106,7 +106,7 @@ export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics, wal
                     {/* Analytics Toggle Button */}
                     <button
                         onClick={onOpenAnalytics}
-                        className="w-8.5 h-8.5 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 active:scale-95 transition-all duration-200 cursor-pointer group"
+                        className="w-9 h-9 min-w-[36px] min-h-[36px] shrink-0 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 active:scale-95 transition-all duration-200 cursor-pointer group"
                         title={lang === 'vi' ? "Thống kê & Báo cáo" : "통계 및 보고서"}
                     >
                         <svg className="w-4.5 h-4.5 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -118,7 +118,7 @@ export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics, wal
                     {window.electronAPI && (
                         <button
                             onClick={() => window.electronAPI.toggleMiniWidget()}
-                            className="w-8.5 h-8.5 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 active:scale-95 transition-all duration-200 cursor-pointer group"
+                            className="w-9 h-9 min-w-[36px] min-h-[36px] shrink-0 rounded-xl flex items-center justify-center text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 active:scale-95 transition-all duration-200 cursor-pointer group"
                             title={lang === 'vi' ? "Mở Cửa sổ Mini" : "미니 창 열기"}
                         >
                             <svg className="w-4.5 h-4.5 group-hover:scale-110 transition-transform duration-200" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -128,10 +128,10 @@ export default function Header({ searchTerm, setSearchTerm, onOpenAnalytics, wal
                     )}
 
                     {/* Settings Gear Dropdown Button */}
-                    <div className="relative">
+                    <div className="relative shrink-0">
                         <button
                             onClick={() => setIsSettingsOpen(prev => !prev)}
-                            className={`w-8.5 h-8.5 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-95 cursor-pointer relative group ${
+                            className={`w-9 h-9 min-w-[36px] min-h-[36px] shrink-0 rounded-xl flex items-center justify-center transition-all duration-200 active:scale-95 cursor-pointer relative group ${
                                 isSettingsOpen 
                                     ? 'bg-blue-600 text-white shadow-xs' 
                                     : 'text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40'

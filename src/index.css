@@ -77,10 +77,10 @@ html.is-mini body {
   background: transparent !important;
 }
 
-/* Marquee Animation - Seamless loop from 0 to -50% with duplicated items */
+/* Marquee Animation - Seamless loop from 0 to -50% with GPU Hardware Acceleration (60-120 FPS) */
 @keyframes marquee {
-  0% { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
+  0% { transform: translate3d(0, 0, 0); }
+  100% { transform: translate3d(-50%, 0, 0); }
 }
 
 .animate-marquee {
@@ -90,6 +90,9 @@ html.is-mini body {
   white-space: nowrap;
   animation: marquee 350s linear infinite;
   width: max-content;
+  will-change: transform;
+  backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
 }
 
 /* Slow down marquee on hover */

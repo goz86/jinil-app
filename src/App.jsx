@@ -23,6 +23,7 @@ import RealtimeLockOverlay from './components/RealtimeLockOverlay';
 import SystemAnnouncementModal from './components/SystemAnnouncementModal';
 import NotesModal from './components/NotesModal';
 import FullscreenWeatherOverlay from './components/effects/FullscreenWeatherOverlay';
+import AnimatedContent from './components/effects/AnimatedContent';
 import { hasAppLockPin } from './lib/appLock';
 import { initializeApp } from 'firebase/app';
 import { auth, db, secondaryAuth, secondaryDb, firebaseConfig } from './firebase';
@@ -1040,7 +1041,14 @@ function App() {
             tasks={tasks} 
           />
         </React.Suspense>
-      <div className="w-full max-w-[1400px] flex flex-col lg:flex-row gap-6 justify-center">
+      <AnimatedContent
+        distance={20}
+        duration={0.4}
+        stagger={0.06}
+        trigger="mount"
+        ease="power2.out"
+        className="w-full max-w-[1400px] flex flex-col lg:flex-row gap-6 justify-center"
+      >
         {/* Left Column: Calendar & News */}
         <div className="w-full lg:w-80 flex-shrink-0 flex flex-col gap-6">
           <CalendarSidebar
@@ -1150,7 +1158,7 @@ function App() {
             onOpenNotes={() => setIsNotesOpen(true)}
           />
         </div>
-      </div>
+      </AnimatedContent>
       </div>
 
       <NotesModal

@@ -18,6 +18,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.110.8",
     "electron-updater": "^6.8.3",
+    "gsap": "^3.15.1",
     "lightweight-charts": "^5.2.0",
     "qrcode": "^1.5.4",
     "react-is": "^19.2.8",

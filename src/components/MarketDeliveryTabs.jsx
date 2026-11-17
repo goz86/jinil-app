@@ -6,12 +6,14 @@ import InvoiceModal from './InvoiceModal';
 import InTransitShipmentModal from './InTransitShipmentModal';
 import RecentShipmentsModal from './RecentShipmentsModal';
 import NotesModal from './NotesModal';
+import AnimatedContent from './effects/AnimatedContent';
 import { supabase } from '../lib/supabase';
 import { useLanguage } from '../contexts/LanguageContext';
 
 export default function MarketDeliveryTabs({ selectedDate, deliveryCount, deliveries, onOpenClients, onOpenInventory, onOpenLabelPrint, onOpenNotes, user }) {
     const { t } = useLanguage();
     const [activeTab, setActiveTab] = useState('market'); // Only for market and delivery inline
+    const [renderedTabs, setRenderedTabs] = useState(() => new Set(['market']));
     const [isInTransitModalOpen, setIsInTransitModalOpen] = useState(false);
     const [isRecentShipmentsOpen, setIsRecentShipmentsOpen] = useState(false);
     const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
@@ -169,6 +171,7 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
                                 }
                             } else {
                                 setActiveTab(tab.key);
+                                setRenderedTabs(prev => (prev.has(tab.key) ? prev : new Set([...prev, tab.key])));
                             }
                         }}
                         className={`flex flex-col items-center justify-center gap-1.5 py-3.5 px-1 text-xs md:text-[13px] font-bold tracking-tight transition-all duration-300 border-b border-r last:border-r-0 border-gray-100 dark:border-slate-700/80 relative cursor-pointer
@@ -200,17 +203,26 @@ export default function MarketDeliveryTabs({ selectedDate, deliveryCount, delive
                 ))}
             </div>
 
-            {/* Content for Inline Tabs */}
+            {/* Content for Inline Tabs with 0ms Tab Render Cache & GSAP AnimatedContent */}
             <div className="p-5">
-                {activeTab === 'market' ? (
-                    <MarketWidget />
-                ) : (
-                    <DeliveryWidget
-                        selectedDate={selectedDate}
-                        deliveries={deliveries}
-                        onOpenInTransitModal={() => setIsInTransitModalOpen(true)}
-                        onOpenRecentShipments={() => setIsRecentShipmentsOpen(true)}
-                    />
+                {renderedTabs.has('market') && (
+                    <div style={{ display: activeTab === 'market' ? 'block' : 'none' }}>
+                        <AnimatedContent distance={14} duration={0.3} ease="power2.out" trigger="mount">
+                            <MarketWidget />
+                        </AnimatedContent>
+                    </div>
+                )}
+                {renderedTabs.has('delivery') && (
+                    <div style={{ display: activeTab === 'delivery' ? 'block' : 'none' }}>
+                        <AnimatedContent distance={14} duration={0.3} ease="power2.out" trigger="mount">
+                            <DeliveryWidget
+                                selectedDate={selectedDate}
+                                deliveries={deliveries}
+                                onOpenInTransitModal={() => setIsInTransitModalOpen(true)}
+                                onOpenRecentShipments={() => setIsRecentShipmentsOpen(true)}
+                            />
+                        </AnimatedContent>
+                    </div>
                 )}
             </div>
 
