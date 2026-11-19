@@ -22,4 +22,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getPrinters: () => ipcRenderer.invoke('get-printers'),
     parseBtwBuffer: (data) => ipcRenderer.invoke('bartender-parse-btw', data),
     openExternal: (url) => ipcRenderer.invoke('open-external', url),
+    onAppVisibility: (callback) => {
+        ipcRenderer.on('app-visibility-changed', (event, isVisible) => callback(isVisible));
+    },
 });

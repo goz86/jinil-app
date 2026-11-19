@@ -170,10 +170,40 @@ export default function RealSnowEffect({
         cancelAnimationFrame(animId);
         startTime = performance.now();
         animId = requestAnimationFrame(render);
+      } else {
+        cancelAnimationFrame(animId);
       }
     };
 
     document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('blur', () => {
+      if (document.hidden) {
+        isVisible = false;
+        cancelAnimationFrame(animId);
+      }
+    });
+    window.addEventListener('focus', () => {
+      if (!isVisible && !document.hidden) {
+        isVisible = true;
+        cancelAnimationFrame(animId);
+        startTime = performance.now();
+        animId = requestAnimationFrame(render);
+      }
+    });
+
+    if (window.electronAPI?.onAppVisibility) {
+      window.electronAPI.onAppVisibility((visible) => {
+        isVisible = visible && !document.hidden;
+        if (isVisible) {
+          cancelAnimationFrame(animId);
+          startTime = performance.now();
+          animId = requestAnimationFrame(render);
+        } else {
+          cancelAnimationFrame(animId);
+        }
+      });
+    }
+
     animId = requestAnimationFrame(render);
 
     return () => {

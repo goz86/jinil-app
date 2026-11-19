@@ -375,7 +375,13 @@ function createMiniWindow() {
         minWidth: 200, minHeight: 300,
         maxWidth: 800, maxHeight: 1200,
         hasShadow: true,
-        webPreferences: { nodeIntegration: false, contextIsolation: true, webSecurity: false, preload: path.join(__dirname, 'preload.js') }
+        webPreferences: { 
+            nodeIntegration: false, 
+            contextIsolation: true, 
+            webSecurity: false, 
+            preload: path.join(__dirname, 'preload.js'),
+            backgroundThrottling: true
+        }
     });
     if (isDev) {
         miniWindow.loadURL('http://localhost:5173/#/mini');
@@ -392,7 +398,14 @@ function createWindow() {
         width: 1400, height: 900, title: "진일 라벨",
         icon: nativeImage.createFromPath(iconPath),
         autoHideMenuBar: true, show: false,
-        webPreferences: { nodeIntegration: false, contextIsolation: true, webSecurity: false, devTools: true, preload: path.join(__dirname, 'preload.js') }
+        webPreferences: { 
+            nodeIntegration: false, 
+            contextIsolation: true, 
+            webSecurity: false, 
+            devTools: true, 
+            preload: path.join(__dirname, 'preload.js'),
+            backgroundThrottling: true
+        }
     });
     if (isDev) { mainWindow.loadURL('http://localhost:5173'); }
     else { mainWindow.loadFile(path.join(__dirname, '../dist/index.html')); }

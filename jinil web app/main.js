@@ -391,9 +391,11 @@ if (process.platform === 'win32') {
     app.setAppUserModelId("com.jinil.todos");
 }
 
+let isAdjustingPosition = false;
 function positionMiniNextToMain() {
-    if (!mainWindow || !miniWindow) return;
+    if (isAdjustingPosition || !mainWindow || !miniWindow) return;
     try {
+        isAdjustingPosition = true;
         if (!mainWindow.isVisible() || mainWindow.isMinimized()) return;
         const [mainX, mainY] = mainWindow.getPosition();
         const [mainWidth, mainHeight] = mainWindow.getSize();
@@ -421,7 +423,6 @@ function positionMiniNextToMain() {
             nextX = rightCandidate;
         } else {
             // Neither side has enough room without overlap or clipping.
-            // On startup or constrained screens, adjust mainWindow slightly to fit miniWindow on the left cleanly
             if (!mainWindow.isMaximized()) {
                 const newMainX = Math.min(
                     rightLimit - mainWidth,
@@ -444,6 +445,8 @@ function positionMiniNextToMain() {
         });
     } catch (err) {
         console.error("Positioning mini window error:", err);
+    } finally {
+        setTimeout(() => { isAdjustingPosition = false; }, 100);
     }
 }
 
@@ -469,7 +472,13 @@ function createMiniWindow() {
         minWidth: 200, minHeight: 300,
         maxWidth: 800, maxHeight: 1200,
         hasShadow: true,
-        webPreferences: { nodeIntegration: false, contextIsolation: true, webSecurity: false, preload: path.join(__dirname, 'preload.js') }
+        webPreferences: { 
+            nodeIntegration: false, 
+            contextIsolation: true, 
+            webSecurity: false, 
+            preload: path.join(__dirname, 'preload.js'),
+            backgroundThrottling: true
+        }
     });
     if (isDev) {
         miniWindow.loadURL('http://localhost:5173/#/mini');
@@ -486,7 +495,14 @@ function createWindow() {
         width: 1400, height: 900, title: "진일 라벨",
         icon: nativeImage.createFromPath(iconPath),
         autoHideMenuBar: true, show: false,
-        webPreferences: { nodeIntegration: false, contextIsolation: true, webSecurity: false, devTools: true, preload: path.join(__dirname, 'preload.js') }
+        webPreferences: { 
+            nodeIntegration: false, 
+            contextIsolation: true, 
+            webSecurity: false, 
+            devTools: true, 
+            preload: path.join(__dirname, 'preload.js'),
+            backgroundThrottling: true
+        }
     });
     if (isDev) { mainWindow.loadURL('http://localhost:5173'); }
     else { mainWindow.loadFile(path.join(__dirname, '../dist/index.html')); }
@@ -511,19 +527,32 @@ function createWindow() {
 
     mainWindow.once('ready-to-show', () => {
         mainWindow.show();
-        createMiniWindow();
-        setTimeout(positionMiniNextToMain, 300);
     });
 
     mainWindow.on('move', positionMiniNextToMain);
     mainWindow.on('resize', positionMiniNextToMain);
     mainWindow.on('show', () => {
-        if (!miniWindow) {
-            createMiniWindow();
-        } else {
-            miniWindow.show();
+        if (miniWindow && miniWindow.isVisible()) {
+            setTimeout(positionMiniNextToMain, 100);
         }
-        setTimeout(positionMiniNextToMain, 200);
+        if (mainWindow && mainWindow.webContents) {
+            mainWindow.webContents.send('app-visibility-changed', true);
+        }
+    });
+    mainWindow.on('hide', () => {
+        if (mainWindow && mainWindow.webContents) {
+            mainWindow.webContents.send('app-visibility-changed', false);
+        }
+    });
+    mainWindow.on('minimize', () => {
+        if (mainWindow && mainWindow.webContents) {
+            mainWindow.webContents.send('app-visibility-changed', false);
+        }
+    });
+    mainWindow.on('restore', () => {
+        if (mainWindow && mainWindow.webContents) {
+            mainWindow.webContents.send('app-visibility-changed', true);
+        }
     });
 
     mainWindow.on('closed', () => {

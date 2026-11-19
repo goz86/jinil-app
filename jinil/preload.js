@@ -19,4 +19,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     pickBarTenderTemplate: () => ipcRenderer.invoke('bartender-pick-template'),
     pickBarTenderExcel: () => ipcRenderer.invoke('bartender-pick-excel'),
     printWithBarTender: (payload) => ipcRenderer.invoke('bartender-print', payload),
+    onAppVisibility: (callback) => {
+        ipcRenderer.on('app-visibility-changed', (event, isVisible) => callback(isVisible));
+    },
 });
