@@ -19,7 +19,7 @@ const getWeatherInfo = (code, isNight = false) => {
                 return {
                     label: '맑은 밤',
                     iconType: 'clear-night',
-                    bgClass: 'bg-[#1b365d]/95 text-white border-blue-400/30 dark:bg-[#122543]/95 dark:border-blue-500/30 shadow-lg backdrop-blur-xl',
+                    bgClass: 'bg-[#1b365d]/95 text-white border-blue-400/30 dark:bg-[#122543]/95 dark:border-blue-500/30 shadow-lg',
                     bgTint: 'from-[#2b528d]/60 via-[#1b365d]/50 to-[#0e1e38]/40'
                 };
             case 1:
@@ -27,14 +27,14 @@ const getWeatherInfo = (code, isNight = false) => {
                 return {
                     label: '구름 조금 (밤)',
                     iconType: 'partly-cloudy-night',
-                    bgClass: 'bg-[#1b365d]/90 text-white border-blue-400/25 dark:bg-[#122543]/90 dark:border-blue-500/25 shadow-lg backdrop-blur-xl',
+                    bgClass: 'bg-[#1b365d]/90 text-white border-blue-400/25 dark:bg-[#122543]/90 dark:border-blue-500/25 shadow-lg',
                     bgTint: 'from-[#284c82]/55 via-[#183154]/45 to-[#0d1a30]/35'
                 };
             case 3:
                 return {
                     label: '흐린 밤',
                     iconType: 'cloudy',
-                    bgClass: 'bg-[#192f52]/90 text-white border-blue-400/20 dark:bg-[#101e36]/90 dark:border-blue-500/20 shadow-lg backdrop-blur-xl',
+                    bgClass: 'bg-[#192f52]/90 text-white border-blue-400/20 dark:bg-[#101e36]/90 dark:border-blue-500/20 shadow-lg',
                     bgTint: 'from-[#203a63]/50 via-[#142642]/40 to-[#0b1424]/30'
                 };
             case 51:
@@ -46,14 +46,14 @@ const getWeatherInfo = (code, isNight = false) => {
                 return {
                     label: '밤비',
                     iconType: 'rain',
-                    bgClass: 'bg-[#16335c]/95 text-white border-blue-400/35 dark:bg-[#0e2240]/95 dark:border-blue-500/35 shadow-lg backdrop-blur-xl',
+                    bgClass: 'bg-[#16335c]/95 text-white border-blue-400/35 dark:bg-[#0e2240]/95 dark:border-blue-500/35 shadow-lg',
                     bgTint: 'from-[#1e467d]/65 via-[#122c52]/55 to-[#0a182e]/45'
                 };
             default:
                 return {
                     label: '맑은 밤',
                     iconType: 'clear-night',
-                    bgClass: 'bg-[#1b365d]/95 text-white border-blue-400/30 dark:bg-[#122543]/95 dark:border-blue-500/30 shadow-lg backdrop-blur-xl',
+                    bgClass: 'bg-[#1b365d]/95 text-white border-blue-400/30 dark:bg-[#122543]/95 dark:border-blue-500/30 shadow-lg',
                     bgTint: 'from-[#2b528d]/60 via-[#1b365d]/50 to-[#0e1e38]/40'
                 };
         }
@@ -763,7 +763,8 @@ export default function WeatherWidget() {
             onTouchEnd={handleTouchEnd}
             onClick={handleCardClick}
             title="클릭하여 15초간 전체 화면 날씨 감상 (좌우 스와이프로 예보 전환)"
-            className={`relative overflow-hidden rounded-2xl p-4 border transition-colors duration-200 shadow-sm backdrop-blur-md w-full select-none cursor-pointer min-h-[175px] flex flex-col justify-between ${weatherInfo.bgClass}`}
+            className={`relative overflow-hidden rounded-2xl p-4 border transition-colors duration-200 shadow-sm w-full select-none cursor-pointer min-h-[175px] flex flex-col justify-between ${weatherInfo.bgClass}`}
+            style={{ isolation: 'isolate' }}
         >
             {/* Ambient Background Gradient Tint (Dynamic by Weather) */}
             <div className={`absolute -inset-2 bg-gradient-to-br ${weatherInfo.bgTint} pointer-events-none blur-xl opacity-90 transition-colors duration-200`}></div>

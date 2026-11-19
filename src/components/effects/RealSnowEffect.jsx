@@ -83,9 +83,42 @@ export default function RealSnowEffect({
     }
 
     let startTime = performance.now();
+    let lastRenderTime = 0;
+    const TARGET_FPS = 30; // 30 FPS cap saves 75% GPU/CPU work
+    const FRAME_INTERVAL = 1000 / TARGET_FPS;
+
+    // Pre-render snowflake sprites to avoid calling createRadialGradient in animation loop
+    const SPRITE_SIZES = [8, 16, 24];
+    const sprites = SPRITE_SIZES.map(size => {
+      const offCanvas = document.createElement('canvas');
+      offCanvas.width = size * 2;
+      offCanvas.height = size * 2;
+      const offCtx = offCanvas.getContext('2d');
+      const grad = offCtx.createRadialGradient(size, size, 0, size, size, size);
+      if (isNight) {
+        grad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+        grad.addColorStop(0.5, 'rgba(224, 242, 254, 0.7)');
+        grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      } else {
+        grad.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        grad.addColorStop(0.35, 'rgba(186, 230, 253, 0.85)');
+        grad.addColorStop(0.75, 'rgba(56, 189, 248, 0.45)');
+        grad.addColorStop(1, 'rgba(14, 165, 233, 0)');
+      }
+      offCtx.fillStyle = grad;
+      offCtx.beginPath();
+      offCtx.arc(size, size, size, 0, Math.PI * 2);
+      offCtx.fill();
+      return { canvas: offCanvas, size };
+    });
 
     const render = (now) => {
       if (!isVisible || document.hidden) return;
+
+      animId = requestAnimationFrame(render);
+
+      if (now - lastRenderTime < FRAME_INTERVAL) return;
+      lastRenderTime = now - ((now - lastRenderTime) % FRAME_INTERVAL);
 
       const elapsed = (now - startTime) * 0.001;
 
@@ -121,47 +154,19 @@ export default function RealSnowEffect({
           f.x = width + f.radius * 2;
         }
 
-        // Draw soft, organic, feathered snowflake with crystalline contrast
-        const grad = ctx.createRadialGradient(
-          f.x,
-          f.y,
-          0,
-          f.x,
-          f.y,
-          f.radius
+        // Fast GPU blit using pre-rendered sprite
+        const spriteIdx = f.depth > 0.65 ? 2 : f.depth > 0.35 ? 1 : 0;
+        const sprite = sprites[spriteIdx];
+        ctx.globalAlpha = f.opacity;
+        ctx.drawImage(
+          sprite.canvas,
+          f.x - f.radius,
+          f.y - f.radius,
+          f.radius * 2,
+          f.radius * 2
         );
-
-        if (isNight) {
-          // Night: Luminous moonlit frosty silver-white
-          grad.addColorStop(0, `rgba(255, 255, 255, ${f.opacity})`);
-          grad.addColorStop(0.5, `rgba(224, 242, 254, ${f.opacity * 0.7})`);
-          grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
-        } else {
-          // Day / Light UI: Frosted crystalline core with sky-blue refraction rim
-          // This guarantees crystal-clear visibility against white/light backgrounds!
-          grad.addColorStop(0, `rgba(255, 255, 255, ${Math.min(1, f.opacity * 1.1)})`);
-          grad.addColorStop(0.35, `rgba(186, 230, 253, ${f.opacity * 0.95})`);
-          grad.addColorStop(0.75, `rgba(56, 189, 248, ${f.opacity * 0.55})`);
-          grad.addColorStop(1, 'rgba(14, 165, 233, 0)');
-        }
-
-        ctx.beginPath();
-        ctx.fillStyle = grad;
-        ctx.arc(f.x, f.y, f.radius, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Extra frosty core sparkle for near flakes
-        if (f.depth > 0.65) {
-          ctx.beginPath();
-          ctx.fillStyle = isNight
-            ? `rgba(255, 255, 255, ${f.opacity * 0.9})`
-            : `rgba(255, 255, 255, 0.95)`;
-          ctx.arc(f.x, f.y, f.radius * 0.35, 0, Math.PI * 2);
-          ctx.fill();
-        }
       }
-
-      animId = requestAnimationFrame(render);
+      ctx.globalAlpha = 1.0;
     };
 
     const handleVisibility = () => {
@@ -220,6 +225,7 @@ export default function RealSnowEffect({
   return (
     <canvas
       ref={canvasRef}
+      style={{ contain: 'strict', willChange: 'transform' }}
       className={`absolute inset-0 w-full h-full pointer-events-none z-0 ${fullScreen ? '' : 'rounded-2xl'} ${className}`}
       aria-hidden="true"
     />

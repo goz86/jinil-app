@@ -16,7 +16,7 @@ export default function WeatherAtmosphere({ iconType, isNight = false }) {
   return (
     <div
       className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl z-0 transition-opacity duration-700 select-none"
-      style={{ transform: 'translateZ(0)' }}
+      style={{ transform: 'translateZ(0)', contain: 'strict', isolation: 'isolate' }}
       aria-hidden="true"
     >
       {/* 1. Snow condition: Soft fluttering snow */}
