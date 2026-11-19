@@ -304,6 +304,10 @@ if (process.platform === 'win32') {
     app.setAppUserModelId("com.jinil.todos");
 }
 
+// Memory & performance optimizations
+app.commandLine.appendSwitch('js-flags', '--max-old-space-size=128');
+app.commandLine.appendSwitch('disable-features', 'SpareRendererForSitePerProcess');
+
 function positionMiniNextToMain() {
     if (!mainWindow || !miniWindow) return;
     try {
@@ -430,19 +434,32 @@ function createWindow() {
 
     mainWindow.once('ready-to-show', () => {
         mainWindow.show();
-        createMiniWindow();
-        setTimeout(positionMiniNextToMain, 300);
     });
 
     mainWindow.on('move', positionMiniNextToMain);
     mainWindow.on('resize', positionMiniNextToMain);
     mainWindow.on('show', () => {
-        if (!miniWindow) {
-            createMiniWindow();
-        } else {
-            miniWindow.show();
+        if (miniWindow && miniWindow.isVisible()) {
+            setTimeout(positionMiniNextToMain, 100);
         }
-        setTimeout(positionMiniNextToMain, 200);
+        if (mainWindow && mainWindow.webContents) {
+            mainWindow.webContents.send('app-visibility-changed', true);
+        }
+    });
+    mainWindow.on('hide', () => {
+        if (mainWindow && mainWindow.webContents) {
+            mainWindow.webContents.send('app-visibility-changed', false);
+        }
+    });
+    mainWindow.on('minimize', () => {
+        if (mainWindow && mainWindow.webContents) {
+            mainWindow.webContents.send('app-visibility-changed', false);
+        }
+    });
+    mainWindow.on('restore', () => {
+        if (mainWindow && mainWindow.webContents) {
+            mainWindow.webContents.send('app-visibility-changed', true);
+        }
     });
 
     mainWindow.on('closed', () => { console.log('[Main] mainWindow closed'); mainWindow = null; if (miniWindow) { miniWindow.close(); miniWindow = null; } });

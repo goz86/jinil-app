@@ -391,6 +391,10 @@ if (process.platform === 'win32') {
     app.setAppUserModelId("com.jinil.todos");
 }
 
+// Memory & performance optimizations
+app.commandLine.appendSwitch('js-flags', '--max-old-space-size=128');
+app.commandLine.appendSwitch('disable-features', 'SpareRendererForSitePerProcess');
+
 let isAdjustingPosition = false;
 function positionMiniNextToMain() {
     if (isAdjustingPosition || !mainWindow || !miniWindow) return;
