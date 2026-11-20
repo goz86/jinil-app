@@ -2,13 +2,40 @@ import React, { useState, useEffect, useCallback } from 'react';
 import WeatherIcon from './WeatherIcon';
 import WeatherAtmosphere from './effects/WeatherAtmosphere';
 
-// Helper to determine whether it's currently night time (7 PM - 6 AM)
-const checkIsNight = (isDayParam) => {
+// High-precision astronomical solar calculator to determine real-time sunrise and sunset
+const checkIsNight = (isDayParam, lat = 37.5665, lon = 126.9780, customDate = null) => {
     if (isDayParam !== undefined && isDayParam !== null) {
         return isDayParam === 0;
     }
-    const hour = new Date().getHours();
-    return hour >= 19 || hour < 6;
+    const now = customDate || new Date();
+    try {
+        const rad = Math.PI / 180;
+        const dayOfYear = Math.floor((now - new Date(now.getFullYear(), 0, 0)) / 86400000);
+        // Solar declination
+        const declination = -23.44 * Math.cos((360 / 365) * (dayOfYear + 10) * rad) * rad;
+        const latRad = lat * rad;
+        // Cosine of hour angle for sunset/sunrise (zenith = 90.833 deg with atmospheric refraction)
+        const cosHourAngle = (Math.cos(90.833 * rad) - Math.sin(latRad) * Math.sin(declination)) / (Math.cos(latRad) * Math.cos(declination));
+        if (cosHourAngle <= 1 && cosHourAngle >= -1) {
+            const hourAngle = Math.acos(cosHourAngle) / rad / 15;
+            const b = (360 / 365) * (dayOfYear - 81) * rad;
+            const eot = 9.87 * Math.sin(2 * b) - 7.53 * Math.cos(b) - 1.5 * Math.sin(b);
+            const tzOffset = -now.getTimezoneOffset() / 60;
+            const solarNoon = 12 - (lon - tzOffset * 15) / 15 - eot / 60;
+            const sunrise = solarNoon - hourAngle;
+            const sunset = solarNoon + hourAngle;
+            const currentHourDecimal = now.getHours() + now.getMinutes() / 60;
+            return currentHourDecimal < sunrise || currentHourDecimal >= sunset;
+        }
+    } catch (e) {
+        console.warn('[checkIsNight] Solar calculation fallback', e);
+    }
+    // Seasonal fallback for Korea/East Asia
+    const month = now.getMonth();
+    const sunsetHour = (month >= 10 || month <= 1) ? 17.3 : (month >= 4 && month <= 7) ? 19.8 : 18.5;
+    const sunriseHour = (month >= 10 || month <= 1) ? 7.3 : (month >= 4 && month <= 7) ? 5.3 : 6.3;
+    const currentHour = now.getHours() + now.getMinutes() / 60;
+    return currentHour < sunriseHour || currentHour >= sunsetHour;
 };
 
 // Weather code to Pure Korean condition, SVG icon type & dynamic theme tint mapper
@@ -212,43 +239,50 @@ const parseWttrConditionCode = (desc) => {
 // Map MET Norway weather symbol codes to label, iconType & code
 const mapMetNoSymbol = (symbol = '', isNight = false) => {
     const s = (symbol || '').toLowerCase();
+    // Auto-detect day/night from MET Norway symbol name (_night or _day)
+    const isNightEffective = s.includes('_night') ? true : (s.includes('_day') ? false : isNight);
+
     if (s.includes('thunder')) {
-        return { label: '뇌우', iconType: 'thunder', code: 95 };
+        return { label: isNightEffective ? '뇌우 (밤)' : '뇌우', iconType: 'thunder', code: 95, isNight: isNightEffective };
     }
     if (s.includes('snow') || s.includes('sleet')) {
-        return { label: '눈', iconType: 'snow', code: 71 };
+        return { label: isNightEffective ? '눈 (밤)' : '눈', iconType: 'snow', code: 71, isNight: isNightEffective };
     }
     if (s.includes('rain') || s.includes('drizzle')) {
-        return { label: isNight ? '밤비' : '비', iconType: 'rain', code: 61 };
+        return { label: isNightEffective ? '밤비' : '비', iconType: 'rain', code: 61, isNight: isNightEffective };
     }
     if (s.includes('fog')) {
-        return { label: '안개', iconType: 'fog', code: 45 };
+        return { label: isNightEffective ? '안개 (밤)' : '안개', iconType: 'fog', code: 45, isNight: isNightEffective };
     }
     if (s.includes('cloudy') || s.includes('overcast')) {
         return { 
-            label: isNight ? '흐린 밤' : '흐림', 
+            label: isNightEffective ? '흐린 밤' : '흐림', 
             iconType: 'cloudy', 
-            code: 3 
+            code: 3,
+            isNight: isNightEffective
         };
     }
     if (s.includes('partlycloudy') || s.includes('fair')) {
         return { 
-            label: isNight ? '구름 조금 (밤)' : '구름 조금', 
-            iconType: isNight ? 'partly-cloudy-night' : 'partly-cloudy-day', 
-            code: 2 
+            label: isNightEffective ? '구름 조금 (밤)' : '구름 조금', 
+            iconType: isNightEffective ? 'partly-cloudy-night' : 'partly-cloudy-day', 
+            code: 2,
+            isNight: isNightEffective
         };
     }
     if (s.includes('clearsky') || s.includes('clear')) {
         return { 
-            label: isNight ? '맑은 밤' : '맑음', 
-            iconType: isNight ? 'clear-night' : 'clear-day', 
-            code: 0 
+            label: isNightEffective ? '맑은 밤' : '맑음', 
+            iconType: isNightEffective ? 'clear-night' : 'clear-day', 
+            code: 0,
+            isNight: isNightEffective
         };
     }
     return {
-        label: isNight ? '맑은 밤' : '맑음',
-        iconType: isNight ? 'clear-night' : 'clear-day',
-        code: 0
+        label: isNightEffective ? '맑은 밤' : '맑음',
+        iconType: isNightEffective ? 'clear-night' : 'clear-day',
+        code: 0,
+        isNight: isNightEffective
     };
 };
 
@@ -314,9 +348,17 @@ export default function WeatherWidget() {
         return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
     });
     const [activeSlide, setActiveSlide] = useState(0); // 0: Live Current Weather, 1: 4-Day Forecast
+    const [currentCoords, setCurrentCoords] = useState({ lat: 37.5665, lon: 126.9780 });
+    const [currentTimeTick, setCurrentTimeTick] = useState(Date.now());
 
-    const isNightNow = weather ? (weather.isNight !== undefined ? weather.isNight : checkIsNight()) : checkIsNight();
-    const weatherInfo = weather ? getWeatherInfo(weather.code, isNightNow) : (isNightNow ? { label: '맑은 밤', iconType: 'clear-night', bgClass: 'bg-slate-900/90 text-slate-100 border-indigo-900/80', bgTint: 'from-indigo-950/90 to-slate-900/90' } : { label: '불러오는 중', iconType: 'partly-cloudy-day', bgClass: 'bg-slate-50/90 dark:bg-slate-900/60 border-slate-200/80 dark:border-slate-700/60', bgTint: 'from-blue-500/15 to-indigo-500/15' });
+    // 1-minute ticker to dynamically re-evaluate sunrise/sunset transitions in real time
+    useEffect(() => {
+        const timer = setInterval(() => setCurrentTimeTick(Date.now()), 60000);
+        return () => clearInterval(timer);
+    }, []);
+
+    const isNightNow = checkIsNight(undefined, currentCoords.lat, currentCoords.lon);
+    const weatherInfo = weather ? getWeatherInfo(weather.code, isNightNow) : (isNightNow ? { label: '맑은 밤', iconType: 'clear-night', bgClass: 'bg-[#1b365d]/95 text-white border-blue-400/30 dark:bg-[#122543]/95 dark:border-blue-500/30 shadow-lg', bgTint: 'from-[#2b528d]/60 via-[#1b365d]/50 to-[#0e1e38]/40' } : { label: '불러오는 중', iconType: 'partly-cloudy-day', bgClass: 'bg-slate-50/90 dark:bg-slate-900/60 border-slate-200/80 dark:border-slate-700/60', bgTint: 'from-blue-500/15 to-indigo-500/15' });
 
     // Drag / Touch Swipe gesture state
     const [startX, setStartX] = useState(0);
@@ -396,6 +438,7 @@ export default function WeatherWidget() {
     };
 
     const fetchWeatherData = useCallback(async (lat, lon) => {
+        setCurrentCoords({ lat, lon });
         setLoading(true);
         setError(false);
 
@@ -453,7 +496,9 @@ export default function WeatherWidget() {
                     const precipAmount = currentItem?.data?.next_1_hours?.details?.precipitation_amount ??
                                          currentItem?.data?.next_6_hours?.details?.precipitation_amount ?? 0;
 
-                    const isNight = checkIsNight();
+                    const symbolHasNight = nextSummary.includes('_night');
+                    const symbolHasDay = nextSummary.includes('_day');
+                    const isNight = symbolHasNight ? true : (symbolHasDay ? false : checkIsNight(undefined, lat, lon));
                     let currentMapped = mapMetNoSymbol(nextSummary, isNight);
 
                     // High-Precision Precipitation Override:
@@ -560,7 +605,7 @@ export default function WeatherWidget() {
 
                 const humidity = hourly.relativehumidity_2m ? hourly.relativehumidity_2m[currentHourIndex] || 60 : 60;
                 const apparentTemp = hourly.apparent_temperature ? hourly.apparent_temperature[currentHourIndex] : current.temperature;
-                const isNight = checkIsNight(current.is_day);
+                const isNight = checkIsNight(current.is_day, lat, lon);
 
                 let meteoCode = current.weathercode || 0;
                 const currentPrecip = hourly.precipitation ? (hourly.precipitation[currentHourIndex] || 0) : 0;
@@ -638,7 +683,7 @@ export default function WeatherWidget() {
                     if (precipMM > 0 && parsedCode < 50) {
                         parsedCode = precipMM >= 2.0 ? 65 : 61;
                     }
-                    const isNight = checkIsNight();
+                    const isNight = checkIsNight(undefined, lat, lon);
 
                     // Parse real weather forecast from wttrData.weather
                     const wttrForecast = [];
