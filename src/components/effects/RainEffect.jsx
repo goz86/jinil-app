@@ -41,8 +41,8 @@ export default function RainEffect({
     const DROP_COUNT = fullScreen ? 120 : 38;
     const drops = [];
 
-    // Wind drift slant: natural ~15 deg tilt
-    const slant = fullScreen ? 2.8 : 1.8;
+    // Wind drift slant: gentle natural tilt (~11 deg)
+    const slant = fullScreen ? 2.2 : 1.2;
 
     for (let i = 0; i < DROP_COUNT; i++) {
       const depth = Math.random(); // 0 = far, 1 = near
@@ -50,9 +50,9 @@ export default function RainEffect({
         x: Math.random() * (width + 60) - 20,
         y: Math.random() * (height + 50) - 50,
         depth,
-        // Natural rain physics: longer, sleek streaks falling fluidly
-        speed: (fullScreen ? 10.0 : 8.5) + depth * (fullScreen ? 6.0 : 5.0),
-        length: (fullScreen ? 22 : 18) + depth * (fullScreen ? 14 : 10),
+        // Soothing, gentle rain cadence (calm, graceful fall)
+        speed: (fullScreen ? 6.5 : 4.6) + depth * (fullScreen ? 3.5 : 2.4),
+        length: (fullScreen ? 20 : 15) + depth * (fullScreen ? 10 : 7),
       });
     }
 
